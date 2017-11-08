@@ -26,7 +26,7 @@ function compressPlugin (fastify, opts, next) {
       this.send(pump(payload, zlib.createDeflate(), onEnd))
     // brotli compression
     } else if (/\bbr\b/.test(acceptEncoding)) {
-      this.header('Content-Encoding', 'gzip')
+      this.header('Content-Encoding', 'br')
       this.send(pump(payload, brotli.compressStream(), onEnd))
     // all the other cases
     } else {
