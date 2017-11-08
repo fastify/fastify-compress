@@ -1,0 +1,36 @@
+{
+  "name": "fastify-compress",
+  "version": "0.1.0",
+  "description": "Fastify compression utils",
+  "main": "index.js",
+  "dependencies": {
+    "fastify-plugin": "^0.1.1",
+    "iltorb": "^2.0.2",
+    "pump": "^1.0.2"
+  },
+  "devDependencies": {
+    "fastify": "^0.33.0",
+    "tap": "^10.7.3",
+    "standard": "^10.0.3"
+  },
+  "scripts": {
+    "test": "standard && tap test.js"
+  },
+  "keywords": [
+    "fastify",
+    "compression",
+    "deflate",
+    "gzip",
+    "brodli"
+  ],
+  "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fastify/fastify-compress/issues"
+  },
+  "homepage": "https://github.com/fastify/fastify-compress#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fastify/fastify-compress.git"
+  }
+}
