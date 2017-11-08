@@ -11,7 +11,7 @@ const Fastify = require('fastify')
 const compressPlugin = require('./index')
 
 test('should send a deflated data', t => {
-  t.plan(1)
+  t.plan(2)
   const fastify = Fastify()
   fastify.register(compressPlugin)
 
@@ -26,6 +26,7 @@ test('should send a deflated data', t => {
       'accept-encoding': 'deflate'
     }
   }, res => {
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
@@ -33,7 +34,7 @@ test('should send a deflated data', t => {
 })
 
 test('should send a gzipped data', t => {
-  t.plan(1)
+  t.plan(2)
   const fastify = Fastify()
   fastify.register(compressPlugin)
 
@@ -48,6 +49,7 @@ test('should send a gzipped data', t => {
       'accept-encoding': 'gzip'
     }
   }, res => {
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.unzipSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
@@ -55,7 +57,7 @@ test('should send a gzipped data', t => {
 })
 
 test('should send a brotli data', t => {
-  t.plan(1)
+  t.plan(2)
   const fastify = Fastify()
   fastify.register(compressPlugin)
 
@@ -70,6 +72,7 @@ test('should send a brotli data', t => {
       'accept-encoding': 'br'
     }
   }, res => {
+    t.strictEqual(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
     const payload = brotli.decompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
