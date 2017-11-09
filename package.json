@@ -6,7 +6,8 @@
   "dependencies": {
     "fastify-plugin": "^0.1.1",
     "iltorb": "^2.0.2",
-    "pump": "^1.0.2"
+    "pump": "^1.0.2",
+    "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
     "fastify": "^0.33.0",
