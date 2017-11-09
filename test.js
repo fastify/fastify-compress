@@ -102,32 +102,6 @@ test('should follow the encoding order', t => {
   })
 })
 
-test('Accepts only streams', t => {
-  t.plan(2)
-  const fastify = Fastify()
-  fastify.register(compressPlugin)
-
-  fastify.get('/', (req, reply) => {
-    reply.compress('hello')
-  })
-
-  fastify.inject({
-    url: '/',
-    method: 'GET',
-    headers: {
-      'accept-encoding': 'br'
-    }
-  }, res => {
-    const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 500)
-    t.deepEqual({
-      error: 'Internal Server Error',
-      message: 'Internal server error',
-      statusCode: 500
-    }, payload)
-  })
-})
-
 test('Unsupported encoding', t => {
   t.plan(2)
   const fastify = Fastify()
@@ -198,6 +172,180 @@ test('Should close the stream', t => {
       error: 'Bad Request',
       message: 'Missing `accept encoding` header',
       statusCode: 400
+    }, payload)
+  })
+})
+
+test('No compression header', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress({ hello: 'world' })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual({ hello: 'world' }, payload)
+  })
+})
+
+test('Should compress json data (gzip)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, res => {
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should compress json data (deflate)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should compress json data (brotli)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, res => {
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should compress string data (gzip)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress('hello')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, res => {
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), 'hello')
+  })
+})
+
+test('Should compress string data (deflate)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress('hello')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), 'hello')
+  })
+})
+
+test('Should compress string data (brotli)', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress('hello')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, res => {
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), 'hello')
+  })
+})
+
+test('Missing payload', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress()
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.strictEqual(res.statusCode, 500)
+    t.deepEqual({
+      error: 'Internal Server Error',
+      message: 'Internal server error',
+      statusCode: 500
     }, payload)
   })
 })
