@@ -4,7 +4,14 @@ const fp = require('fastify-plugin')
 const zlib = require('zlib')
 const brotli = require('iltorb')
 const pump = require('pump')
+const sts = require('string-to-stream')
 const supportedEncodings = ['deflate', 'gzip', 'br']
+
+const compressStream = {
+  gzip: zlib.createGzip,
+  deflate: zlib.createDeflate,
+  br: brotli.compressStream
+}
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -12,25 +19,22 @@ function compressPlugin (fastify, opts, next) {
 }
 
 function compress (payload) {
-  if (!payload || payload._readableState === undefined) {
-    this._req.log.warn(new Error('The payload is not a stream'))
+  if (this.request.headers['x-no-compression'] !== undefined) {
+    return this.send(payload)
+  }
+
+  if (!payload) {
+    this._req.log.warn('compress: missing payload')
     this.send(new Error('Internal server error'))
     return
   }
 
-  var header = this.request.headers['accept-encoding']
-  if (!header) {
+  var encoding = getEncodingHeader(this.request)
+
+  if (encoding === undefined) {
     closeStream(payload)
     this.code(400).send(new Error('Missing `accept encoding` header'))
     return
-  }
-  var encoding = null
-  var acceptEncodings = header.split(',')
-  for (var i = 0; i < acceptEncodings.length; i++) {
-    if (supportedEncodings.indexOf(acceptEncodings[i]) > -1) {
-      encoding = acceptEncodings[i]
-      break
-    }
   }
 
   if (encoding === null) {
@@ -39,19 +43,19 @@ function compress (payload) {
     return
   }
 
-  // deflate compression
-  if (encoding === 'deflate') {
-    this.header('Content-Encoding', 'deflate')
-    this.send(pump(payload, zlib.createDeflate(), onEnd.bind(this)))
-  // gzip compression
-  } else if (encoding === 'gzip') {
-    this.header('Content-Encoding', 'gzip')
-    this.send(pump(payload, zlib.createGzip(), onEnd.bind(this)))
-  // brotli compression
-  } else if (encoding === 'br') {
-    this.header('Content-Encoding', 'br')
-    this.send(pump(payload, brotli.compressStream(), onEnd.bind(this)))
+  if (!payload._readableState) {
+    if (typeof payload !== 'string') {
+      payload = JSON.stringify(payload)
+    }
+    payload = sts(payload)
   }
+
+  this.header('Content-Encoding', encoding)
+  this.send(pump(
+    payload,
+    compressStream[encoding](),
+    onEnd.bind(this))
+  )
 }
 
 function onEnd (err) {
@@ -66,6 +70,18 @@ function closeStream (payload) {
   } else if (typeof payload.abort === 'function') {
     payload.abort()
   }
+}
+
+function getEncodingHeader (request) {
+  var header = request.headers['accept-encoding']
+  if (!header) return undefined
+  var acceptEncodings = header.split(',')
+  for (var i = 0; i < acceptEncodings.length; i++) {
+    if (supportedEncodings.indexOf(acceptEncodings[i]) > -1) {
+      return acceptEncodings[i]
+    }
+  }
+  return null
 }
 
 module.exports = fp(compressPlugin, '>=0.20.0')
