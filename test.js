@@ -51,7 +51,7 @@ test('should send a gzipped data', t => {
   }, res => {
     t.strictEqual(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
-    const payload = zlib.unzipSync(res.rawPayload)
+    const payload = zlib.gunzipSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
   })
 })
@@ -70,6 +70,29 @@ test('should send a brotli data', t => {
     method: 'GET',
     headers: {
       'accept-encoding': 'br'
+    }
+  }, res => {
+    t.strictEqual(res.headers['content-encoding'], 'br')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
+test('should follow the encoding order', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'hello,br'
     }
   }, res => {
     t.strictEqual(res.headers['content-encoding'], 'br')
@@ -127,6 +150,54 @@ test('Unsupported encoding', t => {
       error: 'Not Acceptable',
       message: 'Unsupported encoding',
       statusCode: 406
+    }, payload)
+  })
+})
+
+test('Missing header', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.strictEqual(res.statusCode, 400)
+    t.deepEqual({
+      error: 'Bad Request',
+      message: 'Missing `accept encoding` header',
+      statusCode: 400
+    }, payload)
+  })
+})
+
+test('Should close the stream', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
+
+  fastify.get('/', (req, reply) => {
+    const stream = createReadStream('./package.json')
+    stream.on('close', () => t.ok('stream closed'))
+    reply.compress(stream)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.strictEqual(res.statusCode, 400)
+    t.deepEqual({
+      error: 'Bad Request',
+      message: 'Missing `accept encoding` header',
+      statusCode: 400
     }, payload)
   })
 })
