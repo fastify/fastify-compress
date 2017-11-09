@@ -11,7 +11,8 @@ npm i fastify-compress --save
 ```
 
 ## Usage
-This plugin add a `compress` function to `reply` that accepts a stream, and compress it based on the `'accept-encoding'` header.  
+This plugin add a `compress` function to `reply` that accepts a stream or a string and compress it based on the `'accept-encoding'` header. If a js object is passed in, will be stringified as json.  
+
 Currently the following headers are supported:
 - `'deflate'`
 - `'gzip'`
