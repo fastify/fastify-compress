@@ -16,7 +16,7 @@ test('should send a deflated data', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -39,7 +39,7 @@ test('should send a gzipped data', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -59,10 +59,10 @@ test('should send a gzipped data', t => {
 test('should send a brotli data', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { brotli })
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -82,10 +82,10 @@ test('should send a brotli data', t => {
 test('should follow the encoding order', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { brotli })
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -108,7 +108,7 @@ test('Unsupported encoding', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -134,7 +134,7 @@ test('Missing header', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress(createReadStream('./package.json'))
+    reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
   fastify.inject({
@@ -159,7 +159,7 @@ test('Should close the stream', t => {
   fastify.get('/', (req, reply) => {
     const stream = createReadStream('./package.json')
     stream.on('close', () => t.ok('stream closed'))
-    reply.compress(stream)
+    reply.type('text/plain').compress(stream)
   })
 
   fastify.inject({
@@ -245,7 +245,7 @@ test('Should compress json data (deflate)', t => {
 test('Should compress json data (brotli)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { brotli })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -270,7 +270,7 @@ test('Should compress string data (gzip)', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress('hello')
+    reply.type('text/plain').compress('hello')
   })
 
   fastify.inject({
@@ -291,7 +291,7 @@ test('Should compress string data (deflate)', t => {
   fastify.register(compressPlugin)
 
   fastify.get('/', (req, reply) => {
-    reply.compress('hello')
+    reply.type('text/plain').compress('hello')
   })
 
   fastify.inject({
@@ -309,10 +309,10 @@ test('Should compress string data (deflate)', t => {
 test('Should compress string data (brotli)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { brotli })
 
   fastify.get('/', (req, reply) => {
-    reply.compress('hello')
+    reply.type('text/plain').compress('hello')
   })
 
   fastify.inject({
@@ -347,5 +347,71 @@ test('Missing payload', t => {
       message: 'Internal server error',
       statusCode: 500
     }, payload)
+  })
+})
+
+test('Should compress json data (gzip) - global', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, res => {
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should compress json data (deflate) - global', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should compress json data (brotli) - global', t => {
+  t.plan(1)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: true, brotli })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, res => {
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
