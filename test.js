@@ -13,7 +13,7 @@ const compressPlugin = require('./index')
 test('should send a deflated data', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -36,7 +36,7 @@ test('should send a deflated data', t => {
 test('should send a gzipped data', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -59,7 +59,7 @@ test('should send a gzipped data', t => {
 test('should send a brotli data', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli })
+  fastify.register(compressPlugin, { brotli, global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -82,7 +82,7 @@ test('should send a brotli data', t => {
 test('should follow the encoding order', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli })
+  fastify.register(compressPlugin, { brotli, global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -105,7 +105,7 @@ test('should follow the encoding order', t => {
 test('Unsupported encoding', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -131,7 +131,7 @@ test('Unsupported encoding', t => {
 test('Missing header', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -154,7 +154,7 @@ test('Missing header', t => {
 test('Should close the stream', t => {
   t.plan(3)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     const stream = createReadStream('./package.json')
@@ -179,7 +179,7 @@ test('Should close the stream', t => {
 test('No compression header', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.compress({ hello: 'world' })
@@ -201,7 +201,7 @@ test('No compression header', t => {
 test('Should compress json data (gzip)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -223,7 +223,7 @@ test('Should compress json data (gzip)', t => {
 test('Should compress json data (deflate)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -245,7 +245,7 @@ test('Should compress json data (deflate)', t => {
 test('Should compress json data (brotli)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli })
+  fastify.register(compressPlugin, { global: false, brotli, threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -267,7 +267,7 @@ test('Should compress json data (brotli)', t => {
 test('Should compress string data (gzip)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress('hello')
@@ -288,7 +288,7 @@ test('Should compress string data (gzip)', t => {
 test('Should compress string data (deflate)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress('hello')
@@ -309,7 +309,7 @@ test('Should compress string data (deflate)', t => {
 test('Should compress string data (brotli)', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli })
+  fastify.register(compressPlugin, { brotli, threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress('hello')
@@ -330,7 +330,7 @@ test('Should compress string data (brotli)', t => {
 test('Missing payload', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin)
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.compress()
@@ -353,7 +353,7 @@ test('Missing payload', t => {
 test('Should compress json data (gzip) - global', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: true })
+  fastify.register(compressPlugin, { threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -375,7 +375,7 @@ test('Should compress json data (gzip) - global', t => {
 test('Should compress json data (deflate) - global', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: true })
+  fastify.register(compressPlugin, { threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -397,7 +397,7 @@ test('Should compress json data (deflate) - global', t => {
 test('Should compress json data (brotli) - global', t => {
   t.plan(1)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: true, brotli })
+  fastify.register(compressPlugin, { brotli, threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -413,5 +413,49 @@ test('Should compress json data (brotli) - global', t => {
   }, res => {
     const payload = brotli.decompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('identity header (compress)', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
+
+  fastify.get('/', (req, reply) => {
+    reply.compress({ hello: 'world' })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'identity'
+    }
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual({ hello: 'world' }, payload)
+  })
+})
+
+test('identity header (hook)', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+
+  fastify.get('/', (req, reply) => {
+    reply.send({ hello: 'world' })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'identity'
+    }
+  }, res => {
+    const payload = JSON.parse(res.payload)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual({ hello: 'world' }, payload)
   })
 })
