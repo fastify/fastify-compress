@@ -23,21 +23,12 @@ If an unsupported encoding is received, it will automatically return a `406` err
 It automatically defines if a payload should be compressed or not based on its `Content-Type`, if no content type is present, it will assume is `application/json`.
 
 ### Global hook
-If you want to enable compression to all your routes, pass the option `{ global: true }`.
+The global compression hook is enabled by default if you want to disable it, pass the option `{ global: false }`.
 ```javascript
-const fs = require('fs')
-const fastify = require('fastify')
-
-fastify.register(require('fastify-compress'), { global: true })
-
-fastify.get('/', (req, reply) => {
-  reply.send({ hello: 'world' })
-})
-
-fastify.listen(3000, function (err) {
-  if (err) throw err
-  console.log(`server listening on ${fastify.server.address().port}`)
-})
+fastify.register(
+  require('fastify-compress'),
+  { global: false }
+)
 ```
 Remember that thanks to the Fastify encapsulation model, you can set a global compression, but running it only in a subset of routes is you wrap them inside a plugin.
 
@@ -48,7 +39,7 @@ This plugin add a `compress` function to `reply` that accepts a stream or a stri
 const fs = require('fs')
 const fastify = require('fastify')
 
-fastify.register(require('fastify-compress'))
+fastify.register(require('fastify-compress'), { global: false })
 
 fastify.get('/', (req, reply) => {
   reply
@@ -61,12 +52,21 @@ fastify.listen(3000, function (err) {
   console.log(`server listening on ${fastify.server.address().port}`)
 })
 ```
+## Options
+### Threshold
+You can set a custom threshold below which it will not be made compression, default to `1024`.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { threshold: 2048 }
+)
+```
 ### Brotli
 Brotli compression is not enabled by default, if you need it we recommend to install [`iltorb`](https://www.npmjs.com/package/iltorb) and pass it as option.
 ```javascript
 fastify.register(
   require('fastify-compress'),
-  { global: true, brotli: require('iltorb') }
+  { brotli: require('iltorb') }
 )
 ```
 
