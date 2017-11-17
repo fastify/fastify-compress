@@ -5,14 +5,15 @@
   "main": "index.js",
   "dependencies": {
     "fastify-plugin": "^0.1.1",
-    "iltorb": "^2.0.2",
-    "pump": "^1.0.2",
+    "mime-db": "^1.31.0",
+    "pump": "^1.0.3",
     "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
-    "fastify": "^0.33.0",
-    "tap": "^10.7.3",
-    "standard": "^10.0.3"
+    "fastify": "^0.35.0",
+    "iltorb": "^2.0.2",
+    "standard": "^10.0.3",
+    "tap": "^10.7.3"
   },
   "scripts": {
     "test": "standard && tap test.js"
