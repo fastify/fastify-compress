@@ -70,6 +70,12 @@ fastify.register(
 )
 ```
 
+### Disable compression by header
+You can selectively disable the response compression by using the `x-no-compression` header in the request.
+
+## Note
+Please have in mind that in large scale scenarios, you should use a proxy like Nginx to handle response-compression.
+
 ## Acknowledgements
 This project is kindly sponsored by:
 - [LetzDoIt](http://www.letzdoitapp.com/)
