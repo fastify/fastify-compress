@@ -17,6 +17,9 @@ Currently the following headers are supported:
 - `'deflate'`
 - `'gzip'`
 - `'br'`
+- `'*'`
+
+If the `'accept-encoding'` header specifies no preferred encoding with an asterisk `*` the payload will be compressed with `gzip`.
 
 If an unsupported encoding is received, it will automatically return a `406` error, if the `'accept-encoding'` header is missing, it will return a `400` error.
 
