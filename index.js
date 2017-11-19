@@ -45,13 +45,7 @@ function compressPlugin (fastify, opts, next) {
 
     var encoding = getEncodingHeader(this.request)
 
-    if (encoding === undefined) {
-      closeStream(payload)
-      this.code(400).send(new Error('Missing `accept encoding` header'))
-      return
-    }
-
-    if (encoding === 'identity') {
+    if (encoding === undefined || encoding === 'identity') {
       return this.send(payload)
     }
 
@@ -96,13 +90,6 @@ function compressPlugin (fastify, opts, next) {
 
     var encoding = getEncodingHeader(req)
 
-    if (encoding === undefined) {
-      closeStream(payload)
-      reply.code(400)
-      next(new Error('Missing `accept encoding` header'))
-      return
-    }
-
     if (encoding === null) {
       closeStream(payload)
       reply.code(406)
@@ -110,7 +97,7 @@ function compressPlugin (fastify, opts, next) {
       return
     }
 
-    if (encoding === 'identity') {
+    if (encoding === undefined || encoding === 'identity') {
       return next()
     }
 

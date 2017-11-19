@@ -18,7 +18,7 @@ Currently the following headers are supported:
 - `'gzip'`
 - `'br'`
 
-If an unsupported encoding is received, it will automatically return a `406` error, if the `'accept-encoding'` header is missing, it will return a `400` error.
+If an unsupported encoding is received, it will automatically return a `406` error, if the `'accept-encoding'` header is missing, it will not compress the payload.
 
 It automatically defines if a payload should be compressed or not based on its `Content-Type`, if no content type is present, it will assume is `application/json`.
 
