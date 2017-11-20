@@ -56,6 +56,29 @@ test('should send a gzipped data', t => {
   })
 })
 
+test('should send a gzipped data for * header', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': '*'
+    }
+  }, res => {
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
 test('should send a brotli data', t => {
   t.plan(2)
   const fastify = Fastify()

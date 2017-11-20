@@ -142,6 +142,9 @@ function getEncodingHeader (request) {
     if (supportedEncodings.indexOf(acceptEncodings[i]) > -1) {
       return acceptEncodings[i]
     }
+    if (acceptEncodings[i].indexOf('*') > -1) {
+      return 'gzip'
+    }
   }
   return null
 }
