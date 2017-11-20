@@ -146,7 +146,7 @@ test('should not compress on missing header', t => {
   })
 })
 
-test('Should not compress on missing header', t => {
+test('Should close the stream', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
@@ -159,10 +159,18 @@ test('Should not compress on missing header', t => {
 
   fastify.inject({
     url: '/',
-    method: 'GET'
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'compress'
+    }
   }, res => {
-    t.strictEqual(res.statusCode, 200)
-    t.notOk(res.headers['content-encoding'])
+    const payload = JSON.parse(res.payload)
+    t.strictEqual(res.statusCode, 406)
+    t.deepEqual({
+      error: 'Not Acceptable',
+      message: 'Unsupported encoding',
+      statusCode: 406
+    }, payload)
   })
 })
 
