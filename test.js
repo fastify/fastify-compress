@@ -128,7 +128,7 @@ test('Unsupported encoding', t => {
   })
 })
 
-test('Missing header', t => {
+test('should not compress on missing header', t => {
   t.plan(2)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
@@ -141,13 +141,8 @@ test('Missing header', t => {
     url: '/',
     method: 'GET'
   }, res => {
-    const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 400)
-    t.deepEqual({
-      error: 'Bad Request',
-      message: 'Missing `accept encoding` header',
-      statusCode: 400
-    }, payload)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
   })
 })
 
@@ -164,14 +159,17 @@ test('Should close the stream', t => {
 
   fastify.inject({
     url: '/',
-    method: 'GET'
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'compress'
+    }
   }, res => {
     const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 400)
+    t.strictEqual(res.statusCode, 406)
     t.deepEqual({
-      error: 'Bad Request',
-      message: 'Missing `accept encoding` header',
-      statusCode: 400
+      error: 'Not Acceptable',
+      message: 'Unsupported encoding',
+      statusCode: 406
     }, payload)
   })
 })
