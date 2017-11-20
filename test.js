@@ -179,12 +179,36 @@ test('Should close the stream', t => {
     stream.on('close', () => t.ok('stream closed'))
     reply.type('text/plain').compress(stream)
   })
+  
+    fastify.inject({
+      url: '/',
+      method: 'GET'
+    }, res => {
+      const payload = JSON.parse(res.payload)
+      t.strictEqual(res.statusCode, 400)
+      t.deepEqual({
+        error: 'Bad Request',
+        message: 'Missing `accept encoding` header',
+        statusCode: 400
+      }, payload)
+  })
+})
+
+test('Should send 406 error on invalid accept encoding', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: true })
+
+  fastify.get('/', (req, reply) => {
+    reply.header('content-type', 'text/plain')
+    reply.send('something')
+  })
 
   fastify.inject({
     url: '/',
     method: 'GET',
     headers: {
-      'accept-encoding': 'compress'
+      'accept-encoding': 'invalid'
     }
   }, res => {
     const payload = JSON.parse(res.payload)
@@ -390,6 +414,117 @@ test('Should compress json data (gzip) - global', t => {
   }, res => {
     const payload = zlib.gunzipSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
+
+test('Should not compress on x-no-compression header', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, res => {
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+  })
+})
+
+test('Should not try compress missing payload', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(undefined)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, res => {
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+  })
+})
+
+test('Should not compress if content-type is a invalid type', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.header('content-type', 'something/invalid')
+    reply.send('a message')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+  })
+})
+
+test('Should not compress if content-type is a invalid type', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.type('something/invalid').compress('a message')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+  })
+})
+
+test('Should not compress if payload length is smaller than threshold', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 128 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress('a message')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, res => {
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
   })
 })
 

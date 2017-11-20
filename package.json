@@ -16,7 +16,10 @@
     "tap": "^10.7.3"
   },
   "scripts": {
-    "test": "standard && tap test.js"
+    "unit": "tap test.js",
+    "test": "standard && npm run unit",
+    "coverage": "npm run unit --  --cov",
+    "coverage-report": "npm run coverage && tap --coverage-report=lcov"
   },
   "keywords": [
     "fastify",
