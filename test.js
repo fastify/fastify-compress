@@ -179,18 +179,14 @@ test('Should close the stream', t => {
     stream.on('close', () => t.ok('stream closed'))
     reply.type('text/plain').compress(stream)
   })
-  
-    fastify.inject({
-      url: '/',
-      method: 'GET'
-    }, res => {
-      const payload = JSON.parse(res.payload)
-      t.strictEqual(res.statusCode, 400)
-      t.deepEqual({
-        error: 'Bad Request',
-        message: 'Missing `accept encoding` header',
-        statusCode: 400
-      }, payload)
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, res => {
+    const file = readFileSync('./package.json', 'utf8')
+    t.strictEqual(res.statusCode, 200)
+    t.strictEqual(file, res.payload)
   })
 })
 
@@ -418,7 +414,7 @@ test('Should compress json data (gzip) - global', t => {
 })
 
 test('Should not compress on x-no-compression header', t => {
-  t.plan(2)
+  t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
   const json = { hello: 'world' }
@@ -436,14 +432,14 @@ test('Should not compress on x-no-compression header', t => {
   }, res => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+    t.deepEqual(JSON.parse(res.payload), json)
   })
 })
 
 test('Should not try compress missing payload', t => {
-  t.plan(2)
+  t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
-  const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
     reply.send(undefined)
@@ -458,14 +454,14 @@ test('Should not try compress missing payload', t => {
   }, res => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.payload, '')
   })
 })
 
 test('Should not compress if content-type is a invalid type', t => {
-  t.plan(2)
+  t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
-  const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
     reply.header('content-type', 'something/invalid')
@@ -481,14 +477,14 @@ test('Should not compress if content-type is a invalid type', t => {
   }, res => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.payload, 'a message')
   })
 })
 
 test('Should not compress if content-type is a invalid type', t => {
-  t.plan(2)
+  t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
-  const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
     reply.type('something/invalid').compress('a message')
@@ -503,14 +499,14 @@ test('Should not compress if content-type is a invalid type', t => {
   }, res => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.payload, 'a message')
   })
 })
 
 test('Should not compress if payload length is smaller than threshold', t => {
-  t.plan(2)
+  t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 128 })
-  const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress('a message')
@@ -525,6 +521,7 @@ test('Should not compress if payload length is smaller than threshold', t => {
   }, res => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.payload, 'a message')
   })
 })
 
