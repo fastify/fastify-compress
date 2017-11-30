@@ -6,7 +6,7 @@
   "dependencies": {
     "fastify-plugin": "^0.1.1",
     "mime-db": "^1.31.0",
-    "pump": "^1.0.3",
+    "pump": "^2.0.0",
     "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
