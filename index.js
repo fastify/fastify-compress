@@ -66,11 +66,9 @@ function compressPlugin (fastify, opts, next) {
     }
 
     this.header('Content-Encoding', encoding)
-    this.send(pump(
-      payload,
-      compressStream[encoding](),
-      onEnd.bind(this))
-    )
+    var stream = compressStream[encoding]()
+    pump(payload, stream, onEnd.bind(this))
+    this.send(stream)
   }
 
   function onSend (req, reply, payload, next) {
@@ -112,11 +110,9 @@ function compressPlugin (fastify, opts, next) {
     }
 
     reply.header('Content-Encoding', encoding)
-    next(null, pump(
-      payload,
-      compressStream[encoding](),
-      onEnd.bind(reply))
-    )
+    var stream = compressStream[encoding]()
+    pump(payload, stream, onEnd.bind(reply))
+    next(null, stream)
   }
 }
 
