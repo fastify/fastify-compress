@@ -4,7 +4,7 @@
   "description": "Fastify compression utils",
   "main": "index.js",
   "dependencies": {
-    "fastify-plugin": "^0.1.1",
+    "fastify-plugin": "^0.2.0",
     "mime-db": "^1.32.0",
     "pump": "^2.0.0",
     "string-to-stream": "^1.1.0"
