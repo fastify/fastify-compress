@@ -10,10 +10,10 @@
     "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
-    "fastify": "^0.35.3",
+    "fastify": "^0.39.1",
     "iltorb": "^2.0.3",
     "standard": "^10.0.3",
-    "tap": "^11.0.0"
+    "tap": "^11.0.1"
   },
   "scripts": {
     "unit": "tap test.js",
