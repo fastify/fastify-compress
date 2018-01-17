@@ -152,4 +152,7 @@ function shouldCompress (type) {
   return data.compressible
 }
 
-module.exports = fp(compressPlugin, '>=0.20.0')
+module.exports = fp(compressPlugin, {
+  fastify: '>=0.39.1',
+  name: 'fastify-compress'
+})
