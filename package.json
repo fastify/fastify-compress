@@ -6,11 +6,11 @@
   "dependencies": {
     "fastify-plugin": "^0.2.1",
     "mime-db": "^1.32.0",
-    "pump": "^2.0.0",
+    "pump": "^2.0.1",
     "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
-    "fastify": "^0.39.1",
+    "fastify": "^0.40.0",
     "iltorb": "^2.0.3",
     "standard": "^10.0.3",
     "tap": "^11.0.1"

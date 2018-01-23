@@ -28,7 +28,7 @@ function compressPlugin (fastify, opts, next) {
   next()
 
   function compress (payload) {
-    if (!payload) {
+    if (payload == null) {
       this.res.log.warn('compress: missing payload')
       this.send(new Error('Internal server error'))
       return
@@ -55,7 +55,7 @@ function compressPlugin (fastify, opts, next) {
       return
     }
 
-    if (payload._readableState === undefined) {
+    if (typeof payload.pipe !== 'function') {
       if (typeof payload !== 'string') {
         payload = this.serialize(payload)
       }
@@ -72,7 +72,7 @@ function compressPlugin (fastify, opts, next) {
   }
 
   function onSend (req, reply, payload, next) {
-    if (!payload) {
+    if (payload == null) {
       reply.res.log.warn('compress: missing payload')
       return next()
     }
@@ -99,10 +99,7 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
-    if (payload._readableState === undefined) {
-      if (typeof payload !== 'string') {
-        payload = reply.serialize(payload)
-      }
+    if (typeof payload.pipe !== 'function') {
       if (Buffer.byteLength(payload) < threshold) {
         return next()
       }
@@ -153,6 +150,6 @@ function shouldCompress (type) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=0.39.1',
+  fastify: '>=0.40.0',
   name: 'fastify-compress'
 })
