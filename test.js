@@ -5,6 +5,7 @@ const test = t.test
 const brotli = require('iltorb')
 const zlib = require('zlib')
 const fs = require('fs')
+const JSONStream = require('jsonstream')
 const createReadStream = fs.createReadStream
 const readFileSync = fs.readFileSync
 const Fastify = require('fastify')
@@ -637,5 +638,57 @@ test('identity header (hook)', t => {
     const payload = JSON.parse(res.payload)
     t.notOk(res.headers['content-encoding'])
     t.deepEqual({ hello: 'world' }, payload)
+  })
+})
+
+test('should support stream1 (reply compress)', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    const stream = JSONStream.stringify()
+    reply.type('text/plain').compress(stream)
+    stream.write({ hello: 'world' })
+    stream.end({ a: 42 })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
+  })
+})
+
+test('should support stream1 (global hook)', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+
+  fastify.get('/', (req, reply) => {
+    const stream = JSONStream.stringify()
+    reply.type('text/plain').send(stream)
+    stream.write({ hello: 'world' })
+    stream.end({ a: 42 })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 })
