@@ -13,7 +13,7 @@
     "fastify": "^0.40.0",
     "iltorb": "^2.0.3",
     "jsonstream": "^1.0.3",
-    "standard": "^10.0.3",
+    "standard": "^11.0.0",
     "tap": "^11.0.1"
   },
   "scripts": {
