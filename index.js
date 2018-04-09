@@ -38,7 +38,7 @@ function compressPlugin (fastify, opts, next) {
       return this.send(payload)
     }
 
-    var type = this.res.getHeader('Content-Type') || 'application/json'
+    var type = this.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type) === false) {
       return this.send(payload)
     }
@@ -81,7 +81,7 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
-    var type = reply.res.getHeader('Content-Type') || 'application/json'
+    var type = reply.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type) === false) {
       return next()
     }
@@ -150,6 +150,6 @@ function shouldCompress (type) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=0.40.0',
+  fastify: '>=1.0.0',
   name: 'fastify-compress'
 })
