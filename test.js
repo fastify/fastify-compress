@@ -716,3 +716,27 @@ test('should ignore br header if brotli option not set', t => {
     t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
+
+test('accept-encoding can contain white space', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'hello, gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})

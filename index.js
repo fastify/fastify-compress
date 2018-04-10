@@ -133,10 +133,11 @@ function getEncodingHeader (supportedEncodings, request) {
   if (!header) return undefined
   var acceptEncodings = header.split(',')
   for (var i = 0; i < acceptEncodings.length; i++) {
-    if (supportedEncodings.indexOf(acceptEncodings[i]) > -1) {
-      return acceptEncodings[i]
+    var acceptEncoding = acceptEncodings[i].trim()
+    if (supportedEncodings.indexOf(acceptEncoding) > -1) {
+      return acceptEncoding
     }
-    if (acceptEncodings[i].indexOf('*') > -1) {
+    if (acceptEncoding.indexOf('*') > -1) {
       return 'gzip'
     }
   }
