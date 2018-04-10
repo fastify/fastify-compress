@@ -5,7 +5,6 @@ const zlib = require('zlib')
 const pump = require('pump')
 const sts = require('string-to-stream')
 const mimedb = require('mime-db')
-const supportedEncodings = ['deflate', 'gzip', 'br', 'identity']
 const compressibleTypes = /^text\/|\+json$|\+text$|\+xml$/
 
 function compressPlugin (fastify, opts, next) {
@@ -21,8 +20,10 @@ function compressPlugin (fastify, opts, next) {
     deflate: zlib.createDeflate
   }
 
+  const supportedEncodings = ['deflate', 'gzip', 'identity']
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
+    supportedEncodings.push('br')
   }
 
   next()
@@ -43,7 +44,7 @@ function compressPlugin (fastify, opts, next) {
       return this.send(payload)
     }
 
-    var encoding = getEncodingHeader(this.request)
+    var encoding = getEncodingHeader(supportedEncodings, this.request)
 
     if (encoding === undefined || encoding === 'identity') {
       return this.send(payload)
@@ -86,7 +87,7 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
-    var encoding = getEncodingHeader(req)
+    var encoding = getEncodingHeader(supportedEncodings, req)
 
     if (encoding === null) {
       closeStream(payload)
@@ -127,7 +128,7 @@ function closeStream (payload) {
   }
 }
 
-function getEncodingHeader (request) {
+function getEncodingHeader (supportedEncodings, request) {
   var header = request.headers['accept-encoding']
   if (!header) return undefined
   var acceptEncodings = header.split(',')
