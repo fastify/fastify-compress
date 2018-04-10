@@ -692,3 +692,27 @@ test('should support stream1 (global hook)', t => {
     t.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 })
+
+test('should ignore br header if brotli option not set', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br,gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+  })
+})
