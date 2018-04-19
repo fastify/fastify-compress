@@ -66,7 +66,10 @@ function compressPlugin (fastify, opts, next) {
       payload = sts(payload)
     }
 
-    this.header('Content-Encoding', encoding)
+    this
+      .header('Content-Encoding', encoding)
+      .removeHeader('content-length')
+
     var stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(this))
     this.send(stream)
@@ -107,7 +110,10 @@ function compressPlugin (fastify, opts, next) {
       payload = sts(payload)
     }
 
-    reply.header('Content-Encoding', encoding)
+    reply
+      .header('Content-Encoding', encoding)
+      .removeHeader('content-length')
+
     var stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)
@@ -152,6 +158,6 @@ function shouldCompress (type) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=1.0.0',
+  fastify: '>=1.3.0',
   name: 'fastify-compress'
 })
