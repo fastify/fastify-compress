@@ -5,7 +5,6 @@ const zlib = require('zlib')
 const pump = require('pump')
 const sts = require('string-to-stream')
 const mimedb = require('mime-db')
-const supportedEncodings = ['deflate', 'gzip', 'br', 'identity']
 const compressibleTypes = /^text\/|\+json$|\+text$|\+xml$/
 
 function compressPlugin (fastify, opts, next) {
@@ -21,8 +20,10 @@ function compressPlugin (fastify, opts, next) {
     deflate: zlib.createDeflate
   }
 
+  const supportedEncodings = ['deflate', 'gzip', 'identity']
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
+    supportedEncodings.push('br')
   }
 
   next()
@@ -38,12 +39,12 @@ function compressPlugin (fastify, opts, next) {
       return this.send(payload)
     }
 
-    var type = this.res.getHeader('Content-Type') || 'application/json'
+    var type = this.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type) === false) {
       return this.send(payload)
     }
 
-    var encoding = getEncodingHeader(this.request)
+    var encoding = getEncodingHeader(supportedEncodings, this.request)
 
     if (encoding === undefined || encoding === 'identity') {
       return this.send(payload)
@@ -65,7 +66,10 @@ function compressPlugin (fastify, opts, next) {
       payload = sts(payload)
     }
 
-    this.header('Content-Encoding', encoding)
+    this
+      .header('Content-Encoding', encoding)
+      .removeHeader('content-length')
+
     var stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(this))
     this.send(stream)
@@ -81,12 +85,12 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
-    var type = reply.res.getHeader('Content-Type') || 'application/json'
+    var type = reply.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type) === false) {
       return next()
     }
 
-    var encoding = getEncodingHeader(req)
+    var encoding = getEncodingHeader(supportedEncodings, req)
 
     if (encoding === null) {
       closeStream(payload)
@@ -106,7 +110,10 @@ function compressPlugin (fastify, opts, next) {
       payload = sts(payload)
     }
 
-    reply.header('Content-Encoding', encoding)
+    reply
+      .header('Content-Encoding', encoding)
+      .removeHeader('content-length')
+
     var stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)
@@ -127,15 +134,16 @@ function closeStream (payload) {
   }
 }
 
-function getEncodingHeader (request) {
+function getEncodingHeader (supportedEncodings, request) {
   var header = request.headers['accept-encoding']
   if (!header) return undefined
   var acceptEncodings = header.split(',')
   for (var i = 0; i < acceptEncodings.length; i++) {
-    if (supportedEncodings.indexOf(acceptEncodings[i]) > -1) {
-      return acceptEncodings[i]
+    var acceptEncoding = acceptEncodings[i].trim()
+    if (supportedEncodings.indexOf(acceptEncoding) > -1) {
+      return acceptEncoding
     }
-    if (acceptEncodings[i].indexOf('*') > -1) {
+    if (acceptEncoding.indexOf('*') > -1) {
       return 'gzip'
     }
   }
@@ -150,6 +158,6 @@ function shouldCompress (type) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=0.40.0',
+  fastify: '>=1.3.0',
   name: 'fastify-compress'
 })
