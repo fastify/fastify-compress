@@ -801,3 +801,71 @@ test('onSend hook should remove content-length', t => {
     t.strictEqual(payload.toString('utf-8'), file)
   })
 })
+
+test('Should compress if customTypes is set and matches content type', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { customTypes: /x-user-header$/ })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('application/x-user-header').send(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
+test('Should not compress if customTypes is set and does not match content type or mime-db', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { customTypes: /x-user-header$/ })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('application/x-other-type').send(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.statusCode, 200)
+  })
+})
+
+test('Should not apply customTypes if value passed is not RegExp', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { customTypes: 'x-user-header' })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('application/x-user-header').send(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.statusCode, 200)
+  })
+})

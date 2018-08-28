@@ -66,12 +66,12 @@ fastify.register(
   { threshold: 2048 }
 )
 ```
-### Compression Header Customization
+### customTypes
 [mime-db](https://github.com/jshttp/mime-db) is used to determine if a `Content-Type` should be compressed. You can compress additional content types via regular expression.
 ```javascript
 fastify.register(
   require('fastify-compress'),
-  { customTypes: /^x-protobuf$/ }
+  { customTypes: /x-protobuf$/ }
 )
 ```
 ### Brotli
