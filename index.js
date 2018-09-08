@@ -5,7 +5,6 @@ const zlib = require('zlib')
 const pump = require('pump')
 const sts = require('string-to-stream')
 const mimedb = require('mime-db')
-const compressibleTypes = /^text\/|\+json$|\+text$|\+xml$/
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -15,6 +14,7 @@ function compressPlugin (fastify, opts, next) {
   }
 
   const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
+  const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$/
   const compressStream = {
     gzip: zlib.createGzip,
     deflate: zlib.createDeflate
@@ -40,7 +40,7 @@ function compressPlugin (fastify, opts, next) {
     }
 
     var type = this.getHeader('Content-Type') || 'application/json'
-    if (shouldCompress(type) === false) {
+    if (shouldCompress(type, compressibleTypes) === false) {
       return this.send(payload)
     }
 
@@ -86,7 +86,7 @@ function compressPlugin (fastify, opts, next) {
     }
 
     var type = reply.getHeader('Content-Type') || 'application/json'
-    if (shouldCompress(type) === false) {
+    if (shouldCompress(type, compressibleTypes) === false) {
       return next()
     }
 
@@ -150,7 +150,7 @@ function getEncodingHeader (supportedEncodings, request) {
   return null
 }
 
-function shouldCompress (type) {
+function shouldCompress (type, compressibleTypes) {
   if (compressibleTypes.test(type)) return true
   var data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false

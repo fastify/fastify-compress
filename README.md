@@ -66,6 +66,14 @@ fastify.register(
   { threshold: 2048 }
 )
 ```
+### customTypes
+[mime-db](https://github.com/jshttp/mime-db) is used to determine if a `Content-Type` should be compressed. You can compress additional content types via regular expression.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { customTypes: /x-protobuf$/ }
+)
+```
 ### Brotli
 Brotli compression is not enabled by default, if you need it we recommend to install [`iltorb`](https://www.npmjs.com/package/iltorb) and pass it as option.
 ```javascript
