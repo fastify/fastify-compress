@@ -4,7 +4,9 @@ const fp = require('fastify-plugin')
 const zlib = require('zlib')
 const pump = require('pump')
 const mimedb = require('mime-db')
+const isStream = require('is-stream')
 const intoStream = require('into-stream')
+const maybeUnzip = require('unzip-if-zip')
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -16,8 +18,8 @@ function compressPlugin (fastify, opts, next) {
   const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
   const compressStream = {
-    gzip: zlib.createGzip,
-    deflate: zlib.createDeflate
+    gzip: (opts.zlib || zlib).createGzip || zlib.createGzip,
+    deflate: (opts.zlib || zlib).createDeflate || zlib.createDeflate
   }
 
   const supportedEncodings = ['deflate', 'gzip', 'identity']
@@ -35,13 +37,21 @@ function compressPlugin (fastify, opts, next) {
       return
     }
 
+    var stream
+
     if (this.request.headers['x-no-compression'] !== undefined) {
-      return this.send(payload)
+      payload = payloadAsStream(payload, this.serialize.bind(this))
+      stream = maybeUnzip()
+      pump(payload, stream, onEnd.bind(this))
+      return this.send(stream)
     }
 
     var type = this.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type, compressibleTypes) === false) {
-      return this.send(payload)
+      payload = payloadAsStream(payload, this.serialize.bind(this))
+      stream = maybeUnzip()
+      pump(payload, stream, onEnd.bind(this))
+      return this.send(stream)
     }
 
     var encoding = getEncodingHeader(supportedEncodings, this.request)
@@ -70,7 +80,7 @@ function compressPlugin (fastify, opts, next) {
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
 
-    var stream = compressStream[encoding]()
+    stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(this))
     this.send(stream)
   }
@@ -81,13 +91,21 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
+    var stream
+
     if (req.headers['x-no-compression'] !== undefined) {
-      return next()
+      payload = payloadAsStream(payload)
+      stream = maybeUnzip()
+      pump(payload, stream, onEnd.bind(reply))
+      return next(null, stream)
     }
 
     var type = reply.getHeader('Content-Type') || 'application/json'
     if (shouldCompress(type, compressibleTypes) === false) {
-      return next()
+      payload = payloadAsStream(payload)
+      stream = maybeUnzip()
+      pump(payload, stream, onEnd.bind(reply))
+      return next(null, stream)
     }
 
     var encoding = getEncodingHeader(supportedEncodings, req)
@@ -113,7 +131,8 @@ function compressPlugin (fastify, opts, next) {
     reply
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
-    var stream = compressStream[encoding]()
+
+    stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
@@ -154,6 +173,18 @@ function shouldCompress (type, compressibleTypes) {
   var data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible
+}
+
+function payloadAsStream (payload, serialize) {
+  var result = payload
+  if (isStream(result)) {
+    return result
+  }
+  if (ArrayBuffer.isView(result)) {
+    // into-stream only supports Buffers
+    return intoStream(Buffer.from(result.buffer, result.byteOffset, result.byteLength))
+  }
+  return intoStream(serialize && typeof result !== 'string' ? serialize(result) : result)
 }
 
 module.exports = fp(compressPlugin, {
