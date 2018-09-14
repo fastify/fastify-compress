@@ -3,8 +3,8 @@
 const fp = require('fastify-plugin')
 const zlib = require('zlib')
 const pump = require('pump')
-const sts = require('string-to-stream')
 const mimedb = require('mime-db')
+const streamify = require('./streamify')
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -14,7 +14,7 @@ function compressPlugin (fastify, opts, next) {
   }
 
   const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$/
+  const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
   const compressStream = {
     gzip: zlib.createGzip,
     deflate: zlib.createDeflate
@@ -57,13 +57,13 @@ function compressPlugin (fastify, opts, next) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (typeof payload !== 'string') {
+      if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
         payload = this.serialize(payload)
       }
       if (Buffer.byteLength(payload) < threshold) {
         return this.send(payload)
       }
-      payload = sts(payload)
+      payload = streamify(payload)
     }
 
     this
@@ -107,13 +107,12 @@ function compressPlugin (fastify, opts, next) {
       if (Buffer.byteLength(payload) < threshold) {
         return next()
       }
-      payload = sts(payload)
+      payload = streamify(payload)
     }
 
     reply
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
-
     var stream = compressStream[encoding]()
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)

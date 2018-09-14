@@ -251,6 +251,144 @@ test('No compression header', t => {
   })
 })
 
+test('Should compress buffer (gzip)', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (deflate)', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (brotli)', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, brotli, threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (gzip) - global', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.send(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (deflate) - global', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.send(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (brotli) - global', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { brotli, threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.send(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = brotli.decompressSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
 test('Should compress json data (gzip)', t => {
   t.plan(2)
   const fastify = Fastify()
