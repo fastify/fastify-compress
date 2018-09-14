@@ -4,7 +4,7 @@ const fp = require('fastify-plugin')
 const zlib = require('zlib')
 const pump = require('pump')
 const mimedb = require('mime-db')
-const streamify = require('./streamify')
+const intoStream = require('into-stream')
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -63,7 +63,7 @@ function compressPlugin (fastify, opts, next) {
       if (Buffer.byteLength(payload) < threshold) {
         return this.send(payload)
       }
-      payload = streamify(payload)
+      payload = intoStream(payload)
     }
 
     this
@@ -107,7 +107,7 @@ function compressPlugin (fastify, opts, next) {
       if (Buffer.byteLength(payload) < threshold) {
         return next()
       }
-      payload = streamify(payload)
+      payload = intoStream(payload)
     }
 
     reply
