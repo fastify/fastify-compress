@@ -15,6 +15,7 @@ function compressPlugin (fastify, opts, next) {
     fastify.addHook('onSend', onSend)
   }
 
+  const inflateIfDeflated = opts.inflateIfDeflated === true
   const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
   const compressStream = {
