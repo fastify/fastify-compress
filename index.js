@@ -71,6 +71,9 @@ function compressPlugin (fastify, opts, next) {
       if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
         payload = this.serialize(payload)
       }
+    }
+
+    if (typeof payload.pipe !== 'function') {
       if (Buffer.byteLength(payload) < threshold) {
         return this.send(payload)
       }
