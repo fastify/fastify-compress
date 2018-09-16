@@ -234,10 +234,10 @@ test('should not compress on missing header', t => {
   })
 })
 
-test('should decompress compressed payloads on missing header', t => {
+test('should decompress compressed Buffers on missing header', t => {
   t.plan(4)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -252,6 +252,50 @@ test('should decompress compressed payloads on missing header', t => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
     t.deepEqual(JSON.parse('' + res.payload), json)
+  })
+})
+
+// This throws an error, because the Reply's `send` method attempts
+// to JSON.parse the compressed string before the `onSend` hook is invoked
+// test('should decompress compressed Strings on missing header', t => {
+//   t.plan(4)
+//   const fastify = Fastify()
+//   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+//   const json = { hello: 'world' }
+
+//   fastify.get('/', (req, reply) => {
+//     reply.send(zlib.gzipSync(JSON.stringify(json)).toString())
+//   })
+
+//   fastify.inject({
+//     url: '/',
+//     method: 'GET'
+//   }, (err, res) => {
+//     t.error(err)
+//     t.strictEqual(res.statusCode, 200)
+//     t.notOk(res.headers['content-encoding'])
+//     t.deepEqual(JSON.parse('' + res.payload), json)
+//   })
+// })
+
+test('should decompress compressed Streams on missing header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+
+  fastify.get('/', (req, reply) => {
+    reply.send(createReadStream('./package.json').pipe(zlib.createGzip()))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    const file = readFileSync('./package.json', 'utf8')
+    t.strictEqual(res.rawPayload.toString('utf-8'), file)
   })
 })
 
@@ -675,7 +719,7 @@ test('Should not compress on x-no-compression header', t => {
 test('Should decompress compressed payloads on x-no-compression header', t => {
   t.plan(4)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
