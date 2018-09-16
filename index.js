@@ -48,22 +48,22 @@ function compressPlugin (fastify, opts, next) {
       return
     }
 
-    var stream
-    var noCompress = this.request.headers['x-no-compression'] !== undefined || shouldCompress(
-      this.getHeader('Content-Type') || 'application/json', compressibleTypes
-    ) === false
+    var stream, encoding
+    var noCompress =
+      // don't compress on x-no-compression header
+      (this.request.headers['x-no-compression'] !== undefined) ||
+      // don't compress if not one of the indiated compressible types
+      (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
+      // don't compress on missing or identity `accept-encoding` header
+      ((encoding = getEncodingHeader(supportedEncodings, this.request)) === undefined || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
-        this.removeHeader('Content-Encoding')
+        encoding === undefined
+          ? this.removeHeader('Content-Encoding')
+          : this.header('Content-Encoding', 'identity')
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(this))
       }
-      return this.send(payload)
-    }
-
-    var encoding = getEncodingHeader(supportedEncodings, this.request)
-
-    if (encoding === undefined || encoding === 'identity') {
       return this.send(payload)
     }
 
@@ -90,7 +90,7 @@ function compressPlugin (fastify, opts, next) {
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
 
-    stream = compressStream[encoding]()
+    stream = zipStream(compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
     this.send(stream)
   }
@@ -101,30 +101,30 @@ function compressPlugin (fastify, opts, next) {
       return next()
     }
 
-    var stream
-    var noCompress = req.headers['x-no-compression'] !== undefined || shouldCompress(
-      reply.getHeader('Content-Type') || 'application/json', compressibleTypes
-    ) === false
+    var stream, encoding
+    var noCompress =
+      // don't compress on x-no-compression header
+      (req.headers['x-no-compression'] !== undefined) ||
+      // don't compress if not one of the indiated compressible types
+      (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
+      // don't compress on missing or identity `accept-encoding` header
+      ((encoding = getEncodingHeader(supportedEncodings, req)) === undefined || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
-        reply.removeHeader('Content-Encoding')
+        encoding === undefined
+          ? reply.removeHeader('Content-Encoding')
+          : reply.header('Content-Encoding', 'identity')
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
     }
-
-    var encoding = getEncodingHeader(supportedEncodings, req)
 
     if (encoding === null) {
       closeStream(payload)
       reply.code(406)
       next(new Error('Unsupported encoding'))
       return
-    }
-
-    if (encoding === undefined || encoding === 'identity') {
-      return next()
     }
 
     if (typeof payload.pipe !== 'function') {
@@ -138,7 +138,7 @@ function compressPlugin (fastify, opts, next) {
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
 
-    stream = compressStream[encoding]()
+    stream = zipStream(compressStream, encoding)
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
@@ -214,6 +214,16 @@ function maybeUnzip (payload, serialize) {
   if (!Buffer.isBuffer(buf)) return result
   if (isCompressed(buf) === 0) return result
   return intoStream(result)
+}
+
+function zipStream (deflate, encoding) {
+  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+    switch (isCompressed(data)) {
+      case 1: return swap(null, through())
+      case 2: return swap(null, through())
+    }
+    return swap(null, deflate[encoding]())
+  })
 }
 
 function unzipStream (inflate, maxRecursion) {

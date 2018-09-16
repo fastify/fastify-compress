@@ -116,6 +116,33 @@ test('should send a gzipped data with custom zlib', t => {
   })
 })
 
+test('should not double-compress Stream if already zipped', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(
+      createReadStream('./package.json')
+        .pipe(zlib.createGzip())
+    )
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
 test('should send a gzipped data for * header', t => {
   t.plan(3)
   const fastify = Fastify()
