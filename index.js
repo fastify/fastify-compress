@@ -77,7 +77,6 @@ function compressPlugin (fastify, opts, next) {
 
   function onSend (req, reply, payload, next) {
     if (payload == null) {
-      reply.res.log.warn('compress: missing payload')
       return next()
     }
 
