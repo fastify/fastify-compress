@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "fastify-plugin": "^1.0.0",
-    "into-stream": "^3.1.0",
+    "into-stream": "^4.0.0",
     "mime-db": "^1.33.0",
     "pump": "^3.0.0"
   },
