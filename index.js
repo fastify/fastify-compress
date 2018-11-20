@@ -30,7 +30,7 @@ function compressPlugin (fastify, opts, next) {
 
   function compress (payload) {
     if (payload == null) {
-      this.res.log.warn('compress: missing payload')
+      this.res.log.debug('compress: missing payload')
       this.send(new Error('Internal server error'))
       return
     }
@@ -77,7 +77,7 @@ function compressPlugin (fastify, opts, next) {
 
   function onSend (req, reply, payload, next) {
     if (payload == null) {
-      reply.res.log.warn('compress: missing payload')
+      reply.res.log.debug('compress: missing payload')
       return next()
     }
 
