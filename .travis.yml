@@ -4,9 +4,10 @@ os:
   - linux
 
 node_js:
+  - "11"
+  - "10"
   - "8"
   - "6"
-  - "10"
 
 notifications:
   email:
