@@ -1,6 +1,6 @@
 {
   "name": "fastify-compress",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Fastify compression utils",
   "main": "index.js",
   "dependencies": {
