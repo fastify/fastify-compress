@@ -309,29 +309,6 @@ test('should decompress compressed Buffers on missing header', t => {
   })
 })
 
-// This throws an error, because the Reply's `send` method attempts
-// to JSON.parse the compressed string before the `onSend` hook is invoked
-// test('should decompress compressed Strings on missing header', t => {
-//   t.plan(4)
-//   const fastify = Fastify()
-//   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
-//   const json = { hello: 'world' }
-
-//   fastify.get('/', (req, reply) => {
-//     reply.send(zlib.gzipSync(JSON.stringify(json)).toString())
-//   })
-
-//   fastify.inject({
-//     url: '/',
-//     method: 'GET'
-//   }, (err, res) => {
-//     t.error(err)
-//     t.strictEqual(res.statusCode, 200)
-//     t.notOk(res.headers['content-encoding'])
-//     t.deepEqual(JSON.parse('' + res.payload), json)
-//   })
-// })
-
 test('should decompress compressed Streams on missing header', t => {
   t.plan(4)
   const fastify = Fastify()

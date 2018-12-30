@@ -7,7 +7,7 @@ const mimedb = require('mime-db')
 const isStream = require('is-stream')
 const intoStream = require('into-stream')
 const peek = require('peek-stream')
-const through = require('through2')
+const Minipass = require('minipass')
 const pumpify = require('pumpify')
 const isGzip = require('is-gzip')
 const isZip = require('is-zip')
@@ -204,12 +204,6 @@ function maybeUnzip (payload, serialize) {
     buf = result = serialize(payload)
   }
 
-  // payload may be a string (or serialize returns a string),
-  // in which case we just need the first four bytes
-  if (typeof result === 'string') {
-    buf = Buffer.from(result.slice(0, 4))
-  }
-
   // handle case where serialize doesn't return a string or Buffer
   if (!Buffer.isBuffer(buf)) return result
   if (isCompressed(buf) === 0) return result
@@ -219,8 +213,8 @@ function maybeUnzip (payload, serialize) {
 function zipStream (deflate, encoding) {
   return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
     switch (isCompressed(data)) {
-      case 1: return swap(null, through())
-      case 2: return swap(null, through())
+      case 1: return swap(null, new Minipass())
+      case 2: return swap(null, new Minipass())
     }
     return swap(null, deflate[encoding]())
   })
@@ -235,7 +229,7 @@ function unzipStream (inflate, maxRecursion) {
       case 2: return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
       case 3: return swap(null, pumpify(unZipper.ParseOne(), unzipStream(inflate, maxRecursion - 1)))
     }
-    return swap(null, through())
+    return swap(null, new Minipass())
   })
 }
 
