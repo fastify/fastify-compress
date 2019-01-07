@@ -309,6 +309,29 @@ test('should decompress compressed Buffers on missing header', t => {
   })
 })
 
+test('should decompress data that has been compressed multiple times on missing header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send([0, 1, 2, 3, 4, 5, 6].reduce(
+      (x) => zlib.gzipSync(x), JSON.stringify(json)
+    ))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual(JSON.parse('' + res.payload), json)
+  })
+})
+
 test('should decompress compressed Streams on missing header', t => {
   t.plan(4)
   const fastify = Fastify()
