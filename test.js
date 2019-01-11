@@ -36,6 +36,35 @@ test('should send a deflated data', t => {
   })
 })
 
+test('should send a deflated data with custom deflate', t => {
+  t.plan(5)
+  let usedCustom = false
+  const customZlib = { createDeflate: () => (usedCustom = true) && zlib.createDeflate() }
+
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, zlib: customZlib })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.notOk(res.headers['content-length'], 'no content length')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+    t.strictEqual(usedCustom, true)
+  })
+})
+
 test('should send a gzipped data', t => {
   t.plan(3)
   const fastify = Fastify()
@@ -43,6 +72,87 @@ test('should send a gzipped data', t => {
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
+test('should send a gzipped data with custom zlib', t => {
+  t.plan(4)
+  let usedCustom = false
+  const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, zlib: customZlib })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+    t.strictEqual(usedCustom, true)
+  })
+})
+
+test('should not double-compress Stream if already zipped', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(
+      createReadStream('./package.json')
+        .pipe(zlib.createGzip())
+    )
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
+test('onSend hook should not double-compress Stream if already zipped', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: true })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(
+      createReadStream('./package.json')
+        .pipe(zlib.createGzip())
+    )
   })
 
   fastify.inject({
@@ -175,6 +285,71 @@ test('should not compress on missing header', t => {
     t.error(err)
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
+  })
+})
+
+test('should decompress compressed Buffers on missing header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.gzipSync(JSON.stringify(json)))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual(JSON.parse('' + res.payload), json)
+  })
+})
+
+test('should decompress data that has been compressed multiple times on missing header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send([0, 1, 2, 3, 4, 5, 6].reduce(
+      (x) => zlib.gzipSync(x), JSON.stringify(json)
+    ))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual(JSON.parse('' + res.payload), json)
+  })
+})
+
+test('should decompress compressed Streams on missing header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+
+  fastify.get('/', (req, reply) => {
+    reply.send(createReadStream('./package.json').pipe(zlib.createGzip()))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    const file = readFileSync('./package.json', 'utf8')
+    t.strictEqual(res.rawPayload.toString('utf-8'), file)
   })
 })
 
@@ -592,6 +767,30 @@ test('Should not compress on x-no-compression header', t => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
     t.deepEqual(JSON.parse(res.payload), json)
+  })
+})
+
+test('Should decompress compressed payloads on x-no-compression header', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.gzipSync(JSON.stringify(json)))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual(JSON.parse('' + res.payload), json)
   })
 })
 

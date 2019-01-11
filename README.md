@@ -86,6 +86,20 @@ fastify.register(
 ### Disable compression by header
 You can selectively disable the response compression by using the `x-no-compression` header in the request.
 
+### Inflate pre-compressed bodies for clients that do not support compression
+Optional feature to inflate pre-compressed data if the client doesn't include one of the supported compression types in its `Accept-Encoding` header.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { inflateIfDeflated: true }
+)
+
+fastify.get('/file', (req, reply) =>
+  // will inflate the file  on the way out for clients
+  // that indicate they do not support compression
+  reply.send(fs.createReadStream('./file.gz')))
+```
+
 ## Note
 Please have in mind that in large scale scenarios, you should use a proxy like Nginx to handle response-compression.
 
