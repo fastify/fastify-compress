@@ -75,7 +75,10 @@ fastify.register(
 )
 ```
 ### Brotli
-Brotli compression is not enabled by default, if you need it we recommend to install [`iltorb`](https://www.npmjs.com/package/iltorb) and pass it as option.
+Brotli compression is enabled by default if your Node.js(>= v11.7.0) supports it natively.
+
+For the Node.js versions that not support brotli natively, it's not enabled by default, if you need it we recommend to install [`iltorb`](https://www.npmjs.com/package/iltorb) and pass it as option.
+
 ```javascript
 fastify.register(
   require('fastify-compress'),
