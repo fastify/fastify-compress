@@ -5,7 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "fastify-plugin": "^1.0.0",
-    "into-stream": "^4.0.0",
+    "into-stream": "^5.0.0",
     "is-deflate": "^1.0.0",
     "is-gzip": "^1.0.0",
     "is-stream": "^1.1.0",
