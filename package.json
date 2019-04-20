@@ -8,7 +8,7 @@
     "into-stream": "4.0.0",
     "is-deflate": "^1.0.0",
     "is-gzip": "^1.0.0",
-    "is-stream": "^1.1.0",
+    "is-stream": "^2.0.0",
     "is-zip": "^1.0.0",
     "mime-db": "^1.33.0",
     "minipass": "2.3.5",
