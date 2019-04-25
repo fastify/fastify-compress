@@ -37,6 +37,9 @@ function compressPlugin (fastify, opts, next) {
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
     supportedEncodings.push('br')
+  } else if (zlib.createBrotliCompress) {
+    compressStream.br = zlib.createBrotliCompress
+    supportedEncodings.push('br')
   }
 
   next()
