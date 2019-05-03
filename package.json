@@ -4,7 +4,6 @@
   "description": "Fastify compression utils",
   "main": "index.js",
   "dependencies": {
-    "@types/node": "^11.13.9",
     "fastify-plugin": "^1.0.0",
     "into-stream": "4.0.0",
     "is-deflate": "^1.0.0",
@@ -20,6 +19,7 @@
     "unzipper": "^0.9.11"
   },
   "devDependencies": {
+    "@types/node": "^11.13.9",
     "fastify": "^2.0.0",
     "iltorb": "^2.3.0",
     "jsonstream": "^1.0.3",
