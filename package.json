@@ -32,7 +32,7 @@
   },
   "scripts": {
     "unit": "tap test/test.js",
-    "test": "standard && npm run unit",
+    "test": "standard && npm run unit && npm run typescript",
     "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
     "typescript": "tsc --project ./test/types/tsconfig.json",
     "coverage": "npm run unit --  --cov",
