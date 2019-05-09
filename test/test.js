@@ -9,7 +9,7 @@ const JSONStream = require('jsonstream')
 const createReadStream = fs.createReadStream
 const readFileSync = fs.readFileSync
 const Fastify = require('fastify')
-const compressPlugin = require('./index')
+const compressPlugin = require('../index')
 
 test('should send a deflated data', t => {
   t.plan(4)
