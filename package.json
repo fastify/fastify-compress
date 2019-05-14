@@ -19,16 +19,22 @@
     "unzipper": "^0.9.11"
   },
   "devDependencies": {
+    "@types/node": "^11.13.9",
+    "@typescript-eslint/parser": "^1.7.0",
+    "eslint-plugin-typescript": "^0.14.0",
     "fastify": "^2.0.0",
     "iltorb": "^2.3.0",
     "jsonstream": "^1.0.3",
     "pre-commit": "^1.2.2",
     "standard": "^12.0.0",
+    "typescript": "^3.4.5",
     "tap": "^12.6.6"
   },
   "scripts": {
-    "unit": "tap test.js",
-    "test": "standard && npm run unit",
+    "unit": "tap test/test.js",
+    "test": "standard && npm run unit && npm run typescript",
+    "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
+    "typescript": "tsc --project ./test/types/tsconfig.json",
     "coverage": "npm run unit --  --cov",
     "coverage-report": "npm run coverage && tap --coverage-report=lcov"
   },
