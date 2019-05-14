@@ -19,7 +19,7 @@
     "unzipper": "^0.9.11"
   },
   "devDependencies": {
-    "@types/node": "^11.13.9",
+    "@types/node": "^12.0.2",
     "@typescript-eslint/parser": "^1.7.0",
     "eslint-plugin-typescript": "^0.14.0",
     "fastify": "^2.0.0",
