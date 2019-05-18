@@ -42,7 +42,7 @@ This plugin add a `compress` function to `reply` that accepts a stream or a stri
 
 ```javascript
 const fs = require('fs')
-const fastify = require('fastify')
+const fastify = require('fastify')()
 
 fastify.register(require('fastify-compress'), { global: false })
 
