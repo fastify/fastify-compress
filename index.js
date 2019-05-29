@@ -14,7 +14,7 @@ const isZip = require('is-zip')
 const unZipper = require('unzipper')
 const isDeflate = require('is-deflate')
 
-function compressPlugin (fastify, opts, next) {
+function compressPlugin(fastify, opts, next) {
   fastify.decorateReply('compress', compress)
 
   if (opts.global !== false) {
@@ -33,7 +33,8 @@ function compressPlugin (fastify, opts, next) {
     deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
   }
 
-  const supportedEncodings = ['deflate', 'gzip', 'identity']
+  let supportedEncodings = ['deflate', 'gzip', 'identity']
+
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
     supportedEncodings.push('br')
@@ -41,10 +42,15 @@ function compressPlugin (fastify, opts, next) {
     compressStream.br = zlib.createBrotliCompress
     supportedEncodings.push('br')
   }
-
+  if (opts.preferredEncodings) {
+    supportedEncodings.sorted = true;
+    supportedEncodings.sort((a, b) => {
+      return (opts.preferredEncodings.indexOf(a) > supportedEncodings.indexOf(b)) ? 1 : -1;
+    })
+  }
   next()
 
-  function compress (payload) {
+  function compress(payload) {
     if (payload == null) {
       this.res.log.debug('compress: missing payload')
       this.send(new Error('Internal server error'))
@@ -62,9 +68,9 @@ function compressPlugin (fastify, opts, next) {
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
-        encoding === undefined
-          ? this.removeHeader('Content-Encoding')
-          : this.header('Content-Encoding', 'identity')
+        encoding === undefined ?
+          this.removeHeader('Content-Encoding') :
+          this.header('Content-Encoding', 'identity')
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(this))
       }
       return this.send(payload)
@@ -98,7 +104,7 @@ function compressPlugin (fastify, opts, next) {
     this.send(stream)
   }
 
-  function onSend (req, reply, payload, next) {
+  function onSend(req, reply, payload, next) {
     if (payload == null) {
       reply.res.log.debug('compress: missing payload')
       return next()
@@ -115,9 +121,9 @@ function compressPlugin (fastify, opts, next) {
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
-        encoding === undefined
-          ? reply.removeHeader('Content-Encoding')
-          : reply.header('Content-Encoding', 'identity')
+        encoding === undefined ?
+          reply.removeHeader('Content-Encoding') :
+          reply.header('Content-Encoding', 'identity')
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
@@ -147,11 +153,11 @@ function compressPlugin (fastify, opts, next) {
   }
 }
 
-function onEnd (err) {
+function onEnd(err) {
   if (err) this.res.log.error(err)
 }
 
-function closeStream (payload) {
+function closeStream(payload) {
   if (typeof payload.close === 'function') {
     payload.close()
   } else if (typeof payload.destroy === 'function') {
@@ -161,40 +167,44 @@ function closeStream (payload) {
   }
 }
 
-function getEncodingHeader (supportedEncodings, request) {
+function getEncodingHeader(supportedEncodings, request) {
   var header = request.headers['accept-encoding']
   if (!header) return undefined
-  var acceptEncodings = header.split(',')
-  for (var i = 0; i < acceptEncodings.length; i++) {
-    var acceptEncoding = acceptEncodings[i].trim()
-    if (supportedEncodings.indexOf(acceptEncoding) > -1) {
-      return acceptEncoding
-    }
-    if (acceptEncoding.indexOf('*') > -1) {
+
+  let ix = [supportedEncodings, header.split(',').map(a => a.trim())].sort(() => supportedEncodings.sorted ? 1 : -1)
+
+  for (var i = 0; i < ix[0].length; i++) {
+    var i1a = ix[0][i].trim()
+    if (ix[1].indexOf(i1a) > -1) {
+      return i1a;
+
+    } else
+    if (acceptEncodings.indexOf('*') > -1) {
       return 'gzip'
     }
   }
   return null
 }
 
-function shouldCompress (type, compressibleTypes) {
+function shouldCompress(type, compressibleTypes) {
   if (compressibleTypes.test(type)) return true
   var data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible
 }
 
-function isCompressed (data) {
+function isCompressed(data) {
   if (isGzip(data)) return 1
   if (isDeflate(data)) return 2
   if (isZip(data)) return 3
   return 0
 }
 
-function maybeUnzip (payload, serialize) {
+function maybeUnzip(payload, serialize) {
   if (isStream(payload)) return payload
 
-  var buf = payload; var result = payload
+  var buf = payload;
+  var result = payload
 
   if (ArrayBuffer.isView(payload)) {
     // Cast non-Buffer DataViews into a Buffer
@@ -213,24 +223,35 @@ function maybeUnzip (payload, serialize) {
   return intoStream(result)
 }
 
-function zipStream (deflate, encoding) {
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+function zipStream(deflate, encoding) {
+  return peek({
+    newline: false,
+    maxBuffer: 10
+  }, function (data, swap) {
     switch (isCompressed(data)) {
-      case 1: return swap(null, new Minipass())
-      case 2: return swap(null, new Minipass())
+      case 1:
+        return swap(null, new Minipass())
+      case 2:
+        return swap(null, new Minipass())
     }
     return swap(null, deflate[encoding]())
   })
 }
 
-function unzipStream (inflate, maxRecursion) {
+function unzipStream(inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+  return peek({
+    newline: false,
+    maxBuffer: 10
+  }, function (data, swap) {
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
     switch (isCompressed(data)) {
-      case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
-      case 2: return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
-      case 3: return swap(null, pumpify(unZipper.ParseOne(), unzipStream(inflate, maxRecursion - 1)))
+      case 1:
+        return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
+      case 2:
+        return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
+      case 3:
+        return swap(null, pumpify(unZipper.ParseOne(), unzipStream(inflate, maxRecursion - 1)))
     }
     return swap(null, new Minipass())
   })
