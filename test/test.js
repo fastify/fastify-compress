@@ -143,6 +143,33 @@ test('should not double-compress Stream if already zipped', t => {
   })
 })
 
+test('should support quality syntax', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(
+      createReadStream('./package.json')
+        .pipe(zlib.createDeflate())
+    )
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip;q=0.5,deflate;q=0.6,identity;q=0.3'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.inflateSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
 test('onSend hook should not double-compress Stream if already zipped', t => {
   t.plan(3)
   const fastify = Fastify()
@@ -256,6 +283,33 @@ test('Unsupported encoding', t => {
     method: 'GET',
     headers: {
       'accept-encoding': 'hello'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = JSON.parse(res.payload)
+    t.strictEqual(res.statusCode, 406)
+    t.deepEqual({
+      error: 'Not Acceptable',
+      message: 'Unsupported encoding',
+      statusCode: 406
+    }, payload)
+  })
+})
+
+test('Unsupported encoding with quality value', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'lzma;q=1.0'
     }
   }, (err, res) => {
     t.error(err)
