@@ -13,6 +13,7 @@ const isGzip = require('is-gzip')
 const isZip = require('is-zip')
 const unZipper = require('unzipper')
 const isDeflate = require('is-deflate')
+const encodingNegotiator = require('encoding-negotiator')
 
 function compressPlugin (fastify, opts, next) {
   fastify.decorateReply('compress', compress)
@@ -33,7 +34,7 @@ function compressPlugin (fastify, opts, next) {
     deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
   }
 
-  const supportedEncodings = ['deflate', 'gzip', 'identity']
+  const supportedEncodings = ['gzip', 'deflate', 'identity']
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
     supportedEncodings.push('br')
@@ -162,19 +163,8 @@ function closeStream (payload) {
 }
 
 function getEncodingHeader (supportedEncodings, request) {
-  var header = request.headers['accept-encoding']
-  if (!header) return undefined
-  var acceptEncodings = header.split(',')
-  for (var i = 0; i < acceptEncodings.length; i++) {
-    var acceptEncoding = acceptEncodings[i].trim()
-    if (supportedEncodings.indexOf(acceptEncoding) > -1) {
-      return acceptEncoding
-    }
-    if (acceptEncoding.indexOf('*') > -1) {
-      return 'gzip'
-    }
-  }
-  return null
+  const header = request.headers['accept-encoding']
+  return encodingNegotiator.negotiate(header, supportedEncodings)
 }
 
 function shouldCompress (type, compressibleTypes) {
