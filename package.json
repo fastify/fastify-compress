@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^12.0.8",
-    "@typescript-eslint/parser": "^1.7.0",
+    "@typescript-eslint/parser": "^2.0.0",
     "eslint-plugin-typescript": "^0.14.0",
     "fastify": "^2.0.0",
     "iltorb": "^2.3.0",
