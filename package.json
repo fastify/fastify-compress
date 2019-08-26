@@ -16,7 +16,7 @@
     "peek-stream": "^1.1.0",
     "pump": "^3.0.0",
     "pumpify": "^2.0.0",
-    "string-to-stream": "^2.0.0",
+    "string-to-stream": "^3.0.1",
     "unzipper": "^0.10.1"
   },
   "devDependencies": {
