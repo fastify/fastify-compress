@@ -37,11 +37,17 @@ function compressPlugin (fastify, opts, next) {
   const supportedEncodings = ['gzip', 'deflate', 'identity']
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
-    supportedEncodings.push('br')
+    supportedEncodings.unshift('br')
   } else if (zlib.createBrotliCompress) {
     compressStream.br = zlib.createBrotliCompress
-    supportedEncodings.push('br')
+    supportedEncodings.unshift('br')
   }
+
+  const encodings = Array.isArray(opts.encodings)
+    ? supportedEncodings
+      .filter(encoding => opts.encodings.includes(encoding))
+      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+    : supportedEncodings
 
   next()
 
@@ -56,10 +62,10 @@ function compressPlugin (fastify, opts, next) {
     var noCompress =
       // don't compress on x-no-compression header
       (this.request.headers['x-no-compression'] !== undefined) ||
-      // don't compress if not one of the indiated compressible types
+      // don't compress if not one of the indicated compressible types
       (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, this.request)) === undefined || encoding === 'identity')
+      ((encoding = getEncodingHeader(encodings, this.request)) === undefined || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
@@ -112,7 +118,7 @@ function compressPlugin (fastify, opts, next) {
       // don't compress if not one of the indiated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, req)) === undefined || encoding === 'identity')
+      ((encoding = getEncodingHeader(encodings, req)) === undefined || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
@@ -162,9 +168,9 @@ function closeStream (payload) {
   }
 }
 
-function getEncodingHeader (supportedEncodings, request) {
-  const header = request.headers['accept-encoding']
-  return encodingNegotiator.negotiate(header, supportedEncodings)
+function getEncodingHeader (encodings, request) {
+  const header = (request.headers['accept-encoding'] || '').replace('*', 'gzip')
+  return encodingNegotiator.negotiate(header, encodings)
 }
 
 function shouldCompress (type, compressibleTypes) {
