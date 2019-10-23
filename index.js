@@ -43,6 +43,10 @@ function compressPlugin (fastify, opts, next) {
     supportedEncodings.unshift('br')
   }
 
+  if (opts.encodings && opts.encodings.length < 1) {
+    throw Error('The `encodings` array option must have at least 1 item.')
+  }
+
   const encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
       .filter(encoding => opts.encodings.includes(encoding))
@@ -169,7 +173,8 @@ function closeStream (payload) {
 }
 
 function getEncodingHeader (encodings, request) {
-  const header = (request.headers['accept-encoding'] || '').replace('*', 'gzip')
+  const header = (request.headers['accept-encoding'] || '')
+    .replace('*', 'gzip') // consider the no-preference token as gzip for downstream compat
   return encodingNegotiator.negotiate(header, encodings)
 }
 
