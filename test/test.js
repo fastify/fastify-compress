@@ -258,7 +258,7 @@ test('should follow the encoding order', t => {
     url: '/',
     method: 'GET',
     headers: {
-      'accept-encoding': 'hello,br'
+      'accept-encoding': 'hello,br,gzip'
     }
   }, (err, res) => {
     t.error(err)
@@ -1385,4 +1385,35 @@ test('Should not apply customTypes if value passed is not RegExp', t => {
     t.notOk(res.headers['content-encoding'])
     t.strictEqual(res.statusCode, 200)
   })
+})
+
+test('Should only use `encodings` if passed', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { encodings: ['deflate'] })
+
+  fastify.get('/', (req, reply) => {
+    reply.send(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br,gzip,deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.strictEqual(res.statusCode, 200)
+  })
+})
+
+test('Should throw if `encodings` array is empty', t => {
+  const fastify = Fastify()
+
+  t.throws(
+    fastify.register(compressPlugin, { encodings: [] }),
+    {}
+  )
 })
