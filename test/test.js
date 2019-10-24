@@ -1409,11 +1409,8 @@ test('Should only use `encodings` if passed', t => {
   })
 })
 
-test('Should throw if `encodings` array is empty', t => {
+test('Should error if `encodings` array is empty', t => {
   const fastify = Fastify()
-
-  t.throws(
-    fastify.register(compressPlugin, { encodings: [] }),
-    {}
-  )
+  fastify.register(compressPlugin, { encodings: [] })
+  fastify.ready(err => { t.ok(err instanceof Error) })
 })
