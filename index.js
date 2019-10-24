@@ -44,7 +44,7 @@ function compressPlugin (fastify, opts, next) {
   }
 
   if (opts.encodings && opts.encodings.length < 1) {
-    throw Error('The `encodings` array option must have at least 1 item.')
+    next(new Error('The `encodings` option array must have at least 1 item.'))
   }
 
   const encodings = Array.isArray(opts.encodings)
@@ -52,6 +52,10 @@ function compressPlugin (fastify, opts, next) {
       .filter(encoding => opts.encodings.includes(encoding))
       .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
+
+  if (encodings.length < 1) {
+    next(new Error('None of the passed `encodings` were supported — compression not possible.'))
+  }
 
   next()
 
