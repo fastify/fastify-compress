@@ -89,6 +89,30 @@ test('should send a gzipped data', t => {
   })
 })
 
+test('should send a gzipped data if header case varied', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'GZiP'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
 test('should send a gzipped data with custom zlib', t => {
   t.plan(4)
   let usedCustom = false
@@ -269,7 +293,7 @@ test('should follow the encoding order', t => {
   })
 })
 
-test('Unsupported encoding', t => {
+test('should send uncompressed if unsupported encoding', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
@@ -286,17 +310,13 @@ test('Unsupported encoding', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual({
-      error: 'Not Acceptable',
-      message: 'Unsupported encoding',
-      statusCode: 406
-    }, payload)
+    t.strictEqual(res.statusCode, 200)
+    const file = readFileSync('./package.json', 'utf8')
+    t.strictEqual(res.payload, file)
   })
 })
 
-test('Unsupported encoding with quality value', t => {
+test('should send uncompressed if unsupported encoding with quality value', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
@@ -313,13 +333,9 @@ test('Unsupported encoding with quality value', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual({
-      error: 'Not Acceptable',
-      message: 'Unsupported encoding',
-      statusCode: 406
-    }, payload)
+    t.strictEqual(res.statusCode, 200)
+    const file = readFileSync('./package.json', 'utf8')
+    t.strictEqual(res.payload, file)
   })
 })
 
@@ -429,7 +445,7 @@ test('Should close the stream', t => {
   })
 })
 
-test('Should send 406 error on invalid accept encoding', t => {
+test('Should send uncompressed on invalid accept encoding', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: true })
@@ -447,13 +463,8 @@ test('Should send 406 error on invalid accept encoding', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual({
-      error: 'Not Acceptable',
-      message: 'Unsupported encoding',
-      statusCode: 406
-    }, payload)
+    t.strictEqual(res.statusCode, 200)
+    t.strictEqual(res.payload, 'something')
   })
 })
 
@@ -495,6 +506,29 @@ test('Should compress buffer (gzip)', t => {
     method: 'GET',
     headers: {
       'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (gzip) if header case varied', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'GzIp'
     }
   }, (err, res) => {
     t.error(err)
@@ -589,6 +623,29 @@ test('Should compress buffer (gzip) - global', t => {
     method: 'GET',
     headers: {
       'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = zlib.gunzipSync(res.rawPayload)
+    t.strictEqual(payload.toString('utf-8'), buf.toString())
+  })
+})
+
+test('Should compress buffer (gzip) with varied header case - global', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+  const buf = Buffer.from('hello world')
+
+  fastify.get('/', (req, reply) => {
+    reply.send(buf)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gZIP'
     }
   }, (err, res) => {
     t.error(err)

@@ -59,7 +59,7 @@ function compressPlugin (fastify, opts, next) {
       // don't compress if not one of the indiated compressible types
       (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, this.request)) === undefined || encoding === 'identity')
+      ((encoding = getEncodingHeader(supportedEncodings, this.request)) == null || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
@@ -69,12 +69,6 @@ function compressPlugin (fastify, opts, next) {
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(this))
       }
       return this.send(payload)
-    }
-
-    if (encoding === null) {
-      closeStream(payload)
-      this.code(406).send(new Error('Unsupported encoding'))
-      return
     }
 
     if (typeof payload.pipe !== 'function') {
@@ -112,7 +106,7 @@ function compressPlugin (fastify, opts, next) {
       // don't compress if not one of the indiated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, req)) === undefined || encoding === 'identity')
+      ((encoding = getEncodingHeader(supportedEncodings, req)) == null || encoding === 'identity')
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
@@ -122,13 +116,6 @@ function compressPlugin (fastify, opts, next) {
         pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
-    }
-
-    if (encoding === null) {
-      closeStream(payload)
-      reply.code(406)
-      next(new Error('Unsupported encoding'))
-      return
     }
 
     if (typeof payload.pipe !== 'function') {
@@ -152,19 +139,9 @@ function onEnd (err) {
   if (err) this.res.log.error(err)
 }
 
-function closeStream (payload) {
-  if (typeof payload.close === 'function') {
-    payload.close()
-  } else if (typeof payload.destroy === 'function') {
-    payload.destroy()
-  } else if (typeof payload.abort === 'function') {
-    payload.abort()
-  }
-}
-
 function getEncodingHeader (supportedEncodings, request) {
   const header = request.headers['accept-encoding']
-  return encodingNegotiator.negotiate(header, supportedEncodings)
+  return header == null ? undefined : encodingNegotiator.negotiate(header.toLowerCase(), supportedEncodings)
 }
 
 function shouldCompress (type, compressibleTypes) {
