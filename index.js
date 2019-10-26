@@ -153,7 +153,7 @@ function onEnd (err) {
   if (err) this.res.log.error(err)
 }
 
-function getEncodingHeader (supportedEncodings, request) {
+function getEncodingHeader (encodings, request) {
   let header = request.headers['accept-encoding']
   if (header != null) {
     header = header.toLowerCase()
