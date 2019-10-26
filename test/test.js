@@ -1419,3 +1419,16 @@ test('Should error if `encodings` array is empty', t => {
     t.ok(err instanceof Error)
   })
 })
+
+test('Should error if no entries in `encodings` are supported', t => {
+  t.plan(1)
+  const fastify = Fastify()
+
+  fastify.register(compressPlugin, { 
+    encodings: ['(not-a-real-encoding)'] 
+  })
+
+  fastify.ready(err => {
+    t.ok(err instanceof Error)
+  })
+})
