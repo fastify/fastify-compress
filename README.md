@@ -23,7 +23,7 @@ Currently, the following encoding tokens are supported, using the first acceptab
 4. `*` (no preference — `fastify-compress` will use `gzip`)
 5. `identity` (no compression)
 
-If the `accept-encoding` header is missing, it will not compress the payload. If `accept-encoding` is present but no supported encoding is found, a `406` error is returned.
+If the `accept-encoding` header is missing or contains no supported encodings, it will not compress the payload.
 
 The plugin automatically decides if a payload should be compressed based on its `content-type`; if no content type is present, it will assume `application/json`.
 
