@@ -44,7 +44,7 @@
     "compression",
     "deflate",
     "gzip",
-    "brodli"
+    "brotli"
   ],
   "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
   "license": "MIT",
