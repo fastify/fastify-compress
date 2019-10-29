@@ -1,5 +1,6 @@
-import { Plugin } from 'fastify'
+import { Plugin, FastifyReply } from 'fastify'
 import { Server, IncomingMessage, ServerResponse } from 'http'
+import { Stream } from 'stream';
 
 declare const fastifyCompress: Plugin<
   Server,
@@ -12,6 +13,7 @@ declare const fastifyCompress: Plugin<
     brotli?: NodeModule
     zlib?: NodeModule
     inflateIfDeflated?: boolean
+    onUnsupportedEncoding?: (encoding: string, reply: FastifyReply<ServerResponse>) => string | Buffer | Stream | Error
   }
 >
 

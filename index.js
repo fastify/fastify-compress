@@ -22,6 +22,7 @@ function compressPlugin (fastify, opts, next) {
     fastify.addHook('onSend', onSend)
   }
 
+  const onUnsupportedEncoding = opts.onUnsupportedEncoding
   const inflateIfDeflated = opts.inflateIfDeflated === true
   const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
@@ -60,6 +61,12 @@ function compressPlugin (fastify, opts, next) {
       (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
       ((encoding = getEncodingHeader(supportedEncodings, this.request)) == null || encoding === 'identity')
+
+    if (encoding == null && onUnsupportedEncoding != null) {
+      var encodingHeader = this.request.headers['accept-encoding']
+      var errorPayload = onUnsupportedEncoding(encodingHeader, this)
+      return this.send(errorPayload)
+    }
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
@@ -107,6 +114,16 @@ function compressPlugin (fastify, opts, next) {
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
       ((encoding = getEncodingHeader(supportedEncodings, req)) == null || encoding === 'identity')
+
+    if (encoding == null && onUnsupportedEncoding != null) {
+      var encodingHeader = req.headers['accept-encoding']
+      var errorPayload = onUnsupportedEncoding(encodingHeader, reply)
+      if (errorPayload instanceof Error) {
+        return next(errorPayload)
+      } else {
+        return next(null, errorPayload)
+      }
+    }
 
     if (noCompress) {
       if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
