@@ -23,7 +23,18 @@ Currently the following headers are supported:
 
 If the `'accept-encoding'` header specifies no preferred encoding with an asterisk `*` the payload will be compressed with `gzip`.
 
-If an unsupported encoding is received or if the `'accept-encoding'` header is missing, it will not compress the payload.
+If an unsupported encoding is received or if the `'accept-encoding'` header is missing, it will not compress the payload. A custom response can be sent instead by setting the `onUnsupportedEncoding(encoding, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  {
+    onUnsupportedEncoding: (encoding, reply) => {
+      reply.code(406)
+      return 'We do not support the ' + encoding + ' encoding.'
+    }
+  }
+)
+```
 
 It automatically defines if a payload should be compressed or not based on its `Content-Type`, if no content type is present, it will assume is `application/json`.
 
