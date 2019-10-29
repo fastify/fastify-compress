@@ -38,10 +38,24 @@ function compressPlugin (fastify, opts, next) {
   const supportedEncodings = ['gzip', 'deflate', 'identity']
   if (opts.brotli) {
     compressStream.br = opts.brotli.compressStream
-    supportedEncodings.push('br')
+    supportedEncodings.unshift('br')
   } else if (zlib.createBrotliCompress) {
     compressStream.br = zlib.createBrotliCompress
-    supportedEncodings.push('br')
+    supportedEncodings.unshift('br')
+  }
+
+  if (opts.encodings && opts.encodings.length < 1) {
+    next(new Error('The `encodings` option array must have at least 1 item.'))
+  }
+
+  const encodings = Array.isArray(opts.encodings)
+    ? supportedEncodings
+      .filter(encoding => opts.encodings.includes(encoding))
+      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+    : supportedEncodings
+
+  if (encodings.length < 1) {
+    next(new Error('None of the passed `encodings` were supported — compression not possible.'))
   }
 
   next()
@@ -57,10 +71,10 @@ function compressPlugin (fastify, opts, next) {
     var noCompress =
       // don't compress on x-no-compression header
       (this.request.headers['x-no-compression'] !== undefined) ||
-      // don't compress if not one of the indiated compressible types
+      // don't compress if not one of the indicated compressible types
       (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, this.request)) == null || encoding === 'identity')
+      ((encoding = getEncodingHeader(encodings, this.request)) == null || encoding === 'identity')
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = this.request.headers['accept-encoding']
@@ -113,7 +127,7 @@ function compressPlugin (fastify, opts, next) {
       // don't compress if not one of the indiated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(supportedEncodings, req)) == null || encoding === 'identity')
+      ((encoding = getEncodingHeader(encodings, req)) == null || encoding === 'identity')
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = req.headers['accept-encoding']
@@ -156,9 +170,15 @@ function onEnd (err) {
   if (err) this.res.log.error(err)
 }
 
-function getEncodingHeader (supportedEncodings, request) {
-  const header = request.headers['accept-encoding']
-  return header == null ? undefined : encodingNegotiator.negotiate(header.toLowerCase(), supportedEncodings)
+function getEncodingHeader (encodings, request) {
+  let header = request.headers['accept-encoding']
+  if (header != null) {
+    header = header.toLowerCase()
+      .replace('*', 'gzip') // consider the no-preference token as gzip for downstream compat
+    return encodingNegotiator.negotiate(header, encodings)
+  } else {
+    return undefined
+  }
 }
 
 function shouldCompress (type, compressibleTypes) {
