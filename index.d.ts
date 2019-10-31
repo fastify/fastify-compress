@@ -2,6 +2,8 @@ import { Plugin, FastifyReply } from 'fastify'
 import { Server, IncomingMessage, ServerResponse } from 'http'
 import { Stream } from 'stream';
 
+type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity'
+
 declare const fastifyCompress: Plugin<
   Server,
   IncomingMessage,
@@ -14,6 +16,7 @@ declare const fastifyCompress: Plugin<
     zlib?: NodeModule
     inflateIfDeflated?: boolean
     onUnsupportedEncoding?: (encoding: string, reply: FastifyReply<ServerResponse>) => string | Buffer | Stream | Error
+    encodings?: Array<EncodingToken>
   }
 >
 

@@ -12,5 +12,6 @@ app.register(fastifyCompress, {
   brotli: iltorb,
   zlib: zlib,
   inflateIfDeflated: true,
-  customTypes: /x-protobuf$/
+  customTypes: /x-protobuf$/,
+  encodings: ['gzip', 'br', 'identity', 'deflate']
 })

@@ -282,7 +282,7 @@ test('should follow the encoding order', t => {
     url: '/',
     method: 'GET',
     headers: {
-      'accept-encoding': 'hello,br'
+      'accept-encoding': 'hello,br,gzip'
     }
   }, (err, res) => {
     t.error(err)
@@ -1530,5 +1530,51 @@ test('Should not apply customTypes if value passed is not RegExp', t => {
     t.error(err)
     t.notOk(res.headers['content-encoding'])
     t.strictEqual(res.statusCode, 200)
+  })
+})
+
+test('Should only use `encodings` if passed', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { encodings: ['deflate'] })
+
+  fastify.get('/', (req, reply) => {
+    reply.send(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br,gzip,deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.strictEqual(res.statusCode, 200)
+  })
+})
+
+test('Should error if `encodings` array is empty', t => {
+  t.plan(1)
+  const fastify = Fastify()
+
+  fastify.register(compressPlugin, { encodings: [] })
+
+  fastify.ready(err => {
+    t.ok(err instanceof Error)
+  })
+})
+
+test('Should error if no entries in `encodings` are supported', t => {
+  t.plan(1)
+  const fastify = Fastify()
+
+  fastify.register(compressPlugin, {
+    encodings: ['(not-a-real-encoding)']
+  })
+
+  fastify.ready(err => {
+    t.ok(err instanceof Error)
   })
 })
