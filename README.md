@@ -23,18 +23,7 @@ Currently the following headers are supported:
 
 If the `'accept-encoding'` header specifies no preferred encoding with an asterisk `*` the payload will be compressed with `gzip`.
 
-If an unsupported encoding is received or if the `'accept-encoding'` header is missing, it will not compress the payload. If an unsupported encoding is recieved, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
-```javascript
-fastify.register(
-  require('fastify-compress'),
-  {
-    onUnsupportedEncoding: (encoding, reply) => {
-      reply.code(406)
-      return 'We do not support the ' + encoding + ' encoding.'
-    }
-  }
-)
-```
+If an unsupported encoding is recieved or if the `'accept-encoding'` header is missing, it will not compress the payload. If an unsupported encoding is recieved and you would like to return an error, provide an `onUnsupportedEncoding` option.
 
 It automatically defines if a payload should be compressed or not based on its `Content-Type`, if no content type is present, it will assume is `application/json`.
 
@@ -94,6 +83,20 @@ For the Node.js versions that not support brotli natively, it's not enabled by d
 fastify.register(
   require('fastify-compress'),
   { brotli: require('iltorb') }
+)
+```
+
+### onUnsupportedEncoding
+When the encoding is not supported, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  {
+    onUnsupportedEncoding: (encoding, reply) => {
+      reply.code(406)
+      return 'We do not support the ' + encoding + ' encoding.'
+    }
+  }
 )
 ```
 
