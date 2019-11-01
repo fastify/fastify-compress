@@ -78,7 +78,7 @@ function compressPlugin (fastify, opts, next) {
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = this.request.headers['accept-encoding']
-      var errorPayload = onUnsupportedEncoding(encodingHeader, this)
+      var errorPayload = onUnsupportedEncoding(encodingHeader, this, this.request)
       return this.send(errorPayload)
     }
 
@@ -131,7 +131,7 @@ function compressPlugin (fastify, opts, next) {
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = req.headers['accept-encoding']
-      var errorPayload = onUnsupportedEncoding(encodingHeader, reply)
+      var errorPayload = onUnsupportedEncoding(encodingHeader, reply, reply.request)
       if (errorPayload instanceof Error) {
         return next(errorPayload)
       } else {
