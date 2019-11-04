@@ -15,7 +15,7 @@ declare const fastifyCompress: Plugin<
     brotli?: NodeModule
     zlib?: NodeModule
     inflateIfDeflated?: boolean
-    onUnsupportedEncoding?: (encoding: string, reply: FastifyReply<ServerResponse>, request: FastifyRequest<ServerResponse>) => string | Buffer | Stream | Error
+    onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<ServerResponse>, reply: FastifyReply<ServerResponse>) => string | Buffer | Stream | Error
     encodings?: Array<EncodingToken>
   }
 >

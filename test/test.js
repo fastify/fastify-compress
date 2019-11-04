@@ -321,7 +321,7 @@ test('should call callback if unsupported encoding', t => {
   const fastify = Fastify()
   fastify.register(compressPlugin, {
     global: false,
-    onUnsupportedEncoding: (encoding, reply) => {
+    onUnsupportedEncoding: (encoding, request, reply) => {
       reply.code(406)
       return JSON.stringify({ hello: encoding })
     }
@@ -501,7 +501,7 @@ test('should call callback if unsupported encoding - global', t => {
   const fastify = Fastify()
   fastify.register(compressPlugin, {
     global: true,
-    onUnsupportedEncoding: (encoding, reply) => {
+    onUnsupportedEncoding: (encoding, request, reply) => {
       reply.code(406)
       return JSON.stringify({ hello: encoding })
     }
@@ -530,7 +530,7 @@ test('should call callback if unsupported encoding and return error - global', t
   const fastify = Fastify()
   fastify.register(compressPlugin, {
     global: true,
-    onUnsupportedEncoding: (encoding, reply) => {
+    onUnsupportedEncoding: (encoding, request, reply) => {
       return new Error('testing error')
     }
   })
