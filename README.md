@@ -87,12 +87,12 @@ fastify.register(
 ```
 
 ### onUnsupportedEncoding
-When the encoding is not supported, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
+When the encoding is not supported, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, request, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
 ```javascript
 fastify.register(
   require('fastify-compress'),
   {
-    onUnsupportedEncoding: (encoding, reply) => {
+    onUnsupportedEncoding: (encoding, request, reply) => {
       reply.code(406)
       return 'We do not support the ' + encoding + ' encoding.'
     }
