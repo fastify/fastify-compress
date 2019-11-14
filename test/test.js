@@ -344,6 +344,38 @@ test('should call callback if unsupported encoding', t => {
   })
 })
 
+test('should call callback if unsupported encoding and throw error', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: false,
+    onUnsupportedEncoding: (encoding, request, reply) => {
+      reply.code(406)
+      throw new Error('testing error')
+    }
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'hello'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 406)
+    t.deepEqual(JSON.parse(res.payload), {
+      error: 'Not Acceptable',
+      message: 'testing error',
+      statusCode: 406
+    })
+  })
+})
+
 test('should send uncompressed if unsupported encoding with quality value', t => {
   t.plan(3)
   const fastify = Fastify()
@@ -525,13 +557,14 @@ test('should call callback if unsupported encoding - global', t => {
   })
 })
 
-test('should call callback if unsupported encoding and return error - global', t => {
+test('should call callback if unsupported encoding and throw error - global', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, {
     global: true,
     onUnsupportedEncoding: (encoding, request, reply) => {
-      return new Error('testing error')
+      reply.code(406)
+      throw new Error('testing error')
     }
   })
 
@@ -548,11 +581,11 @@ test('should call callback if unsupported encoding and return error - global', t
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 500)
+    t.strictEqual(res.statusCode, 406)
     t.deepEqual(JSON.parse(res.payload), {
-      error: 'Internal Server Error',
+      error: 'Not Acceptable',
       message: 'testing error',
-      statusCode: 500
+      statusCode: 406
     })
   })
 })

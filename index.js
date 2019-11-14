@@ -78,7 +78,13 @@ function compressPlugin (fastify, opts, next) {
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = this.request.headers['accept-encoding']
-      var errorPayload = onUnsupportedEncoding(encodingHeader, this.request, this)
+
+      var errorPayload
+      try {
+        errorPayload = onUnsupportedEncoding(encodingHeader, this.request, this)
+      } catch (ex) {
+        errorPayload = ex
+      }
       return this.send(errorPayload)
     }
 
@@ -131,11 +137,11 @@ function compressPlugin (fastify, opts, next) {
 
     if (encoding == null && onUnsupportedEncoding != null) {
       var encodingHeader = req.headers['accept-encoding']
-      var errorPayload = onUnsupportedEncoding(encodingHeader, reply.request, reply)
-      if (errorPayload instanceof Error) {
-        return next(errorPayload)
-      } else {
+      try {
+        var errorPayload = onUnsupportedEncoding(encodingHeader, reply.request, reply)
         return next(null, errorPayload)
+      } catch (ex) {
+        return next(ex)
       }
     }
 
