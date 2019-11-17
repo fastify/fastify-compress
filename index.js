@@ -141,7 +141,7 @@ function compressPlugin (fastify, opts, next) {
         var errorPayload = onUnsupportedEncoding(encodingHeader, reply.request, reply)
         return next(null, errorPayload)
       } catch (err) {
-        return next(ex)
+        return next(err)
       }
     }
 
