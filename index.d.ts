@@ -4,11 +4,8 @@ import { Stream } from 'stream';
 
 type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity'
 
-declare const fastifyCompress: Plugin<
-  Server,
-  IncomingMessage,
-  ServerResponse,
-  {
+declare namespace fastifyCompress {
+  interface FastifyCompressOptions {
     global?: boolean
     threshold?: number
     customTypes?: RegExp
@@ -18,6 +15,13 @@ declare const fastifyCompress: Plugin<
     onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<ServerResponse>, reply: FastifyReply<ServerResponse>) => string | Buffer | Stream
     encodings?: Array<EncodingToken>
   }
+}
+
+declare const fastifyCompress: Plugin<
+  Server,
+  IncomingMessage,
+  ServerResponse,
+  fastifyCompress.FastifyCompressOptions
 >
 
 export = fastifyCompress
