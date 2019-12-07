@@ -33,7 +33,7 @@
     "tap": "^12.6.6"
   },
   "scripts": {
-    "unit": "tap test/test.js",
+    "unit": "tap test/*.js",
     "test": "standard && npm run unit && npm run typescript",
     "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
     "typescript": "tsc --project ./test/types/tsconfig.json",

@@ -37,8 +37,31 @@ fastify.register(
 ```
 Remember that thanks to the Fastify encapsulation model, you can set a global compression, but run it only in a subset of routes if you wrap them inside a plugin.
 
+### Per Route options
+You can specify different options for compression per route by passing in the compression options on the route's configuration.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { global: false }
+)
+
+// only compress if the payload is above a certain size and use brotli
+fastify.get('/custom-route', {
+    config: {
+      compress: {
+        threshold: 128
+        brotli: brotli
+      }
+    }
+  }, (req, reply) => {
+    // ...
+  })
+```
+
 ### `reply.compress`
-This plugin adds a `compress` method to `reply` that accepts a stream or a string, and compresses it based on the `accept-encoding` header. If a JS object is passed in, it will be stringified to JSON.  
+This plugin adds a `compress` method to `reply` that accepts a stream or a string, and compresses it based on the `accept-encoding` header. If a JS object is passed in, it will be stringified to JSON. 
+Note that the compress method is configured with either the per route parameters if the route has a custom configuration or with the global parameters if the the route has no custom parameters but
+the plugin was defined as global.
 
 ```javascript
 const fs = require('fs')
@@ -57,7 +80,9 @@ fastify.listen(3000, function (err) {
   console.log(`server listening on ${fastify.server.address().port}`)
 })
 ```
+
 ## Options
+
 ### Threshold
 The minimum byte size for a response to be compressed. Defaults to `1024`.
 ```javascript

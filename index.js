@@ -16,41 +16,11 @@ const isDeflate = require('is-deflate')
 const encodingNegotiator = require('encoding-negotiator')
 
 function compressPlugin (fastify, opts, next) {
-  const globalParams = {
-    global: (typeof opts.global === 'boolean') ? opts.global : true
-  }
-
-  globalParams.onUnsupportedEncoding = opts.onUnsupportedEncoding
-  globalParams.inflateIfDeflated = opts.inflateIfDeflated === true
-  globalParams.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  globalParams.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
-  globalParams.compressStream = {
-    gzip: (opts.zlib || zlib).createGzip || zlib.createGzip,
-    deflate: (opts.zlib || zlib).createDeflate || zlib.createDeflate
-  }
-  globalParams.uncompressStream = {
-    gzip: (opts.zlib || zlib).createGunzip || zlib.createGunzip,
-    deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
-  }
-
-  const supportedEncodings = ['gzip', 'deflate', 'identity']
-  if (opts.brotli) {
-    globalParams.compressStream.br = opts.brotli.compressStream
-    supportedEncodings.unshift('br')
-  } else if (zlib.createBrotliCompress) {
-    globalParams.compressStream.br = zlib.createBrotliCompress
-    supportedEncodings.unshift('br')
-  }
+  const globalParams = processParams(opts)
 
   if (opts.encodings && opts.encodings.length < 1) {
     next(new Error('The `encodings` option array must have at least 1 item.'))
   }
-
-  globalParams.encodings = Array.isArray(opts.encodings)
-    ? supportedEncodings
-      .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
-    : supportedEncodings
 
   if (globalParams.encodings.length < 1) {
     next(new Error('None of the passed `encodings` were supported — compression not possible.'))
@@ -60,9 +30,9 @@ function compressPlugin (fastify, opts, next) {
   fastify.addHook('onRoute', (routeOptions) => {
     if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
       if (typeof routeOptions.config.compress === 'object') {
-        const mergedCompressParams = Object.assign({}, globalParams, routeOptions.config.compress)
+        const mergedCompressParams = Object.assign({}, globalParams, processParams(routeOptions.config.compress))
         // if the current endpoint has a custom compress configuration ...
-        buildRouteCompress(mergedCompressParams, routeOptions)
+        buildRouteCompress(fastify, mergedCompressParams, routeOptions)
       } else if (routeOptions.config.compress === false) {
         // don't apply any compress settings
       } else {
@@ -71,16 +41,77 @@ function compressPlugin (fastify, opts, next) {
     } else if (globalParams.global) {
       // if the plugin is set globally ( meaning that all the routes will be compressed )
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
-      buildRouteCompress(globalParams, routeOptions)
+      buildRouteCompress(fastify, globalParams, routeOptions)
+    } else {
+      // if no options are specified and the plugin is not global, then we still want to decorate
+      // the reply in this case
+      buildRouteCompress(fastify, globalParams, routeOptions, true)
     }
   })
-
-  fastify.decorateReply('compress', compress(globalParams))
 
   next()
 }
 
-function buildRouteCompress (params, routeOptions) {
+function processParams (opts) {
+  if (!opts) {
+    return
+  }
+
+  const params = {
+    global: (typeof opts.global === 'boolean') ? opts.global : true
+  }
+
+  params.onUnsupportedEncoding = opts.onUnsupportedEncoding
+  params.inflateIfDeflated = opts.inflateIfDeflated === true
+  params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
+  params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
+  params.compressStream = {
+    gzip: (opts.zlib || zlib).createGzip || zlib.createGzip,
+    deflate: (opts.zlib || zlib).createDeflate || zlib.createDeflate
+  }
+  params.uncompressStream = {
+    gzip: (opts.zlib || zlib).createGunzip || zlib.createGunzip,
+    deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
+  }
+
+  const supportedEncodings = ['gzip', 'deflate', 'identity']
+  if (opts.brotli) {
+    params.compressStream.br = opts.brotli.compressStream
+    supportedEncodings.unshift('br')
+  } else if (zlib.createBrotliCompress) {
+    params.compressStream.br = zlib.createBrotliCompress
+    supportedEncodings.unshift('br')
+  }
+
+  params.encodings = Array.isArray(opts.encodings)
+    ? supportedEncodings
+      .filter(encoding => opts.encodings.includes(encoding))
+      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+    : supportedEncodings
+
+  return params
+}
+
+function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
+  // In order to provide a compress method with the same parameter set as the route itself has
+  // we do the decorate the reply at the start of the request
+  if (Array.isArray(routeOptions.onRequest)) {
+    routeOptions.onRequest.push(onRequest)
+  } else if (typeof routeOptions.onRequest === 'function') {
+    routeOptions.onRequest = [routeOptions.onRequest, onRequest]
+  } else {
+    routeOptions.onRequest = [onRequest]
+  }
+
+  function onRequest (req, reply, next) {
+    reply.compress = compress(params)
+    next()
+  }
+
+  if (decorateOnly) {
+    return
+  }
+
   if (Array.isArray(routeOptions.onSend)) {
     routeOptions.onSend.push(onSend)
   } else if (typeof routeOptions.onSend === 'function') {
