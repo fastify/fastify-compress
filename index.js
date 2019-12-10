@@ -20,10 +20,12 @@ function compressPlugin (fastify, opts, next) {
 
   if (opts.encodings && opts.encodings.length < 1) {
     next(new Error('The `encodings` option array must have at least 1 item.'))
+    return
   }
 
   if (globalParams.encodings.length < 1) {
     next(new Error('None of the passed `encodings` were supported — compression not possible.'))
+    return
   }
 
   // add onSend hook onto each route as needed
