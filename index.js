@@ -28,6 +28,8 @@ function compressPlugin (fastify, opts, next) {
     return
   }
 
+  fastify.decorateReply('compress', null)
+
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
     if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {

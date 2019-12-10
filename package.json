@@ -23,7 +23,7 @@
     "@types/node": "^12.0.8",
     "@typescript-eslint/parser": "^2.0.0",
     "eslint-plugin-typescript": "^0.14.0",
-    "fastify": "fastify/fastify#master",
+    "fastify": "^2.11.0",
     "iltorb": "^2.3.0",
     "jsonstream": "^1.0.3",
     "pre-commit": "^1.2.2",
