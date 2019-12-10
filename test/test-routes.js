@@ -127,3 +127,106 @@ test('should send a gzipped data with custom zlib', t => {
     })
   })
 })
+
+test('should not compress when global is false and compressed route exists', t => {
+  t.plan(12)
+  let usedCustom = false
+  const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    // compress function should still be available
+    t.type(reply.compress, 'function')
+    reply.send({ foo: 1 })
+  })
+
+  fastify.get('/custom', {
+    config: {
+      compress: {
+        zlib: customZlib
+      }
+    }
+  }, (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/standard', {
+    config: {
+      compress: {
+        threshold: 1
+      }
+    }
+  }, (req, reply) => {
+    reply.send({ foo: 1 })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], undefined)
+    t.strictEqual(res.rawPayload.toString('utf-8'), JSON.stringify({ foo: 1 }))
+    t.strictEqual(usedCustom, false)
+
+    usedCustom = false
+    fastify.inject({
+      url: '/custom',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    }, (err, res) => {
+      t.error(err)
+      t.strictEqual(res.headers['content-encoding'], 'gzip')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.gunzipSync(res.rawPayload)
+      t.strictEqual(payload.toString('utf-8'), file)
+      t.strictEqual(usedCustom, true)
+
+      fastify.inject({
+        url: '/standard',
+        method: 'GET',
+        headers: {
+          'accept-encoding': 'gzip'
+        }
+      }, (err, res) => {
+        t.error(err)
+        t.strictEqual(res.headers['content-encoding'], 'gzip')
+        const payload = zlib.gunzipSync(res.rawPayload)
+        t.strictEqual(payload.toString('utf-8'), JSON.stringify({ foo: 1 }))
+      })
+    })
+  })
+})
+
+test('should not compress if route compression disabled', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  const content = { message: 'Hello World!' }
+  fastify.get('/', {
+    config: {
+      compress: false
+    }
+  }, (req, reply) => {
+    reply.send(content)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], undefined)
+    t.strictEqual(res.rawPayload.toString('utf-8'), JSON.stringify(content))
+  })
+})

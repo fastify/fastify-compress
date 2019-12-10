@@ -130,7 +130,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     var noCompress =
       // don't compress on x-no-compression header
       (req.headers['x-no-compression'] !== undefined) ||
-      // don't compress if not one of the indiated compressible types
+      // don't compress if not one of the indicated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
       ((encoding = getEncodingHeader(params.encodings, req)) == null || encoding === 'identity')

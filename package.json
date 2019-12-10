@@ -13,7 +13,6 @@
     "is-zip": "^1.0.0",
     "mime-db": "^1.33.0",
     "minipass": "^2.9.0",
-    "moment": "^2.24.0",
     "peek-stream": "^1.1.0",
     "pump": "^3.0.0",
     "pumpify": "^2.0.0",

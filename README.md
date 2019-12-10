@@ -58,6 +58,8 @@ fastify.get('/custom-route', {
   })
 ```
 
+Note: Setting `config.compress = false` on any route will disable compression on the route even if global compression is enabled.
+
 ### `reply.compress`
 This plugin adds a `compress` method to `reply` that accepts a stream or a string, and compresses it based on the `accept-encoding` header. If a JS object is passed in, it will be stringified to JSON. 
 Note that the compress method is configured with either the per route parameters if the route has a custom configuration or with the global parameters if the the route has no custom parameters but
