@@ -230,3 +230,28 @@ test('should not compress if route compression disabled', t => {
     t.strictEqual(res.rawPayload.toString('utf-8'), JSON.stringify(content))
   })
 })
+
+test('should throw an error on invalid compression setting', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', {
+    config: {
+      compress: 'bad config'
+    }
+  }, (req, reply) => {
+    reply.send('')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.type(err, Error)
+    t.strictEqual(err.message, 'Unknown value for route compress configuration')
+  })
+})
