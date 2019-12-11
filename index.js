@@ -107,9 +107,9 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     routeOptions.onRequest = [onRequest]
   }
 
-  const compresFn = compress(params)
+  const compressFn = compress(params)
   function onRequest (req, reply, next) {
-    reply.compress = compresFn
+    reply.compress = compressFn
     next()
   }
 
