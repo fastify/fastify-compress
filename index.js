@@ -16,108 +16,113 @@ const isDeflate = require('is-deflate')
 const encodingNegotiator = require('encoding-negotiator')
 
 function compressPlugin (fastify, opts, next) {
-  fastify.decorateReply('compress', compress)
+  const globalParams = processParams(opts)
 
-  if (opts.global !== false) {
-    fastify.addHook('onSend', onSend)
+  if (opts.encodings && opts.encodings.length < 1) {
+    next(new Error('The `encodings` option array must have at least 1 item.'))
+    return
   }
 
-  const onUnsupportedEncoding = opts.onUnsupportedEncoding
-  const inflateIfDeflated = opts.inflateIfDeflated === true
-  const threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  const compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
-  const compressStream = {
+  if (globalParams.encodings.length < 1) {
+    next(new Error('None of the passed `encodings` were supported — compression not possible.'))
+    return
+  }
+
+  fastify.decorateReply('compress', null)
+
+  // add onSend hook onto each route as needed
+  fastify.addHook('onRoute', (routeOptions) => {
+    if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
+      if (typeof routeOptions.config.compress === 'object') {
+        const mergedCompressParams = Object.assign({}, globalParams, processParams(routeOptions.config.compress))
+        // if the current endpoint has a custom compress configuration ...
+        buildRouteCompress(fastify, mergedCompressParams, routeOptions)
+      } else if (routeOptions.config.compress === false) {
+        // don't apply any compress settings
+      } else {
+        throw new Error('Unknown value for route compress configuration')
+      }
+    } else if (globalParams.global) {
+      // if the plugin is set globally ( meaning that all the routes will be compressed )
+      // As the endpoint, does not have a custom rateLimit configuration, use the global one.
+      buildRouteCompress(fastify, globalParams, routeOptions)
+    } else {
+      // if no options are specified and the plugin is not global, then we still want to decorate
+      // the reply in this case
+      buildRouteCompress(fastify, globalParams, routeOptions, true)
+    }
+  })
+
+  next()
+}
+
+function processParams (opts) {
+  if (!opts) {
+    return
+  }
+
+  const params = {
+    global: (typeof opts.global === 'boolean') ? opts.global : true
+  }
+
+  params.onUnsupportedEncoding = opts.onUnsupportedEncoding
+  params.inflateIfDeflated = opts.inflateIfDeflated === true
+  params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
+  params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
+  params.compressStream = {
     gzip: (opts.zlib || zlib).createGzip || zlib.createGzip,
     deflate: (opts.zlib || zlib).createDeflate || zlib.createDeflate
   }
-  const uncompressStream = {
+  params.uncompressStream = {
     gzip: (opts.zlib || zlib).createGunzip || zlib.createGunzip,
     deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
   }
 
   const supportedEncodings = ['gzip', 'deflate', 'identity']
   if (opts.brotli) {
-    compressStream.br = opts.brotli.compressStream
+    params.compressStream.br = opts.brotli.compressStream
     supportedEncodings.unshift('br')
   } else if (zlib.createBrotliCompress) {
-    compressStream.br = zlib.createBrotliCompress
+    params.compressStream.br = zlib.createBrotliCompress
     supportedEncodings.unshift('br')
   }
 
-  if (opts.encodings && opts.encodings.length < 1) {
-    next(new Error('The `encodings` option array must have at least 1 item.'))
-  }
-
-  const encodings = Array.isArray(opts.encodings)
+  params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
       .filter(encoding => opts.encodings.includes(encoding))
       .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
 
-  if (encodings.length < 1) {
-    next(new Error('None of the passed `encodings` were supported — compression not possible.'))
+  return params
+}
+
+function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
+  // In order to provide a compress method with the same parameter set as the route itself has
+  // we do the decorate the reply at the start of the request
+  if (Array.isArray(routeOptions.onRequest)) {
+    routeOptions.onRequest.push(onRequest)
+  } else if (typeof routeOptions.onRequest === 'function') {
+    routeOptions.onRequest = [routeOptions.onRequest, onRequest]
+  } else {
+    routeOptions.onRequest = [onRequest]
   }
 
-  next()
+  const compressFn = compress(params)
+  function onRequest (req, reply, next) {
+    reply.compress = compressFn
+    next()
+  }
 
-  function compress (payload) {
-    if (payload == null) {
-      this.res.log.debug('compress: missing payload')
-      this.send(new Error('Internal server error'))
-      return
-    }
+  if (decorateOnly) {
+    return
+  }
 
-    var stream, encoding
-    var noCompress =
-      // don't compress on x-no-compression header
-      (this.request.headers['x-no-compression'] !== undefined) ||
-      // don't compress if not one of the indicated compressible types
-      (shouldCompress(this.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
-      // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(encodings, this.request)) == null || encoding === 'identity')
-
-    if (encoding == null && onUnsupportedEncoding != null) {
-      var encodingHeader = this.request.headers['accept-encoding']
-
-      var errorPayload
-      try {
-        errorPayload = onUnsupportedEncoding(encodingHeader, this.request, this)
-      } catch (ex) {
-        errorPayload = ex
-      }
-      return this.send(errorPayload)
-    }
-
-    if (noCompress) {
-      if (inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
-        encoding === undefined
-          ? this.removeHeader('Content-Encoding')
-          : this.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(this))
-      }
-      return this.send(payload)
-    }
-
-    if (typeof payload.pipe !== 'function') {
-      if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
-        payload = this.serialize(payload)
-      }
-    }
-
-    if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < threshold) {
-        return this.send(payload)
-      }
-      payload = intoStream(payload)
-    }
-
-    this
-      .header('Content-Encoding', encoding)
-      .removeHeader('content-length')
-
-    stream = zipStream(compressStream, encoding)
-    pump(payload, stream, onEnd.bind(this))
-    this.send(stream)
+  if (Array.isArray(routeOptions.onSend)) {
+    routeOptions.onSend.push(onSend)
+  } else if (typeof routeOptions.onSend === 'function') {
+    routeOptions.onSend = [routeOptions.onSend, onSend]
+  } else {
+    routeOptions.onSend = [onSend]
   }
 
   function onSend (req, reply, payload, next) {
@@ -130,15 +135,15 @@ function compressPlugin (fastify, opts, next) {
     var noCompress =
       // don't compress on x-no-compression header
       (req.headers['x-no-compression'] !== undefined) ||
-      // don't compress if not one of the indiated compressible types
-      (shouldCompress(reply.getHeader('Content-Type') || 'application/json', compressibleTypes) === false) ||
+      // don't compress if not one of the indicated compressible types
+      (shouldCompress(reply.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(encodings, req)) == null || encoding === 'identity')
+      ((encoding = getEncodingHeader(params.encodings, req)) == null || encoding === 'identity')
 
-    if (encoding == null && onUnsupportedEncoding != null) {
+    if (encoding == null && params.onUnsupportedEncoding != null) {
       var encodingHeader = req.headers['accept-encoding']
       try {
-        var errorPayload = onUnsupportedEncoding(encodingHeader, reply.request, reply)
+        var errorPayload = params.onUnsupportedEncoding(encodingHeader, reply.request, reply)
         return next(null, errorPayload)
       } catch (err) {
         return next(err)
@@ -146,17 +151,17 @@ function compressPlugin (fastify, opts, next) {
     }
 
     if (noCompress) {
-      if (inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
+      if (params.inflateIfDeflated && isStream(stream = maybeUnzip(payload))) {
         encoding === undefined
           ? reply.removeHeader('Content-Encoding')
           : reply.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(uncompressStream), onEnd.bind(reply))
+        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < threshold) {
+      if (Buffer.byteLength(payload) < params.threshold) {
         return next()
       }
       payload = intoStream(payload)
@@ -166,9 +171,71 @@ function compressPlugin (fastify, opts, next) {
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
 
-    stream = zipStream(compressStream, encoding)
+    stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(reply))
     next(null, stream)
+  }
+}
+
+function compress (params) {
+  return function (payload) {
+    if (payload == null) {
+      this.res.log.debug('compress: missing payload')
+      this.send(new Error('Internal server error'))
+      return
+    }
+
+    var stream, encoding
+    var noCompress =
+      // don't compress on x-no-compression header
+      (this.request.headers['x-no-compression'] !== undefined) ||
+      // don't compress if not one of the indicated compressible types
+      (shouldCompress(this.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
+      // don't compress on missing or identity `accept-encoding` header
+      ((encoding = getEncodingHeader(params.encodings, this.request)) == null || encoding === 'identity')
+
+    if (encoding == null && params.onUnsupportedEncoding != null) {
+      var encodingHeader = this.request.headers['accept-encoding']
+
+      var errorPayload
+      try {
+        errorPayload = params.onUnsupportedEncoding(encodingHeader, this.request, this)
+      } catch (ex) {
+        errorPayload = ex
+      }
+      return this.send(errorPayload)
+    }
+
+    if (noCompress) {
+      if (params.inflateIfDeflated && isStream(stream = maybeUnzip(payload, this.serialize.bind(this)))) {
+        encoding === undefined
+          ? this.removeHeader('Content-Encoding')
+          : this.header('Content-Encoding', 'identity')
+        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
+      }
+      return this.send(payload)
+    }
+
+    if (typeof payload.pipe !== 'function') {
+      if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
+        payload = this.serialize(payload)
+      }
+    }
+
+    if (typeof payload.pipe !== 'function') {
+      if (Buffer.byteLength(payload) < params.threshold) {
+        return this.send(payload)
+      }
+      payload = intoStream(payload)
+    }
+
+    this
+      .header('Content-Encoding', encoding)
+      .removeHeader('content-length')
+
+    stream = zipStream(params.compressStream, encoding)
+    pump(payload, stream, onEnd.bind(this))
+    this.send(stream)
   }
 }
 
@@ -247,6 +314,6 @@ function unzipStream (inflate, maxRecursion) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=1.3.0',
+  fastify: '>=2.11.0',
   name: 'fastify-compress'
 })
