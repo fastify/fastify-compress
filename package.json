@@ -1,6 +1,6 @@
 {
   "name": "fastify-compress",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Fastify compression utils",
   "main": "index.js",
   "dependencies": {
@@ -11,25 +11,25 @@
     "is-gzip": "^1.0.0",
     "is-stream": "^2.0.0",
     "is-zip": "^1.0.0",
-    "mime-db": "^1.33.0",
+    "mime-db": "^1.43.0",
     "minipass": "^2.9.0",
     "peek-stream": "^1.1.0",
     "pump": "^3.0.0",
-    "pumpify": "^2.0.0",
+    "pumpify": "^2.0.1",
     "string-to-stream": "^3.0.0",
-    "unzipper": "^0.10.1"
+    "unzipper": "^0.10.8"
   },
   "devDependencies": {
     "@types/node": "^13.1.0",
-    "@typescript-eslint/parser": "^2.0.0",
+    "@typescript-eslint/parser": "^2.19.2",
     "eslint-plugin-typescript": "^0.14.0",
     "fastify": "^2.11.0",
     "iltorb": "2.4.3",
     "jsonstream": "^1.0.3",
     "pre-commit": "^1.2.2",
-    "standard": "^14.0.2",
-    "typescript": "^3.4.5",
-    "tap": "^12.6.6"
+    "standard": "^14.3.1",
+    "tap": "^12.6.6",
+    "typescript": "^3.7.5"
   },
   "scripts": {
     "unit": "tap test/*.js",
