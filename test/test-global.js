@@ -1611,3 +1611,26 @@ test('Should error if no entries in `encodings` are supported', t => {
     t.ok(err instanceof Error)
   })
 })
+
+test('Should not compress mime types with undefined compressible values', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { brotli, threshold: 0 })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('image/webp').send('hello')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip, deflate, br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.strictEqual(res.payload, 'hello')
+  })
+})

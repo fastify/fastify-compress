@@ -258,7 +258,7 @@ function shouldCompress (type, compressibleTypes) {
   if (compressibleTypes.test(type)) return true
   var data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
-  return data.compressible
+  return data.compressible === true
 }
 
 function isCompressed (data) {
