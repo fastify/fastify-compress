@@ -314,6 +314,6 @@ function unzipStream (inflate, maxRecursion) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=2.11.0',
+  fastify: '>=3',
   name: 'fastify-compress'
 })
