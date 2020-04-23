@@ -1,10 +1,10 @@
 import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase } from 'fastify'
 import { Stream } from 'stream';
-import { Input } from 'into-stream';
+import { Input, InputObject } from 'into-stream';
 
 declare module "fastify" {
   interface FastifyReplyInterface {
-    compress(input: Input): void;
+    compress(input: Stream | Input | InputObject): void;
   }
 }
 
