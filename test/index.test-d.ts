@@ -1,5 +1,5 @@
-import * as fastify from 'fastify'
-import * as fastifyCompress from '../..'
+import fastify from 'fastify'
+import fastifyCompress from '..'
 
 const zlib = require('zlib')
 const iltorb = require('iltorb')
