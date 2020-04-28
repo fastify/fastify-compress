@@ -2,7 +2,6 @@
 
 const t = require('tap')
 const test = t.test
-const brotli = require('iltorb')
 const zlib = require('zlib')
 const fs = require('fs')
 const JSONStream = require('jsonstream')
@@ -248,7 +247,7 @@ test('should send a gzipped data for * header', t => {
 test('should send a brotli data', t => {
   t.plan(3)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, global: false })
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -264,7 +263,7 @@ test('should send a brotli data', t => {
     t.error(err)
     t.strictEqual(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
   })
 })
@@ -272,7 +271,7 @@ test('should send a brotli data', t => {
 test('should follow the encoding order', t => {
   t.plan(3)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, global: false })
+  fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').compress(createReadStream('./package.json'))
@@ -288,7 +287,7 @@ test('should follow the encoding order', t => {
     t.error(err)
     t.strictEqual(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), file)
   })
 })
@@ -685,7 +684,7 @@ test('Should compress buffer (deflate)', t => {
 test('Should compress buffer (brotli)', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: false, brotli, threshold: 0 })
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
   const buf = Buffer.from('hello world')
 
   fastify.get('/', (req, reply) => {
@@ -700,7 +699,7 @@ test('Should compress buffer (brotli)', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), buf.toString())
   })
 })
@@ -724,7 +723,7 @@ if (zlib.createBrotliCompress) {
       }
     }, (err, res) => {
       t.error(err)
-      const payload = brotli.decompressSync(res.rawPayload)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
       t.strictEqual(payload.toString('utf-8'), buf.toString())
     })
   })
@@ -802,7 +801,7 @@ test('Should compress buffer (deflate) - global', t => {
 test('Should compress buffer (brotli) - global', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0 })
   const buf = Buffer.from('hello world')
 
   fastify.get('/', (req, reply) => {
@@ -817,7 +816,7 @@ test('Should compress buffer (brotli) - global', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), buf.toString())
   })
 })
@@ -841,7 +840,7 @@ if (zlib.createBrotliCompress) {
       }
     }, (err, res) => {
       t.error(err)
-      const payload = brotli.decompressSync(res.rawPayload)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
       t.strictEqual(payload.toString('utf-8'), buf.toString())
     })
   })
@@ -896,7 +895,7 @@ test('Should compress json data (deflate)', t => {
 test('Should compress json data (brotli)', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: false, brotli, threshold: 0 })
+  fastify.register(compressPlugin, { global: false, threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -911,7 +910,7 @@ test('Should compress json data (brotli)', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
@@ -935,7 +934,7 @@ if (zlib.createBrotliCompress) {
       }
     }, (err, res) => {
       t.error(err)
-      const payload = brotli.decompressSync(res.rawPayload)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
       t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
     })
   })
@@ -988,7 +987,7 @@ test('Should compress string data (deflate)', t => {
 test('Should compress string data (brotli)', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.type('text/plain').send('hello')
@@ -1002,7 +1001,7 @@ test('Should compress string data (brotli)', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), 'hello')
   })
 })
@@ -1025,7 +1024,7 @@ if (zlib.createBrotliCompress) {
       }
     }, (err, res) => {
       t.error(err)
-      const payload = brotli.decompressSync(res.rawPayload)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
       t.strictEqual(payload.toString('utf-8'), 'hello')
     })
   })
@@ -1245,7 +1244,7 @@ test('Should compress json data (deflate) - global', t => {
 test('Should compress json data (brotli) - global', t => {
   t.plan(2)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0 })
   const json = { hello: 'world' }
 
   fastify.get('/', (req, reply) => {
@@ -1260,7 +1259,7 @@ test('Should compress json data (brotli) - global', t => {
     }
   }, (err, res) => {
     t.error(err)
-    const payload = brotli.decompressSync(res.rawPayload)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
@@ -1284,7 +1283,7 @@ if (zlib.createBrotliCompress) {
       }
     }, (err, res) => {
       t.error(err)
-      const payload = brotli.decompressSync(res.rawPayload)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
       t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
     })
   })
@@ -1615,7 +1614,7 @@ test('Should error if no entries in `encodings` are supported', t => {
 test('Should not compress mime types with undefined compressible values', t => {
   t.plan(4)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { brotli, threshold: 0 })
+  fastify.register(compressPlugin, { threshold: 0 })
 
   fastify.get('/', (req, reply) => {
     reply.type('image/webp').send('hello')

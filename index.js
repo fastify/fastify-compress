@@ -79,10 +79,7 @@ function processParams (opts) {
   }
 
   const supportedEncodings = ['gzip', 'deflate', 'identity']
-  if (opts.brotli) {
-    params.compressStream.br = opts.brotli.compressStream
-    supportedEncodings.unshift('br')
-  } else if (zlib.createBrotliCompress) {
+  if (zlib.createBrotliCompress) {
     params.compressStream.br = zlib.createBrotliCompress
     supportedEncodings.unshift('br')
   }
@@ -127,7 +124,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
 
   function onSend (req, reply, payload, next) {
     if (payload == null) {
-      reply.res.log.debug('compress: missing payload')
+      reply.log.debug('compress: missing payload')
       return next()
     }
 
@@ -180,7 +177,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
 function compress (params) {
   return function (payload) {
     if (payload == null) {
-      this.res.log.debug('compress: missing payload')
+      this.log.debug('compress: missing payload')
       this.send(new Error('Internal server error'))
       return
     }
@@ -240,7 +237,7 @@ function compress (params) {
 }
 
 function onEnd (err) {
-  if (err) this.res.log.error(err)
+  if (err) this.raw.log.error(err)
 }
 
 function getEncodingHeader (encodings, request) {
@@ -314,6 +311,6 @@ function unzipStream (inflate, maxRecursion) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '>=2.11.0',
+  fastify: '3.x',
   name: 'fastify-compress'
 })

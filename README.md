@@ -101,17 +101,6 @@ fastify.register(
   { customTypes: /x-protobuf$/ }
 )
 ```
-### Brotli
-Brotli compression is enabled by default if your Node.js supports it natively (≥ v11.7.0).
-
-For Node.js versions that don’t natively support Brotli, it's not enabled by default. If you need it, we recommend installing [`iltorb`](https://www.npmjs.com/package/iltorb) and passing it to the `brotli` option:
-
-```javascript
-fastify.register(
-  require('fastify-compress'),
-  { brotli: require('iltorb') }
-)
-```
 
 ### onUnsupportedEncoding
 When the encoding is not supported, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, request, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
