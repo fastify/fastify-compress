@@ -1,7 +1,5 @@
 # fastify-compress
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/fastify/fastify-compress.svg)](https://greenkeeper.io/)
-
 [![Build Status](https://travis-ci.org/fastify/fastify-compress.svg?branch=master)](https://travis-ci.org/fastify/fastify-compress) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 
 Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/master/Reply/).  
@@ -149,7 +147,9 @@ fastify.register(
 Please note that in large-scale scenarios, you should use a proxy like Nginx to handle response compression.
 
 ## Acknowledgements
-This project is kindly sponsored by:
+
+Past sponsors:
+
 - [LetzDoIt](http://www.letzdoitapp.com/)
 
 ## License
