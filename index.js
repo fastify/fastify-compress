@@ -79,10 +79,7 @@ function processParams (opts) {
   }
 
   const supportedEncodings = ['gzip', 'deflate', 'identity']
-  if (opts.brotli) {
-    params.compressStream.br = opts.brotli.compressStream
-    supportedEncodings.unshift('br')
-  } else if (zlib.createBrotliCompress) {
+  if (zlib.createBrotliCompress) {
     params.compressStream.br = zlib.createBrotliCompress
     supportedEncodings.unshift('br')
   }

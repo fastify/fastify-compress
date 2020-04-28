@@ -14,7 +14,6 @@ export interface FastifyCompressOptions {
   global?: boolean
   threshold?: number
   customTypes?: RegExp
-  brotli?: NodeModule
   zlib?: NodeModule
   inflateIfDeflated?: boolean
   onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => string | Buffer | Stream
