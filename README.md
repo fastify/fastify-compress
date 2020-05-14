@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/fastify/fastify-compress.svg?branch=master)](https://travis-ci.org/fastify/fastify-compress) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 
-Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/master/Reply/).  
+Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/master/Reply/) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
 
 ## Install
@@ -10,7 +10,8 @@ Supports `gzip`, `deflate`, and `brotli`.
 npm i fastify-compress
 ```
 
-## Usage
+## Usage - Compress replies
+
 This plugin adds two functionalities to Fastify: a compress utility and a global compression hook.
 
 Currently, the following encoding tokens are supported, using the first acceptable token in this order:
@@ -36,7 +37,7 @@ fastify.register(
 Remember that thanks to the Fastify encapsulation model, you can set a global compression, but run it only in a subset of routes if you wrap them inside a plugin.
 
 ### Per Route options
-You can specify different options for compression per route by passing in the compression options on the route's configuration.
+You can specify different options for compression per route by passing in the `compress` options on the route's configuration.
 ```javascript
 fastify.register(
   require('fastify-compress'),
@@ -81,9 +82,9 @@ fastify.listen(3000, function (err) {
 })
 ```
 
-## Options
+## Compress Options
 
-### Threshold
+### threshold
 The minimum byte size for a response to be compressed. Defaults to `1024`.
 ```javascript
 fastify.register(
@@ -133,13 +134,120 @@ fastify.get('/file', (req, reply) =>
 
 ### Customize encoding priority
 
-By default, `fastify-compress` prioritizes compression as described [at the beginning of §Usage](#usage). You can change that by passing an array of compression tokens to the `encodings` option:
+By default, `fastify-compress` prioritizes compression as described [at the beginning of §Usage - Compress replies](#usage). You can change that by passing an array of compression tokens to the `encodings` option:
 
 ```javascript
 fastify.register(
   require('fastify-compress'),
   // Only support gzip and deflate, and prefer deflate to gzip
   { encodings: ['deflate', 'gzip'] }
+)
+```
+
+## Usage - Decompress request payloads
+
+This plugin add a `preDecoding` hook that decompress the request payload according to the `content-encoding` request header.
+
+Currently, the following encoding tokens are supported:
+
+1. `br`
+2. `gzip`
+3. `deflate`
+
+If an unsupported encoding or and invalid payload is received, the plugin will throw an error.
+
+If the request header is missing, the plugin will not do anything and yield to the next hook.
+
+### Global hook
+
+The global request decompression hook is enabled by default. To disable it, pass the option `{ global: false }`:
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { global: false }
+)
+```
+
+Remember that thanks to the Fastify encapsulation model, you can set a global decompression, but run it only in a subset of routes if you wrap them inside a plugin.
+
+### Per Route options
+
+You can specify different options for decompression per route by passing in the `decompress` options on the route's configuration.
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  { global: false }
+)
+
+// Always decompress using gzip
+fastify.get('/custom-route', {
+    config: {
+      decompress: {
+        forceRequestEncoding: 'gzip'
+      }
+    }
+  }, (req, reply) => {
+    // ...
+  })
+```
+
+### requestEncodings
+
+By default, `fastify-compress` accepts all encodings specified [at the beginning of §Usage - Decompress request payloads](#usage). You can change that by passing an array of compression tokens to the `requestEncodings` option:
+
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  // Only support gzip
+  { requestEncodings: ['gzip'] }
+)
+```
+
+### forceRequestEncoding
+
+By default, `fastify-compress` chooses the decompressing algorithm by looking at the `content-encoding` header, if present.
+
+You can force one algorithm and ignore the header at all by providing the `forceRequestEncoding` option.
+
+Note that if the request payload is not compressed, `fastify-compress` will try to decompress, resulting in an error.
+
+### onUnsupportedRequestEncoding
+
+When the request payload encoding is not supported, you can customize the response error by setting the `onUnsupportedEncoding(request, encoding)` option to be a function that returns an error.
+
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  {
+     onUnsupportedRequestEncoding: (request, encoding) => {
+      return {
+        statusCode: 415,
+        code: 'UNSUPPORTED',
+        error: 'Unsupported Media Type',
+        message: 'We do not support the ' + encoding + ' encoding.'
+      }
+    }
+  }
+)
+```
+
+### onInvalidRequestPayload
+
+When the request payload cannot be decompressed using the detected algorithm, you can customize the response error setting the `onInvalidRequestPayload(request, encoding)` option to be a function that returns an error.
+
+```javascript
+fastify.register(
+  require('fastify-compress'),
+  {
+    onInvalidRequestPayload: (request, encoding, error) => {
+      return {
+        statusCode: 400,
+        code: 'BAD_REQUEST',
+        error: 'Bad Request',
+        message: 'This is not a valid ' + encoding + ' encoded payload: ' + error.message
+      }
+    }
+  }
 )
 ```
 

@@ -14,17 +14,32 @@ const isZip = require('is-zip')
 const unZipper = require('unzipper')
 const isDeflate = require('is-deflate')
 const encodingNegotiator = require('encoding-negotiator')
+const { inherits, format } = require('util')
+
+const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
+const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompressed the request payload using the provided encoding', 400)
 
 function compressPlugin (fastify, opts, next) {
-  const globalParams = processParams(opts)
+  const globalCompressParams = processCompressParams(opts)
+  const globalDecompressParams = processDecompressParams(opts)
 
   if (opts.encodings && opts.encodings.length < 1) {
     next(new Error('The `encodings` option array must have at least 1 item.'))
     return
   }
 
-  if (globalParams.encodings.length < 1) {
+  if (opts.requestEncodings && opts.requestEncodings.length < 1) {
+    next(new Error('The `requestEncodings` option array must have at least 1 item.'))
+    return
+  }
+
+  if (globalCompressParams.encodings.length < 1) {
     next(new Error('None of the passed `encodings` were supported — compression not possible.'))
+    return
+  }
+
+  if (globalDecompressParams.encodings.length < 1) {
+    next(new Error('None of the passed `requestEncodings` were supported — request decompression not possible.'))
     return
   }
 
@@ -32,9 +47,13 @@ function compressPlugin (fastify, opts, next) {
 
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
+    // Manage compression options
     if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
       if (typeof routeOptions.config.compress === 'object') {
-        const mergedCompressParams = Object.assign({}, globalParams, processParams(routeOptions.config.compress))
+        const mergedCompressParams = Object.assign(
+          {}, globalCompressParams, processCompressParams(routeOptions.config.compress)
+        )
+
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
       } else if (routeOptions.config.compress === false) {
@@ -42,14 +61,34 @@ function compressPlugin (fastify, opts, next) {
       } else {
         throw new Error('Unknown value for route compress configuration')
       }
-    } else if (globalParams.global) {
+    } else if (globalCompressParams.global) {
       // if the plugin is set globally ( meaning that all the routes will be compressed )
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
-      buildRouteCompress(fastify, globalParams, routeOptions)
+      buildRouteCompress(fastify, globalCompressParams, routeOptions)
     } else {
       // if no options are specified and the plugin is not global, then we still want to decorate
       // the reply in this case
-      buildRouteCompress(fastify, globalParams, routeOptions, true)
+      buildRouteCompress(fastify, globalCompressParams, routeOptions, true)
+    }
+
+    // Manage decompression options
+    if (routeOptions.config && typeof routeOptions.config.decompress !== 'undefined') {
+      if (typeof routeOptions.config.decompress === 'object') {
+        // if the current endpoint has a custom compress configuration ...
+        const mergedDecompressParams = Object.assign(
+          {}, globalDecompressParams, processDecompressParams(routeOptions.config.decompress)
+        )
+        
+        buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
+      } else if (routeOptions.config.decompress === false) {
+        // don't apply any decompress settings
+      } else {
+        throw new Error('Unknown value for route decompress configuration')
+      }
+    } else if (globalDecompressParams.global) {
+      // if the plugin is set globally ( meaning that all the routes will be decompressed )
+      // As the endpoint, does not have a custom rateLimit configuration, use the global one.
+      buildRouteDecompress(fastify, globalDecompressParams, routeOptions)
     }
   })
 
@@ -89,6 +128,50 @@ function processParams (opts) {
       .filter(encoding => opts.encodings.includes(encoding))
       .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
+
+  return params
+}
+
+function processDecompressParams (opts) {
+  if (!opts) {
+    return
+  }
+
+  const customZlib = opts.zlib || zlib
+
+  const params = {
+    global: (typeof opts.global === 'boolean') ? opts.global : true,
+    onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
+    onInvalidRequestPayload: opts.onInvalidRequestPayload,
+    decompressStream: {
+      gzip: customZlib.createGunzip || zlib.createGunzip,
+      deflate: customZlib.createInflate || zlib.createInflate
+    },
+    encodings: [],
+    forceEncoding: null
+  }
+
+  const supportedEncodings = ['gzip', 'deflate', 'identity']
+
+  if (zlib.createBrotliCompress) {
+    params.decompressStream.br = customZlib.createBrotliDecompress || zlib.createBrotliDecompress
+    supportedEncodings.unshift('br')
+  }
+
+  params.encodings = Array.isArray(opts.requestEncodings)
+    ? supportedEncodings
+      .filter(encoding => opts.requestEncodings.includes(encoding))
+      .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
+    : supportedEncodings
+
+  if (opts.forceRequestEncoding) {
+    if (!params.encodings.includes(opts.forceRequestEncoding)) {
+      throw new Error(`Unsupported decompression encoding ${opts.forceRequestEncoding}`)
+    }
+
+    params.encodings = [opts.forceRequestEncoding]
+    params.forceEncoding = opts.forceRequestEncoding
+  }
 
   return params
 }
@@ -174,6 +257,62 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
   }
 }
 
+function buildRouteDecompress (fastify, params, routeOptions) {
+  // Add our decompress handler in the preDecoding hook
+  if (Array.isArray(routeOptions.preDecoding)) {
+    routeOptions.preDecoding.unshift(preDecoding)
+  } else if (typeof routeOptions.preDecoding === 'function') {
+    routeOptions.preDecoding = [preDecoding, routeOptions.preDecoding]
+  } else {
+    routeOptions.preDecoding = [preDecoding]
+  }
+
+  function preDecoding (request, reply, raw, next) {
+    // Get the encoding from the options or from the headers
+    let encoding = params.forceEncoding
+
+    if (!encoding) {
+      encoding = request.headers['content-encoding']
+    }
+
+    // The request is not compressed, nothing to do here
+    if (!encoding) {
+      return next(null, raw)
+    }
+
+    // Check that encoding is supported
+    if (!params.encodings.includes(encoding)) {
+      let errorPayload
+
+      if (params.onUnsupportedRequestEncoding) {
+        try {
+          errorPayload = params.onUnsupportedRequestEncoding(request, encoding)
+        } catch (ex) {
+          errorPayload = undefined
+        }
+      }
+
+      if (!errorPayload) {
+        errorPayload = new InvalidRequestEncodingError(encoding)
+      }
+
+      return next(errorPayload)
+    }
+
+    // Prepare decompression - If there is an decompress error, prepare the error for fastify handing
+    const decompresser = params.decompressStream[encoding]()
+    decompresser.receivedEncodedLength = 0
+    decompresser.on('error', onDecompressError.bind(this, request, params, encoding))
+    decompresser.pause()
+
+    // Track length of encoded length to handle receivedEncodedLength
+    raw.on('data', trackEncodedLength.bind(decompresser))
+    raw.on('end', removeEncodedLengthTracking)
+
+    next(null, pump(raw, decompresser))
+  }
+}
+
 function compress (params) {
   return function (payload) {
     if (payload == null) {
@@ -238,6 +377,36 @@ function compress (params) {
 
 function onEnd (err) {
   if (err) this.raw.log.error(err)
+}
+
+function trackEncodedLength (chunk) {
+  this.receivedEncodedLength += chunk.length
+}
+
+function removeEncodedLengthTracking () {
+  this.removeListener('data', trackEncodedLength)
+  this.removeListener('end', removeEncodedLengthTracking)
+}
+
+function onDecompressError (request, params, encoding, error) {
+  this.log.debug(`compress: invalid request payload - ${error}`)
+
+  let errorPayload
+
+  if (params.onInvalidRequestPayload) {
+    try {
+      errorPayload = params.onInvalidRequestPayload(request, encoding, error)
+    } catch (ex) {
+      errorPayload = undefined
+    }
+  }
+
+  if (!errorPayload) {
+    errorPayload = new InvalidRequestCompressedPayloadError()
+  }
+
+  error.decompressError = error
+  Object.assign(error, errorPayload)
 }
 
 function getEncodingHeader (encodings, request) {
@@ -308,6 +477,34 @@ function unzipStream (inflate, maxRecursion) {
     }
     return swap(null, new Minipass())
   })
+}
+
+function createError (code, message, statusCode = 500) {
+  code = code.toUpperCase()
+
+  function FastifyCompressError (a) {
+    Error.captureStackTrace(this, FastifyCompressError)
+    this.name = 'FastifyCompressError'
+    this.code = code
+
+    if (a) {
+      this.message = format(message, a)
+    } else {
+      this.message = message
+    }
+
+    this.statusCode = statusCode || undefined
+  }
+
+  FastifyCompressError.prototype[Symbol.toStringTag] = 'Error'
+
+  FastifyCompressError.prototype.toString = function () {
+    return `${this.name} [${this.code}]: ${this.message}`
+  }
+
+  inherits(FastifyCompressError, Error)
+
+  return FastifyCompressError
 }
 
 module.exports = fp(compressPlugin, {
