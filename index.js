@@ -17,7 +17,7 @@ const encodingNegotiator = require('encoding-negotiator')
 const { inherits, format } = require('util')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
-const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompressed the request payload using the provided encoding', 400)
+const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
 function compressPlugin (fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
@@ -41,6 +41,11 @@ function compressPlugin (fastify, opts, next) {
   if (globalDecompressParams.encodings.length < 1) {
     next(new Error('None of the passed `requestEncodings` were supported — request decompression not possible.'))
     return
+  }
+
+  if (globalDecompressParams.forceEncoding && !globalDecompressParams.encodings.includes(globalDecompressParams.forceEncoding)) {
+    next(new Error(`Unsupported decompression encoding ${opts.forceRequestEncoding}.`))
+    return 
   }
 
   fastify.decorateReply('compress', null)
@@ -78,7 +83,7 @@ function compressPlugin (fastify, opts, next) {
         const mergedDecompressParams = Object.assign(
           {}, globalDecompressParams, processDecompressParams(routeOptions.config.decompress)
         )
-        
+
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.config.decompress === false) {
         // don't apply any decompress settings
@@ -95,7 +100,8 @@ function compressPlugin (fastify, opts, next) {
   next()
 }
 
-function processParams (opts) {
+function processCompressParams (opts) {
+  /* istanbul ignore next */
   if (!opts) {
     return
   }
@@ -118,6 +124,8 @@ function processParams (opts) {
   }
 
   const supportedEncodings = ['gzip', 'deflate', 'identity']
+
+  /* istanbul ignore next */
   if (zlib.createBrotliCompress) {
     params.compressStream.br = zlib.createBrotliCompress
     supportedEncodings.unshift('br')
@@ -133,6 +141,7 @@ function processParams (opts) {
 }
 
 function processDecompressParams (opts) {
+  /* istanbul ignore next */
   if (!opts) {
     return
   }
@@ -153,6 +162,7 @@ function processDecompressParams (opts) {
 
   const supportedEncodings = ['gzip', 'deflate', 'identity']
 
+  /* istanbul ignore next */
   if (zlib.createBrotliCompress) {
     params.decompressStream.br = customZlib.createBrotliDecompress || zlib.createBrotliDecompress
     supportedEncodings.unshift('br')
@@ -165,12 +175,11 @@ function processDecompressParams (opts) {
     : supportedEncodings
 
   if (opts.forceRequestEncoding) {
-    if (!params.encodings.includes(opts.forceRequestEncoding)) {
-      throw new Error(`Unsupported decompression encoding ${opts.forceRequestEncoding}`)
-    }
-
-    params.encodings = [opts.forceRequestEncoding]
     params.forceEncoding = opts.forceRequestEncoding
+
+    if (params.encodings.includes(opts.forceRequestEncoding)) {
+      params.encodings = [opts.forceRequestEncoding]
+    }
   }
 
   return params
@@ -288,6 +297,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
         try {
           errorPayload = params.onUnsupportedRequestEncoding(request, encoding)
         } catch (ex) {
+          /* istanbul ignore next */
           errorPayload = undefined
         }
       }
@@ -297,6 +307,11 @@ function buildRouteDecompress (fastify, params, routeOptions) {
       }
 
       return next(errorPayload)
+    }
+
+    // No action on identity
+    if (encoding === 'identity') {
+      return next(null, raw)
     }
 
     // Prepare decompression - If there is an decompress error, prepare the error for fastify handing
@@ -397,6 +412,7 @@ function onDecompressError (request, params, encoding, error) {
     try {
       errorPayload = params.onInvalidRequestPayload(request, encoding, error)
     } catch (ex) {
+      /* istanbul ignore next */
       errorPayload = undefined
     }
   }
@@ -479,7 +495,7 @@ function unzipStream (inflate, maxRecursion) {
   })
 }
 
-function createError (code, message, statusCode = 500) {
+function createError (code, message, statusCode) {
   code = code.toUpperCase()
 
   function FastifyCompressError (a) {
@@ -493,11 +509,12 @@ function createError (code, message, statusCode = 500) {
       this.message = message
     }
 
-    this.statusCode = statusCode || undefined
+    this.statusCode = statusCode
   }
 
   FastifyCompressError.prototype[Symbol.toStringTag] = 'Error'
 
+  /* istanbul ignore next */
   FastifyCompressError.prototype.toString = function () {
     return `${this.name} [${this.code}]: ${this.message}`
   }
