@@ -45,7 +45,7 @@ function compressPlugin (fastify, opts, next) {
 
   if (globalDecompressParams.forceEncoding && !globalDecompressParams.encodings.includes(globalDecompressParams.forceEncoding)) {
     next(new Error(`Unsupported decompression encoding ${opts.forceRequestEncoding}.`))
-    return 
+    return
   }
 
   fastify.decorateReply('compress', null)
@@ -295,7 +295,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
 
       if (params.onUnsupportedRequestEncoding) {
         try {
-          errorPayload = params.onUnsupportedRequestEncoding(request, encoding)
+          errorPayload = params.onUnsupportedRequestEncoding(encoding, request)
         } catch (ex) {
           /* istanbul ignore next */
           errorPayload = undefined
@@ -410,7 +410,7 @@ function onDecompressError (request, params, encoding, error) {
 
   if (params.onInvalidRequestPayload) {
     try {
-      errorPayload = params.onInvalidRequestPayload(request, encoding, error)
+      errorPayload = params.onInvalidRequestPayload(encoding, request, error)
     } catch (ex) {
       /* istanbul ignore next */
       errorPayload = undefined

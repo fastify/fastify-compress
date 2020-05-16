@@ -2,14 +2,15 @@
 
 const t = require('tap')
 const test = t.test
+const path = require('path')
 const zlib = require('zlib')
 const createReadStream = require('fs').createReadStream
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 const pump = require('pump')
 
-function createPayload(compresser) {
-  let payload = createReadStream(__dirname + '/../package.json')
+function createPayload (compresser) {
+  let payload = createReadStream(path.resolve(__dirname, '../package.json'))
 
   if (compresser) {
     payload = pump(payload, compresser())
@@ -23,12 +24,12 @@ test('should decompress a inflated data with custom inflate', t => {
 
   let usedCustomGlobal = false
   let usedCustom = false
-  
+
   const customZlibGlobal = { createInflate: () => (usedCustomGlobal = true) && zlib.createInflate() }
   const customZlib = { createInflate: () => (usedCustom = true) && zlib.createInflate() }
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {zlib: customZlibGlobal})
+  fastify.register(compressPlugin, { zlib: customZlibGlobal })
 
   fastify.post('/', (req, reply) => {
     reply.send(req.body.name)
@@ -43,7 +44,7 @@ test('should decompress a inflated data with custom inflate', t => {
   }, (req, reply) => {
     reply.send(req.body.name)
   })
-  
+
   fastify.inject({
     url: '/',
     method: 'POST',
@@ -82,15 +83,15 @@ test('should decompress a inflated data with custom inflate', t => {
 
 test('should decompress a inflated data with custom gzip', t => {
   t.plan(10)
-  
+
   let usedCustomGlobal = false
   let usedCustom = false
-  
+
   const customZlibGlobal = { createGunzip: () => (usedCustomGlobal = true) && zlib.createGunzip() }
   const customZlib = { createGunzip: () => (usedCustom = true) && zlib.createGunzip() }
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {zlib: customZlibGlobal})
+  fastify.register(compressPlugin, { zlib: customZlibGlobal })
 
   fastify.post('/', (req, reply) => {
     reply.send(req.body.name)
@@ -105,7 +106,7 @@ test('should decompress a inflated data with custom gzip', t => {
   }, (req, reply) => {
     reply.send(req.body.name)
   })
-  
+
   fastify.inject({
     url: '/',
     method: 'POST',
@@ -143,16 +144,14 @@ test('should decompress a inflated data with custom gzip', t => {
 })
 
 test('should not decompress if route decompression disabled', t => {
-  t.plan(10)
-  
+  t.plan(8)
+
   let usedCustomGlobal = false
-  let usedCustom = false
-  
+
   const customZlibGlobal = { createGunzip: () => (usedCustomGlobal = true) && zlib.createGunzip() }
-  const customZlib = { createGunzip: () => (usedCustom = true) && zlib.createGunzip() }
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {zlib: customZlibGlobal})
+  fastify.register(compressPlugin, { zlib: customZlibGlobal })
 
   fastify.post('/', (req, reply) => {
     reply.send(req.body.name)
@@ -165,7 +164,7 @@ test('should not decompress if route decompression disabled', t => {
   }, (req, reply) => {
     reply.send(req.body.name)
   })
-  
+
   fastify.inject({
     url: '/',
     method: 'POST',
@@ -178,10 +177,8 @@ test('should not decompress if route decompression disabled', t => {
     t.error(err)
     t.strictEqual(res.statusCode, 200)
     t.strictEqual(res.body, 'fastify-compress')
-    t.strictEqual(usedCustom, false)
-    t.strictEqual(usedCustomGlobal, true)    
+    t.strictEqual(usedCustomGlobal, true)
 
-    usedCustom = false
     usedCustomGlobal = false
 
     fastify.inject({
@@ -196,14 +193,13 @@ test('should not decompress if route decompression disabled', t => {
       t.error(err)
       t.strictEqual(res.statusCode, 400)
       t.strictDeepEqual(res.json(), {
-        statusCode:400,
+        statusCode: 400,
         code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
         error: 'Bad Request',
         message: 'Request body size did not match Content-Length'
       })
-      t.strictEqual(usedCustom, false)
       t.strictEqual(usedCustomGlobal, false)
-      })
+    })
   })
 })
 

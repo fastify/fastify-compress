@@ -2,14 +2,15 @@
 
 const t = require('tap')
 const test = t.test
+const path = require('path')
 const zlib = require('zlib')
 const createReadStream = require('fs').createReadStream
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 const pump = require('pump')
 
-function createPayload(compresser) {
-  let payload = createReadStream(__dirname + '/../package.json')
+function createPayload (compresser) {
+  let payload = createReadStream(path.resolve(__dirname, '../package.json'))
 
   if (compresser) {
     payload = pump(payload, compresser())
@@ -123,11 +124,11 @@ if (zlib.createBrotliCompress) {
 
     const fastify = Fastify()
     fastify.register(compressPlugin)
-  
+
     fastify.post('/', (req, reply) => {
       reply.send(req.body.name)
     })
-  
+
     fastify.inject({
       url: '/',
       method: 'POST',
@@ -192,9 +193,9 @@ test('should return an error on unsupported encoding', t => {
     t.strictEqual(res.statusCode, 415)
     t.strictDeepEqual(res.json(), {
       statusCode: 415,
-      code: "FST_CP_ERR_INVALID_CONTENT_ENCODING",
-      error: "Unsupported Media Type",
-      message: "Unsupported Content-Encoding: whatever"
+      code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
+      error: 'Unsupported Media Type',
+      message: 'Unsupported Content-Encoding: whatever'
     })
   })
 })
@@ -203,7 +204,7 @@ test('should return an error on disabled encoding', t => {
   t.plan(3)
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {requestEncodings: ['br']})
+  fastify.register(compressPlugin, { requestEncodings: ['br'] })
 
   fastify.post('/', (req, reply) => {
     reply.send(req.body.name)
@@ -222,9 +223,9 @@ test('should return an error on disabled encoding', t => {
     t.strictEqual(res.statusCode, 415)
     t.strictDeepEqual(res.json(), {
       statusCode: 415,
-      code: "FST_CP_ERR_INVALID_CONTENT_ENCODING",
-      error: "Unsupported Media Type",
-      message: "Unsupported Content-Encoding: gzip"
+      code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
+      error: 'Unsupported Media Type',
+      message: 'Unsupported Content-Encoding: gzip'
     })
   })
 })
@@ -252,9 +253,9 @@ test('should return an error on invalid compressed payload', t => {
     t.strictEqual(res.statusCode, 400)
     t.strictDeepEqual(res.json(), {
       statusCode: 400,
-      code: "FST_CP_ERR_INVALID_CONTENT",
-      error: "Bad Request",
-      message: "Could not decompress the request payload using the provided encoding"
+      code: 'FST_CP_ERR_INVALID_CONTENT',
+      error: 'Bad Request',
+      message: 'Could not decompress the request payload using the provided encoding'
     })
   })
 })
@@ -264,7 +265,7 @@ test('should call callback if unsupported encoding', t => {
 
   const fastify = Fastify()
   fastify.register(compressPlugin, {
-    onUnsupportedRequestEncoding(request, encoding) {
+    onUnsupportedRequestEncoding (encoding, request) {
       return {
         statusCode: 400,
         code: 'INVALID',
@@ -294,7 +295,7 @@ test('should call callback if unsupported encoding', t => {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
-      message: `We don't want to deal with whatever.`
+      message: 'We don\'t want to deal with whatever.'
     })
   })
 })
@@ -304,7 +305,7 @@ test('should call callback if invalid payload', t => {
 
   const fastify = Fastify()
   fastify.register(compressPlugin, {
-    onInvalidRequestPayload(request, encoding, error) {
+    onInvalidRequestPayload (encoding, request, error) {
       return {
         statusCode: 400,
         code: 'INVALID',
@@ -333,7 +334,7 @@ test('should call callback if invalid payload', t => {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
-      message: `What have you sent us? deflate incorrect header check.`
+      message: 'What have you sent us? deflate incorrect header check.'
     })
   })
 })
@@ -342,7 +343,7 @@ test('should validate option requestEncodings', t => {
   t.plan(1)
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {requestEncodings: []})
+  fastify.register(compressPlugin, { requestEncodings: [] })
   // t.throws(() => )
   // // t.throws(() => fastify.register(compressPlugin, {requestEncodings: ['whatever']}))
 
@@ -355,7 +356,7 @@ test('should make sure at least one encoding is supported', t => {
   t.plan(1)
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {requestEncodings: ['whatever']})
+  fastify.register(compressPlugin, { requestEncodings: ['whatever'] })
 
   fastify.ready(err => {
     t.equals(err.message, 'None of the passed `requestEncodings` were supported — request decompression not possible.')
@@ -366,7 +367,7 @@ test('should make sure at least one encoding is supported', t => {
   t.plan(1)
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, {forceRequestEncoding: ['whatever']})
+  fastify.register(compressPlugin, { forceRequestEncoding: ['whatever'] })
 
   fastify.ready(err => {
     t.equals(err.message, 'Unsupported decompression encoding whatever.')
