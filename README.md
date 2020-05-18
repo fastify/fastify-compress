@@ -146,7 +146,7 @@ fastify.register(
 
 ## Usage - Decompress request payloads
 
-This plugin add a `preDecoding` hook that decompress the request payload according to the `content-encoding` request header.
+This plugin adds a `preParsing` hook that decompress the request payload according to the `content-encoding` request header.
 
 Currently, the following encoding tokens are supported:
 

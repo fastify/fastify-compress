@@ -267,16 +267,16 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
 }
 
 function buildRouteDecompress (fastify, params, routeOptions) {
-  // Add our decompress handler in the preDecoding hook
-  if (Array.isArray(routeOptions.preDecoding)) {
-    routeOptions.preDecoding.unshift(preDecoding)
-  } else if (typeof routeOptions.preDecoding === 'function') {
-    routeOptions.preDecoding = [preDecoding, routeOptions.preDecoding]
+  // Add our decompress handler in the preParsing hook
+  if (Array.isArray(routeOptions.preParsing)) {
+    routeOptions.preParsing.unshift(preParsing)
+  } else if (typeof routeOptions.preParsing === 'function') {
+    routeOptions.preParsing = [preParsing, routeOptions.preParsing]
   } else {
-    routeOptions.preDecoding = [preDecoding]
+    routeOptions.preParsing = [preParsing]
   }
 
-  function preDecoding (request, reply, raw, next) {
+  function preParsing (request, reply, raw, next) {
     // Get the encoding from the options or from the headers
     let encoding = params.forceEncoding
 
