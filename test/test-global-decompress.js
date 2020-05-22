@@ -118,32 +118,30 @@ test('should decompress a gzipped request payload', t => {
   })
 })
 
-if (zlib.createBrotliCompress) {
-  test('should decompress a brotli compressed request payload', t => {
-    t.plan(3)
+test('should decompress a brotli compressed request payload', t => {
+  t.plan(3)
 
-    const fastify = Fastify()
-    fastify.register(compressPlugin)
+  const fastify = Fastify()
+  fastify.register(compressPlugin)
 
-    fastify.post('/', (req, reply) => {
-      reply.send(req.body.name)
-    })
-
-    fastify.inject({
-      url: '/',
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'content-encoding': 'br'
-      },
-      payload: createPayload(zlib.createBrotliCompress)
-    }, (err, res) => {
-      t.error(err)
-      t.strictEqual(res.statusCode, 200)
-      t.strictEqual(res.body, 'fastify-compress')
-    })
+  fastify.post('/', (req, reply) => {
+    reply.send(req.body.name)
   })
-}
+
+  fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'content-encoding': 'br'
+    },
+    payload: createPayload(zlib.createBrotliCompress)
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.strictEqual(res.body, 'fastify-compress')
+  })
+})
 
 test('should decompress a request payload forcing the provided algorithm', t => {
   t.plan(3)
@@ -260,7 +258,7 @@ test('should return an error on invalid compressed payload', t => {
   })
 })
 
-test('should call callback if unsupported encoding', t => {
+test('should return the error returned from onUnsupportedRequestEncoding', t => {
   t.plan(3)
 
   const fastify = Fastify()
@@ -289,7 +287,6 @@ test('should call callback if unsupported encoding', t => {
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-
     t.strictEqual(res.statusCode, 400)
     t.strictDeepEqual(res.json(), {
       statusCode: 400,
@@ -300,7 +297,41 @@ test('should call callback if unsupported encoding', t => {
   })
 })
 
-test('should call callback if invalid payload', t => {
+test('should return the default error if onUnsupportedRequestEncoding throws', t => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    onUnsupportedRequestEncoding (encoding, request) {
+      throw new Error('Kaboom!')
+    }
+  })
+
+  fastify.post('/', (req, reply) => {
+    reply.send(req.body.name)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'content-encoding': 'whatever'
+    },
+    payload: createPayload(zlib.createDeflate)
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 415)
+    t.strictDeepEqual(res.json(), {
+      statusCode: 415,
+      code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
+      error: 'Unsupported Media Type',
+      message: 'Unsupported Content-Encoding: whatever'
+    })
+  })
+})
+
+test('should return the error returned from onInvalidRequestPayload', t => {
   t.plan(3)
 
   const fastify = Fastify()
@@ -339,13 +370,45 @@ test('should call callback if invalid payload', t => {
   })
 })
 
+test('should return the default error if onInvalidRequestPayload throws', t => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    onInvalidRequestPayload (encoding, request, error) {
+      throw new Error('Kaboom!')
+    }
+  })
+
+  fastify.post('/', (req, reply) => {
+    reply.send(req.body.name)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'content-encoding': 'deflate'
+    },
+    payload: createPayload(zlib.createGzip)
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 400)
+    t.strictDeepEqual(res.json(), {
+      statusCode: 400,
+      code: 'FST_CP_ERR_INVALID_CONTENT',
+      error: 'Bad Request',
+      message: 'Could not decompress the request payload using the provided encoding'
+    })
+  })
+})
+
 test('should validate option requestEncodings', t => {
   t.plan(1)
 
   const fastify = Fastify()
   fastify.register(compressPlugin, { requestEncodings: [] })
-  // t.throws(() => )
-  // // t.throws(() => fastify.register(compressPlugin, {requestEncodings: ['whatever']}))
 
   fastify.ready(err => {
     t.equals(err.message, 'The `requestEncodings` option array must have at least 1 item.')
