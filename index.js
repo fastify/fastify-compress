@@ -115,21 +115,17 @@ function processCompressParams (opts) {
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/|\+json$|\+text$|\+xml$|octet-stream$/
   params.compressStream = {
+    br: (opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress,
     gzip: (opts.zlib || zlib).createGzip || zlib.createGzip,
     deflate: (opts.zlib || zlib).createDeflate || zlib.createDeflate
   }
   params.uncompressStream = {
+    br: (opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress,
     gzip: (opts.zlib || zlib).createGunzip || zlib.createGunzip,
     deflate: (opts.zlib || zlib).createInflate || zlib.createInflate
   }
 
-  const supportedEncodings = ['gzip', 'deflate', 'identity']
-
-  /* istanbul ignore next */
-  if (zlib.createBrotliCompress) {
-    params.compressStream.br = zlib.createBrotliCompress
-    supportedEncodings.unshift('br')
-  }
+  const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
 
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
@@ -153,6 +149,7 @@ function processDecompressParams (opts) {
     onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
     onInvalidRequestPayload: opts.onInvalidRequestPayload,
     decompressStream: {
+      br: customZlib.createBrotliDecompress || zlib.createBrotliDecompress,
       gzip: customZlib.createGunzip || zlib.createGunzip,
       deflate: customZlib.createInflate || zlib.createInflate
     },
@@ -160,13 +157,7 @@ function processDecompressParams (opts) {
     forceEncoding: null
   }
 
-  const supportedEncodings = ['gzip', 'deflate', 'identity']
-
-  /* istanbul ignore next */
-  if (zlib.createBrotliCompress) {
-    params.decompressStream.br = customZlib.createBrotliDecompress || zlib.createBrotliDecompress
-    supportedEncodings.unshift('br')
-  }
+  const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
 
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
@@ -297,7 +288,6 @@ function buildRouteDecompress (fastify, params, routeOptions) {
         try {
           errorPayload = params.onUnsupportedRequestEncoding(encoding, request)
         } catch (ex) {
-          /* istanbul ignore next */
           errorPayload = undefined
         }
       }
@@ -412,7 +402,6 @@ function onDecompressError (request, params, encoding, error) {
     try {
       errorPayload = params.onInvalidRequestPayload(encoding, request, error)
     } catch (ex) {
-      /* istanbul ignore next */
       errorPayload = undefined
     }
   }
