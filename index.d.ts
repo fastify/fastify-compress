@@ -1,6 +1,6 @@
-import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase } from 'fastify'
-import { Stream } from 'stream';
+import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase } from 'fastify';
 import { Input, InputObject } from 'into-stream';
+import { Stream } from 'stream';
 
 declare module "fastify" {
   interface FastifyReplyInterface {
@@ -18,6 +18,10 @@ export interface FastifyCompressOptions {
   inflateIfDeflated?: boolean
   onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => string | Buffer | Stream
   encodings?: Array<EncodingToken>
+  requestEncodings?: Array<EncodingToken> 
+  forceRequestEncoding?: EncodingToken
+  onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => Error | undefined | null
+  onInvalidRequestPayload?: (encoding: string, request: FastifyRequest<RawServerBase>, error: Error) => Error | undefined | null
 }
 
 declare const fastifyCompress: FastifyPlugin<FastifyCompressOptions>

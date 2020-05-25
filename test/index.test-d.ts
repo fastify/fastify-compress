@@ -12,7 +12,9 @@ app.register(fastifyCompress, {
   zlib: zlib,
   inflateIfDeflated: true,
   customTypes: /x-protobuf$/,
-  encodings: ['gzip', 'br', 'identity', 'deflate']
+  encodings: ['gzip', 'br', 'identity', 'deflate'],
+  requestEncodings: ['gzip', 'br', 'identity', 'deflate'],
+  forceRequestEncoding: 'gzip'
 })
 
 const appWithoutGlobal = fastify();
