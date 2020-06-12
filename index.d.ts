@@ -3,7 +3,7 @@ import { Input, InputObject } from 'into-stream';
 import { Stream } from 'stream';
 
 declare module "fastify" {
-  interface FastifyReplyInterface {
+  interface FastifyReply {
     compress(input: Stream | Input | InputObject): void;
   }
 }
