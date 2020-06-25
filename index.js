@@ -323,7 +323,6 @@ function buildRouteDecompress (fastify, params, routeOptions) {
 function compress (params) {
   return function (payload) {
     if (payload == null) {
-      this.log.debug('compress: missing payload')
       this.send(new Error('Internal server error'))
       return
     }

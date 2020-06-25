@@ -1597,3 +1597,98 @@ test('Should not compress mime types with undefined compressible values', t => {
     t.strictEqual(res.payload, 'hello')
   })
 })
+
+test('Should send data compressed according to brotliOptions', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  const brotliOptions = {
+    params: {
+      [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
+      [zlib.constants.BROTLI_PARAM_QUALITY]: 4
+    }
+  }
+
+  fastify.register(compressPlugin, {
+    global: false,
+    brotliOptions
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'br')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.brotliDecompressSync(res.rawPayload, brotliOptions)
+    t.strictEqual(payload.toString('utf-8'), file)
+  })
+})
+
+test('Should send data deflated according to zlibOptions', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  const zlibOptions = {
+    level: 1,
+    dictionary: Buffer.from('fastifycompress')
+  }
+
+  fastify.register(compressPlugin, {
+    global: false,
+    zlibOptions
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    const fileBuffer = readFileSync('./package.json')
+    t.same(res.rawPayload, zlib.deflateSync(fileBuffer, zlibOptions))
+  })
+})
+
+test('Should send data gzipped according to zlibOptions', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  const zlibOptions = {
+    level: 1
+  }
+
+  fastify.register(compressPlugin, {
+    global: false,
+    zlibOptions
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    const fileBuffer = readFileSync('./package.json')
+    t.same(res.rawPayload, zlib.gzipSync(fileBuffer, zlibOptions))
+  })
+})

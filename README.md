@@ -144,6 +144,24 @@ fastify.register(
 )
 ```
 
+### brotliOptions and zlibOptions
+
+You can tune compression by setting the `brotliOptions` and `zlibOptions` properties. These properties are passed directly to native node `zlib` methods, so they should match the corresponding [class](https://nodejs.org/api/zlib.html#zlib_class_brotlioptions) [definitions](https://nodejs.org/api/zlib.html#zlib_class_options).
+
+```javascript
+  server.register(fastifyCompress, {
+    brotliOptions: {
+      params: {
+        [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT, // useful for APIs that primarily return text
+        [zlib.constants.BROTLI_PARAM_QUALITY]: 4, // default is 11, max is 11, min is 0
+      },
+    },
+    zlibOptions: {
+      level: 9, // default is 9, max is 9, min is 0
+    }
+  });
+```
+
 ## Usage - Decompress request payloads
 
 This plugin adds a `preParsing` hook that decompress the request payload according to the `content-encoding` request header.
