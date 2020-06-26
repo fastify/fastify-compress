@@ -1,6 +1,7 @@
 import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase } from 'fastify';
 import { Input, InputObject } from 'into-stream';
 import { Stream } from 'stream';
+import { BrotliOptions, ZlibOptions } from 'zlib';
 
 declare module "fastify" {
   interface FastifyReply {
@@ -15,6 +16,8 @@ export interface FastifyCompressOptions {
   threshold?: number
   customTypes?: RegExp
   zlib?: NodeModule
+  brotliOptions?: BrotliOptions
+  zlibOptions?: ZlibOptions
   inflateIfDeflated?: boolean
   onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => string | Buffer | Stream
   encodings?: Array<EncodingToken>
