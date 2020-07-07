@@ -1,4 +1,4 @@
-import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase } from 'fastify';
+import { FastifyPlugin, FastifyReply, FastifyRequest, RawServerBase, RequestGenericInterface } from 'fastify';
 import { Input, InputObject } from 'into-stream';
 import { Stream } from 'stream';
 import { BrotliOptions, ZlibOptions } from 'zlib';
@@ -19,12 +19,12 @@ export interface FastifyCompressOptions {
   brotliOptions?: BrotliOptions
   zlibOptions?: ZlibOptions
   inflateIfDeflated?: boolean
-  onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => string | Buffer | Stream
+  onUnsupportedEncoding?: (encoding: string, request: FastifyRequest<RequestGenericInterface, RawServerBase>, reply: FastifyReply<RawServerBase>) => string | Buffer | Stream
   encodings?: Array<EncodingToken>
   requestEncodings?: Array<EncodingToken> 
   forceRequestEncoding?: EncodingToken
-  onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest<RawServerBase>, reply: FastifyReply<RawServerBase>) => Error | undefined | null
-  onInvalidRequestPayload?: (encoding: string, request: FastifyRequest<RawServerBase>, error: Error) => Error | undefined | null
+  onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest<RequestGenericInterface, RawServerBase>, reply: FastifyReply<RawServerBase>) => Error | undefined | null
+  onInvalidRequestPayload?: (encoding: string, request: FastifyRequest<RequestGenericInterface, RawServerBase>, error: Error) => Error | undefined | null
 }
 
 declare const fastifyCompress: FastifyPlugin<FastifyCompressOptions>
