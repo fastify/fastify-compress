@@ -382,7 +382,7 @@ function compress (params) {
 }
 
 function onEnd (err) {
-  if (err) this.raw.log.error(err)
+  if (err) this.log.error(err)
 }
 
 function trackEncodedLength (chunk) {

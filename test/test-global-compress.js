@@ -5,6 +5,7 @@ const test = t.test
 const zlib = require('zlib')
 const fs = require('fs')
 const JSONStream = require('jsonstream')
+const { Readable, Writable } = require('stream')
 const createReadStream = fs.createReadStream
 const readFileSync = fs.readFileSync
 const Fastify = require('fastify')
@@ -1690,5 +1691,47 @@ test('Should send data gzipped according to zlibOptions', t => {
     t.strictEqual(res.headers['content-encoding'], 'gzip')
     const fileBuffer = readFileSync('./package.json')
     t.same(res.rawPayload, zlib.gzipSync(fileBuffer, zlibOptions))
+  })
+})
+
+test('stream onEnd handler should log an error if exists', t => {
+  t.plan(1)
+
+  let actual = null
+  const logger = new Writable({
+    write (chunk, encoding, callback) {
+      actual = JSON.parse(chunk.toString())
+    }
+  })
+
+  const fastify = Fastify({
+    global: false,
+    logger: {
+      level: 'error',
+      stream: logger
+    }
+  })
+
+  fastify.register(compressPlugin)
+
+  const expect = new Error('something wrong')
+
+  fastify.get('/', (req, reply) => {
+    const stream = new Readable({
+      read (size) {
+        this.destroy(expect)
+      }
+    })
+    reply.type('text/plain').compress(stream)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (_, res) => {
+    t.equal(actual.msg, expect.message)
   })
 })
