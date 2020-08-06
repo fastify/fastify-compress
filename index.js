@@ -371,8 +371,13 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
-    if (this.hasHeader('Vary') && !this.getHeader('Vary').split(',').some(h => h === 'accept-encoding')) {
-      this.header('Vary', [...this.getHeader('Vary').split(','), 'accept-encoding'])
+    if (this.hasHeader('Vary')) {
+      const varyHeader = this.getHeader('Vary')
+      if (Array.isArray(varyHeader) && !varyHeader.some(h => h === 'accept-encoding')) {
+        this.header('Vary', [...varyHeader, 'accept-encoding'])
+      } else {
+        this.header('Vary', [varyHeader, 'accept-encoding'])
+      }
     } else {
       this.header('Vary', 'accept-encoding')
     }
