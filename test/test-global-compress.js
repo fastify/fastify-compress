@@ -1738,13 +1738,18 @@ test('stream onEnd handler should log an error if exists', t => {
 })
 
 test('should concat accept-encoding to vary header if present', t => {
-  t.plan(2)
+  t.plan(4)
   const fastify = Fastify()
 
   fastify.register(compressPlugin, { global: false })
 
   fastify.get('/', (req, reply) => {
     reply.header('vary', 'different-header')
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/foo', (req, reply) => {
+    reply.header('vary', ['different-header', 'my-header'])
     reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
@@ -1757,5 +1762,16 @@ test('should concat accept-encoding to vary header if present', t => {
   }, (err, res) => {
     t.error(err)
     t.deepEqual(res.headers.vary, ['different-header', 'accept-encoding'])
+  })
+
+  fastify.inject({
+    url: '/foo',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
   })
 })
