@@ -12,7 +12,7 @@ const Fastify = require('fastify')
 const compressPlugin = require('../index')
 
 test('should send a deflated data', t => {
-  t.plan(4)
+  t.plan(5)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
@@ -29,6 +29,7 @@ test('should send a deflated data', t => {
   }, (err, res) => {
     t.error(err)
     t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
@@ -1733,5 +1734,44 @@ test('stream onEnd handler should log an error if exists', t => {
     }
   }, (_, res) => {
     t.equal(actual.msg, expect.message)
+  })
+})
+
+test('should concat accept-encoding to vary header if present', t => {
+  t.plan(4)
+  const fastify = Fastify()
+
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.header('vary', 'different-header')
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/foo', (req, reply) => {
+    reply.header('vary', ['different-header', 'my-header'])
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(res.headers.vary, ['different-header', 'accept-encoding'])
+  })
+
+  fastify.inject({
+    url: '/foo',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
   })
 })
