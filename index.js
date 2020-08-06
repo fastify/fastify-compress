@@ -371,6 +371,12 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
+    if (this.hasHeader('Vary') && !this.getHeader('Vary').split(',').some(h => h === 'accept-encoding')) {
+      this.header('Vary', [...this.getHeader('Vary').split(','), 'accept-encoding'])
+    } else {
+      this.header('Vary', 'accept-encoding')
+    }
+
     this
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
