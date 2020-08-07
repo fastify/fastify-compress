@@ -373,7 +373,7 @@ function compress (params) {
 
     if (this.hasHeader('Vary')) {
       const varyHeader = Array.isArray(this.getHeader('Vary')) ? this.getHeader('Vary') : [this.getHeader('Vary')]
-      if (!varyHeader.some(h => h === 'accept-encoding')) {
+      if (!varyHeader.includes('accept-encoding')) {
         this.header('Vary', [...varyHeader, 'accept-encoding'])
       }
     } else {
