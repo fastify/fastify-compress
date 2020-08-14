@@ -6,7 +6,7 @@
   "dependencies": {
     "encoding-negotiator": "^2.0.0",
     "fastify-plugin": "^2.2.0",
-    "into-stream": "^5.1.1",
+    "into-stream": "^6.0.0",
     "is-deflate": "^1.0.0",
     "is-gzip": "^2.0.0",
     "is-stream": "^2.0.0",
