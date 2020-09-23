@@ -209,7 +209,6 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
 
   function onSend (req, reply, payload, next) {
     if (payload == null) {
-      reply.log.debug('compress: missing payload')
       return next()
     }
 
