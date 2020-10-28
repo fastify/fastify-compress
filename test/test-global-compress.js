@@ -5,7 +5,7 @@ const test = t.test
 const zlib = require('zlib')
 const fs = require('fs')
 const JSONStream = require('jsonstream')
-const { Readable, Writable } = require('stream')
+const { Readable, Writable, PassThrough } = require('stream')
 const createReadStream = fs.createReadStream
 const readFileSync = fs.readFileSync
 const Fastify = require('fastify')
@@ -1092,6 +1092,31 @@ test('Should not compress on x-no-compression header', t => {
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
     t.deepEqual(JSON.parse(res.payload), json)
+  })
+})
+
+test('Should not compress text/event-stream', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0 })
+
+  fastify.get('/', (_req, reply) => {
+    reply.header('Content-Type', 'text/event-stream')
+    const stream = new PassThrough()
+    reply.send(stream)
+    stream.write('event: open\n\n')
+    stream.write('event: change\ndata: schema\n\n')
+    stream.end()
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.strictEqual(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.deepEqual(res.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
   })
 })
 
