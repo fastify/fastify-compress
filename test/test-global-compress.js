@@ -247,7 +247,7 @@ test('should send a gzipped data for * header', t => {
 })
 
 test('should send a brotli data', t => {
-  t.plan(3)
+  t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
@@ -263,6 +263,7 @@ test('should send a brotli data', t => {
     }
   }, (err, res) => {
     t.error(err)
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.strictEqual(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(res.rawPayload)
@@ -295,7 +296,7 @@ test('should follow the encoding order', t => {
 })
 
 test('should send uncompressed if unsupported encoding', t => {
-  t.plan(3)
+  t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
@@ -311,6 +312,7 @@ test('should send uncompressed if unsupported encoding', t => {
     }
   }, (err, res) => {
     t.error(err)
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.strictEqual(res.statusCode, 200)
     const file = readFileSync('./package.json', 'utf8')
     t.strictEqual(res.payload, file)
@@ -318,7 +320,7 @@ test('should send uncompressed if unsupported encoding', t => {
 })
 
 test('should call callback if unsupported encoding', t => {
-  t.plan(3)
+  t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, {
     global: false,
@@ -341,6 +343,7 @@ test('should call callback if unsupported encoding', t => {
   }, (err, res) => {
     t.error(err)
     t.strictEqual(res.statusCode, 406)
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.deepEqual(JSON.parse(res.payload), { hello: 'hello' })
   })
 })
@@ -378,7 +381,7 @@ test('should call callback if unsupported encoding and throw error', t => {
 })
 
 test('should send uncompressed if unsupported encoding with quality value', t => {
-  t.plan(3)
+  t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
@@ -394,6 +397,7 @@ test('should send uncompressed if unsupported encoding with quality value', t =>
     }
   }, (err, res) => {
     t.error(err)
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.strictEqual(res.statusCode, 200)
     const file = readFileSync('./package.json', 'utf8')
     t.strictEqual(res.payload, file)
@@ -401,7 +405,7 @@ test('should send uncompressed if unsupported encoding with quality value', t =>
 })
 
 test('should not compress on missing header', t => {
-  t.plan(3)
+  t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
@@ -414,6 +418,7 @@ test('should not compress on missing header', t => {
     method: 'GET'
   }, (err, res) => {
     t.error(err)
+    t.strictEqual(res.headers.vary, 'accept-encoding')
     t.strictEqual(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
   })

@@ -211,6 +211,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     if (payload == null) {
       return next()
     }
+    setVaryHeader(reply)
 
     var stream, encoding
     var noCompress =
@@ -326,6 +327,7 @@ function compress (params) {
       return
     }
 
+    setVaryHeader(this)
     var stream, encoding
     var noCompress =
       // don't compress on x-no-compression header
@@ -370,15 +372,6 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
-    if (this.hasHeader('Vary')) {
-      const varyHeader = Array.isArray(this.getHeader('Vary')) ? this.getHeader('Vary') : [this.getHeader('Vary')]
-      if (!varyHeader.includes('accept-encoding')) {
-        this.header('Vary', [...varyHeader, 'accept-encoding'])
-      }
-    } else {
-      this.header('Vary', 'accept-encoding')
-    }
-
     this
       .header('Content-Encoding', encoding)
       .removeHeader('content-length')
@@ -386,6 +379,17 @@ function compress (params) {
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
     this.send(stream)
+  }
+}
+
+function setVaryHeader (reply) {
+  if (reply.hasHeader('Vary')) {
+    const varyHeader = Array.isArray(reply.getHeader('Vary')) ? reply.getHeader('Vary') : [reply.getHeader('Vary')]
+    if (!varyHeader.includes('accept-encoding')) {
+      reply.header('Vary', [...varyHeader, 'accept-encoding'])
+    }
+  } else {
+    reply.header('Vary', 'accept-encoding')
   }
 }
 
