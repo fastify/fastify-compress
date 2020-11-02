@@ -131,8 +131,8 @@ function processCompressParams (opts) {
 
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
-      .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+        .filter(encoding => opts.encodings.includes(encoding))
+        .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
 
   return params
@@ -163,8 +163,8 @@ function processDecompressParams (opts) {
 
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
-      .filter(encoding => opts.requestEncodings.includes(encoding))
-      .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
+        .filter(encoding => opts.requestEncodings.includes(encoding))
+        .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
 
   if (opts.forceRequestEncoding) {
@@ -213,8 +213,8 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     }
     setVaryHeader(reply)
 
-    var stream, encoding
-    var noCompress =
+    let stream, encoding
+    const noCompress =
       // don't compress on x-no-compression header
       (req.headers['x-no-compression'] !== undefined) ||
       // don't compress if not one of the indicated compressible types
@@ -223,9 +223,9 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       ((encoding = getEncodingHeader(params.encodings, req)) == null || encoding === 'identity')
 
     if (encoding == null && params.onUnsupportedEncoding != null) {
-      var encodingHeader = req.headers['accept-encoding']
+      const encodingHeader = req.headers['accept-encoding']
       try {
-        var errorPayload = params.onUnsupportedEncoding(encodingHeader, reply.request, reply)
+        const errorPayload = params.onUnsupportedEncoding(encodingHeader, reply.request, reply)
         return next(null, errorPayload)
       } catch (err) {
         return next(err)
@@ -328,8 +328,8 @@ function compress (params) {
     }
 
     setVaryHeader(this)
-    var stream, encoding
-    var noCompress =
+    let stream, encoding
+    const noCompress =
       // don't compress on x-no-compression header
       (this.request.headers['x-no-compression'] !== undefined) ||
       // don't compress if not one of the indicated compressible types
@@ -338,9 +338,9 @@ function compress (params) {
       ((encoding = getEncodingHeader(params.encodings, this.request)) == null || encoding === 'identity')
 
     if (encoding == null && params.onUnsupportedEncoding != null) {
-      var encodingHeader = this.request.headers['accept-encoding']
+      const encodingHeader = this.request.headers['accept-encoding']
 
-      var errorPayload
+      let errorPayload
       try {
         errorPayload = params.onUnsupportedEncoding(encodingHeader, this.request, this)
       } catch (ex) {
@@ -440,7 +440,7 @@ function getEncodingHeader (encodings, request) {
 
 function shouldCompress (type, compressibleTypes) {
   if (compressibleTypes.test(type)) return true
-  var data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
+  const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible === true
 }
@@ -455,7 +455,7 @@ function isCompressed (data) {
 function maybeUnzip (payload, serialize) {
   if (isStream(payload)) return payload
 
-  var buf = payload; var result = payload
+  let buf = payload; let result = payload
 
   if (ArrayBuffer.isView(payload)) {
     // Cast non-Buffer DataViews into a Buffer
