@@ -263,8 +263,6 @@ test('avoid double onSend', t => {
 
   server.register(compressPlugin, {
     threshold: 0
-    // the issue disappears by excluding 'br' from the encodings
-    // encodings: ['gzip', 'deflate', 'identity']
   })
 
   server.register(async function (server) {
