@@ -255,3 +255,30 @@ test('should throw an error on invalid compression setting', t => {
     t.strictEqual(err.message, 'Unknown value for route compress configuration')
   })
 })
+
+test('avoid double onSend', t => {
+  t.plan(2)
+
+  const server = Fastify()
+
+  server.register(compressPlugin, {
+    threshold: 0
+  })
+
+  server.register(async function (server) {
+    server.get('/', async (req, _) => {
+      return { hi: true }
+    })
+  }, { prefix: '/test' })
+
+  server.inject({
+    url: '/test',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(JSON.parse(zlib.brotliDecompressSync(res.rawPayload)), { hi: true })
+  })
+})
