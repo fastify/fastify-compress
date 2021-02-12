@@ -229,7 +229,7 @@ You can force one algorithm and ignore the header at all by providing the `force
 
 Note that if the request payload is not compressed, `fastify-compress` will try to decompress, resulting in an error.
 
-### onUnsupportedRequestEncoding
+### onUnsupportedRequestEncoding
 
 When the request payload encoding is not supported, you can customize the response error by setting the `onUnsupportedEncoding(request, encoding)` option to be a function that returns an error.
 
