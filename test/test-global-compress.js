@@ -1805,3 +1805,42 @@ test('should concat accept-encoding to vary header if present', t => {
     t.deepEqual(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
   })
 })
+
+test('should not add accept-encoding to vary header if already present', t => {
+  t.plan(4)
+  const fastify = Fastify()
+
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', (req, reply) => {
+    reply.header('vary', 'accept-encoding,different-header')
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/foo', (req, reply) => {
+    reply.header('vary', ['accept-encoding', 'different-header', 'my-header'])
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(res.headers.vary, 'accept-encoding,different-header')
+  })
+
+  fastify.inject({
+    url: '/foo',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.deepEqual(res.headers.vary, ['accept-encoding', 'different-header', 'my-header'])
+  })
+})
