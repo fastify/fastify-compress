@@ -397,7 +397,7 @@ function compress (params) {
 function setVaryHeader (reply) {
   if (reply.hasHeader('Vary')) {
     const varyHeader = Array.isArray(reply.getHeader('Vary')) ? reply.getHeader('Vary') : [reply.getHeader('Vary')]
-    if (!varyHeader.includes('accept-encoding')) {
+    if (!varyHeader.some((h) => h.includes('accept-encoding'))) {
       reply.header('Vary', [...varyHeader, 'accept-encoding'])
     }
   } else {
