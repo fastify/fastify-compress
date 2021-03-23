@@ -32,12 +32,12 @@
     "typescript": "^4.0.2"
   },
   "scripts": {
-    "unit": "tap test/*.js",
-    "test": "standard && npm run unit && npm run typescript",
-    "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
-    "typescript": "tsd",
     "coverage": "npm run unit -- --cov",
-    "coverage-report": "npm run coverage && tap --coverage-report=lcov"
+    "coverage-report": "npm run coverage && tap --coverage-report=lcov",
+    "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
+    "test": "standard && npm run unit && npm run typescript",
+    "typescript": "tsd",
+    "unit": "tap test/*.js"
   },
   "keywords": [
     "fastify",
