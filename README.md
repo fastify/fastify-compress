@@ -1,6 +1,9 @@
 # fastify-compress
 
-[![Build Status](https://travis-ci.org/fastify/fastify-compress.svg?branch=master)](https://travis-ci.org/fastify/fastify-compress) [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
+![CI](https://github.com/fastify/fastify-compress/workflows/CI/badge.svg)
+[![NPM version](https://img.shields.io/npm/v/fastify-compress.svg?style=flat)](https://www.npmjs.com/package/fastify-compress)
+[![Known Vulnerabilities](https://snyk.io/test/github/fastify/fastify-compress/badge.svg)](https://snyk.io/test/github/fastify/fastify-compress)
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://standardjs.com/)
 
 Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/master/Reply/) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
@@ -119,7 +122,7 @@ fastify.register(
 You can selectively disable response compression by using the `x-no-compression` header in the request.
 
 ### Inflate pre-compressed bodies for clients that do not support compression
-Optional feature to inflate pre-compressed data if the client doesn't include one of the supported compression types in its `accept-encoding` header.
+Optional feature to inflate pre-compressed data if the client does not include one of the supported compression types in its `accept-encoding` header.
 ```javascript
 fastify.register(
   require('fastify-compress'),
