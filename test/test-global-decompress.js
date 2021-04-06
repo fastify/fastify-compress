@@ -38,8 +38,8 @@ test('should not decompress on missing header', t => {
     payload: createPayload()
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -63,8 +63,8 @@ test('should skip a identity encoded request payload', t => {
     payload: createPayload()
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -88,8 +88,8 @@ test('should decompress a deflated request payload', t => {
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -113,8 +113,8 @@ test('should decompress a gzipped request payload', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -138,8 +138,8 @@ test('should decompress a brotli compressed request payload', t => {
     payload: createPayload(zlib.createBrotliCompress)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -163,8 +163,8 @@ test('should decompress a request payload forcing the provided algorithm', t => 
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
   })
 })
 
@@ -188,8 +188,8 @@ test('should return an error on unsupported encoding', t => {
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 415)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 415)
+    t.strictSame(res.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -218,8 +218,8 @@ test('should return an error on disabled encoding', t => {
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 415)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 415)
+    t.strictSame(res.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -248,8 +248,8 @@ test('should return an error on invalid compressed payload', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 400)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 400)
+    t.strictSame(res.json(), {
       statusCode: 400,
       code: 'FST_CP_ERR_INVALID_CONTENT',
       error: 'Bad Request',
@@ -287,8 +287,8 @@ test('should return the error returned from onUnsupportedRequestEncoding', t => 
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 400)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 400)
+    t.strictSame(res.json(), {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
@@ -321,8 +321,8 @@ test('should return the default error if onUnsupportedRequestEncoding throws', t
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 415)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 415)
+    t.strictSame(res.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -360,8 +360,8 @@ test('should return the error returned from onInvalidRequestPayload', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 400)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 400)
+    t.strictSame(res.json(), {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
@@ -394,8 +394,8 @@ test('should return the default error if onInvalidRequestPayload throws', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 400)
-    t.strictDeepEqual(res.json(), {
+    t.equal(res.statusCode, 400)
+    t.strictSame(res.json(), {
       statusCode: 400,
       code: 'FST_CP_ERR_INVALID_CONTENT',
       error: 'Bad Request',
@@ -411,7 +411,7 @@ test('should validate option requestEncodings', t => {
   fastify.register(compressPlugin, { requestEncodings: [] })
 
   fastify.ready(err => {
-    t.equals(err.message, 'The `requestEncodings` option array must have at least 1 item.')
+    t.equal(err.message, 'The `requestEncodings` option array must have at least 1 item.')
   })
 })
 
@@ -422,7 +422,7 @@ test('should make sure at least one encoding is supported', t => {
   fastify.register(compressPlugin, { requestEncodings: ['whatever'] })
 
   fastify.ready(err => {
-    t.equals(err.message, 'None of the passed `requestEncodings` were supported — request decompression not possible.')
+    t.equal(err.message, 'None of the passed `requestEncodings` were supported — request decompression not possible.')
   })
 })
 
@@ -433,6 +433,6 @@ test('should make sure at least one encoding is supported', t => {
   fastify.register(compressPlugin, { forceRequestEncoding: ['whatever'] })
 
   fastify.ready(err => {
-    t.equals(err.message, 'Unsupported decompression encoding whatever.')
+    t.equal(err.message, 'Unsupported decompression encoding whatever.')
   })
 })

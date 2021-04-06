@@ -41,13 +41,13 @@ test('should send a deflated data with custom deflate', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
-    t.strictEqual(usedCustom, false)
-    t.strictEqual(usedCustomGlobal, true)
+    t.equal(payload.toString('utf-8'), file)
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
 
     usedCustom = false
     usedCustomGlobal = false
@@ -59,13 +59,13 @@ test('should send a deflated data with custom deflate', t => {
       }
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.headers['content-encoding'], 'deflate')
+      t.equal(res.headers['content-encoding'], 'deflate')
       t.notOk(res.headers['content-length'], 'no content length')
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.inflateSync(res.rawPayload)
-      t.strictEqual(payload.toString('utf-8'), file)
-      t.strictEqual(usedCustom, true)
-      t.strictEqual(usedCustomGlobal, false)
+      t.equal(payload.toString('utf-8'), file)
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
     })
   })
 })
@@ -101,12 +101,12 @@ test('should send a gzipped data with custom zlib', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
-    t.strictEqual(usedCustom, false)
-    t.strictEqual(usedCustomGlobal, true)
+    t.equal(payload.toString('utf-8'), file)
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
 
     usedCustom = false
     usedCustomGlobal = false
@@ -118,12 +118,12 @@ test('should send a gzipped data with custom zlib', t => {
       }
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.headers['content-encoding'], 'gzip')
+      t.equal(res.headers['content-encoding'], 'gzip')
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.gunzipSync(res.rawPayload)
-      t.strictEqual(payload.toString('utf-8'), file)
-      t.strictEqual(usedCustom, true)
-      t.strictEqual(usedCustomGlobal, false)
+      t.equal(payload.toString('utf-8'), file)
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
     })
   })
 })
@@ -169,9 +169,9 @@ test('should not compress when global is false and compressed route exists', t =
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], undefined)
-    t.strictEqual(res.rawPayload.toString('utf-8'), JSON.stringify({ foo: 1 }))
-    t.strictEqual(usedCustom, false)
+    t.equal(res.headers['content-encoding'], undefined)
+    t.equal(res.rawPayload.toString('utf-8'), JSON.stringify({ foo: 1 }))
+    t.equal(usedCustom, false)
 
     usedCustom = false
     fastify.inject({
@@ -182,11 +182,11 @@ test('should not compress when global is false and compressed route exists', t =
       }
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.headers['content-encoding'], 'gzip')
+      t.equal(res.headers['content-encoding'], 'gzip')
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.gunzipSync(res.rawPayload)
-      t.strictEqual(payload.toString('utf-8'), file)
-      t.strictEqual(usedCustom, true)
+      t.equal(payload.toString('utf-8'), file)
+      t.equal(usedCustom, true)
 
       fastify.inject({
         url: '/standard',
@@ -196,9 +196,9 @@ test('should not compress when global is false and compressed route exists', t =
         }
       }, (err, res) => {
         t.error(err)
-        t.strictEqual(res.headers['content-encoding'], 'gzip')
+        t.equal(res.headers['content-encoding'], 'gzip')
         const payload = zlib.gunzipSync(res.rawPayload)
-        t.strictEqual(payload.toString('utf-8'), JSON.stringify({ foo: 1 }))
+        t.equal(payload.toString('utf-8'), JSON.stringify({ foo: 1 }))
       })
     })
   })
@@ -226,8 +226,8 @@ test('should not compress if route compression disabled', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], undefined)
-    t.strictEqual(res.rawPayload.toString('utf-8'), JSON.stringify(content))
+    t.equal(res.headers['content-encoding'], undefined)
+    t.equal(res.rawPayload.toString('utf-8'), JSON.stringify(content))
   })
 })
 
@@ -252,7 +252,7 @@ test('should throw an error on invalid compression setting', t => {
     }
   }, (err, res) => {
     t.type(err, Error)
-    t.strictEqual(err.message, 'Unknown value for route compress configuration')
+    t.equal(err.message, 'Unknown value for route compress configuration')
   })
 })
 
@@ -279,6 +279,6 @@ test('avoid double onSend', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.deepEqual(JSON.parse(zlib.brotliDecompressSync(res.rawPayload)), { hi: true })
+    t.same(JSON.parse(zlib.brotliDecompressSync(res.rawPayload)), { hi: true })
   })
 })

@@ -55,10 +55,10 @@ test('should decompress a inflated data with custom inflate', t => {
     payload: createPayload(zlib.createDeflate)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
-    t.strictEqual(usedCustom, false)
-    t.strictEqual(usedCustomGlobal, true)
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
 
     usedCustom = false
     usedCustomGlobal = false
@@ -73,10 +73,10 @@ test('should decompress a inflated data with custom inflate', t => {
       payload: createPayload(zlib.createDeflate)
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.statusCode, 200)
-      t.strictEqual(res.body, 'fastify-compress')
-      t.strictEqual(usedCustom, true)
-      t.strictEqual(usedCustomGlobal, false)
+      t.equal(res.statusCode, 200)
+      t.equal(res.body, 'fastify-compress')
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
     })
   })
 })
@@ -117,10 +117,10 @@ test('should decompress a inflated data with custom gzip', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
-    t.strictEqual(usedCustom, false)
-    t.strictEqual(usedCustomGlobal, true)
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
 
     usedCustom = false
     usedCustomGlobal = false
@@ -135,10 +135,10 @@ test('should decompress a inflated data with custom gzip', t => {
       payload: createPayload(zlib.createGzip)
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.statusCode, 200)
-      t.strictEqual(res.body, 'fastify-compress')
-      t.strictEqual(usedCustom, true)
-      t.strictEqual(usedCustomGlobal, false)
+      t.equal(res.statusCode, 200)
+      t.equal(res.body, 'fastify-compress')
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
     })
   })
 })
@@ -175,9 +175,9 @@ test('should not decompress if route decompression disabled', t => {
     payload: createPayload(zlib.createGzip)
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.body, 'fastify-compress')
-    t.strictEqual(usedCustomGlobal, true)
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
+    t.equal(usedCustomGlobal, true)
 
     usedCustomGlobal = false
 
@@ -191,14 +191,14 @@ test('should not decompress if route decompression disabled', t => {
       payload: createPayload(zlib.createGzip)
     }, (err, res) => {
       t.error(err)
-      t.strictEqual(res.statusCode, 400)
-      t.strictDeepEqual(res.json(), {
+      t.equal(res.statusCode, 400)
+      t.strictSame(res.json(), {
         statusCode: 400,
         code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
         error: 'Bad Request',
         message: 'Request body size did not match Content-Length'
       })
-      t.strictEqual(usedCustomGlobal, false)
+      t.equal(usedCustomGlobal, false)
     })
   })
 })
@@ -225,6 +225,6 @@ test('should throw an error on invalid decompression setting', t => {
     payload: ''
   }, (err, res) => {
     t.type(err, Error)
-    t.strictEqual(err.message, 'Unknown value for route decompress configuration')
+    t.equal(err.message, 'Unknown value for route decompress configuration')
   })
 })

@@ -28,12 +28,12 @@ test('should send a deflated data', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
-    t.strictEqual(res.headers.vary, 'accept-encoding')
+    t.equal(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers.vary, 'accept-encoding')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -57,12 +57,12 @@ test('should send a deflated data with custom deflate', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
-    t.strictEqual(usedCustom, true)
+    t.equal(payload.toString('utf-8'), file)
+    t.equal(usedCustom, true)
   })
 })
 
@@ -83,10 +83,10 @@ test('should send a gzipped data', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -107,10 +107,10 @@ test('should send a gzipped data if header case varied', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -133,11 +133,11 @@ test('should send a gzipped data with custom zlib', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
-    t.strictEqual(usedCustom, true)
+    t.equal(payload.toString('utf-8'), file)
+    t.equal(usedCustom, true)
   })
 })
 
@@ -161,10 +161,10 @@ test('should not double-compress Stream if already zipped', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -188,10 +188,10 @@ test('should support quality syntax', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -215,10 +215,10 @@ test('onSend hook should not double-compress Stream if already zipped', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -239,10 +239,10 @@ test('should send a gzipped data for * header', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -263,11 +263,11 @@ test('should send a brotli data', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers.vary, 'accept-encoding')
-    t.strictEqual(res.headers['content-encoding'], 'br')
+    t.equal(res.headers.vary, 'accept-encoding')
+    t.equal(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -288,10 +288,10 @@ test('should follow the encoding order', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'br')
+    t.equal(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -312,10 +312,10 @@ test('should send uncompressed if unsupported encoding', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers.vary, 'accept-encoding')
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.headers.vary, 'accept-encoding')
+    t.equal(res.statusCode, 200)
     const file = readFileSync('./package.json', 'utf8')
-    t.strictEqual(res.payload, file)
+    t.equal(res.payload, file)
   })
 })
 
@@ -342,9 +342,9 @@ test('should call callback if unsupported encoding', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 406)
-    t.strictEqual(res.headers.vary, 'accept-encoding')
-    t.deepEqual(JSON.parse(res.payload), { hello: 'hello' })
+    t.equal(res.statusCode, 406)
+    t.equal(res.headers.vary, 'accept-encoding')
+    t.same(JSON.parse(res.payload), { hello: 'hello' })
   })
 })
 
@@ -371,8 +371,8 @@ test('should call callback if unsupported encoding and throw error', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual(JSON.parse(res.payload), {
+    t.equal(res.statusCode, 406)
+    t.same(JSON.parse(res.payload), {
       error: 'Not Acceptable',
       message: 'testing error',
       statusCode: 406
@@ -397,10 +397,10 @@ test('should send uncompressed if unsupported encoding with quality value', t =>
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers.vary, 'accept-encoding')
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.headers.vary, 'accept-encoding')
+    t.equal(res.statusCode, 200)
     const file = readFileSync('./package.json', 'utf8')
-    t.strictEqual(res.payload, file)
+    t.equal(res.payload, file)
   })
 })
 
@@ -418,8 +418,8 @@ test('should not compress on missing header', t => {
     method: 'GET'
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers.vary, 'accept-encoding')
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.headers.vary, 'accept-encoding')
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
   })
 })
@@ -439,9 +439,9 @@ test('should decompress compressed Buffers on missing header', t => {
     method: 'GET'
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual(JSON.parse('' + res.payload), json)
+    t.same(JSON.parse('' + res.payload), json)
   })
 })
 
@@ -462,9 +462,9 @@ test('should decompress data that has been compressed multiple times on missing 
     method: 'GET'
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual(JSON.parse('' + res.payload), json)
+    t.same(JSON.parse('' + res.payload), json)
   })
 })
 
@@ -482,10 +482,10 @@ test('should decompress compressed Streams on missing header', t => {
     method: 'GET'
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
     const file = readFileSync('./package.json', 'utf8')
-    t.strictEqual(res.rawPayload.toString('utf-8'), file)
+    t.equal(res.rawPayload.toString('utf-8'), file)
   })
 })
 
@@ -506,8 +506,8 @@ test('Should close the stream', t => {
   }, (err, res) => {
     t.error(err)
     const file = readFileSync('./package.json', 'utf8')
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(file, res.payload)
+    t.equal(res.statusCode, 200)
+    t.equal(file, res.payload)
   })
 })
 
@@ -529,8 +529,8 @@ test('Should send uncompressed on invalid accept encoding - global', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
-    t.strictEqual(res.payload, 'something')
+    t.equal(res.statusCode, 200)
+    t.equal(res.payload, 'something')
   })
 })
 
@@ -558,8 +558,8 @@ test('should call callback if unsupported encoding - global', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual(JSON.parse(res.payload), { hello: 'hello' })
+    t.equal(res.statusCode, 406)
+    t.same(JSON.parse(res.payload), { hello: 'hello' })
   })
 })
 
@@ -587,8 +587,8 @@ test('should call callback if unsupported encoding and throw error - global', t 
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 406)
-    t.deepEqual(JSON.parse(res.payload), {
+    t.equal(res.statusCode, 406)
+    t.same(JSON.parse(res.payload), {
       error: 'Not Acceptable',
       message: 'testing error',
       statusCode: 406
@@ -615,7 +615,7 @@ test('No compression header', t => {
     t.error(err)
     const payload = JSON.parse(res.payload)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual({ hello: 'world' }, payload)
+    t.same({ hello: 'world' }, payload)
   })
 })
 
@@ -638,7 +638,7 @@ test('Should compress buffer (gzip)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -661,7 +661,7 @@ test('Should compress buffer (gzip) if header case varied', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -684,7 +684,7 @@ test('Should compress buffer (deflate)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -707,7 +707,7 @@ test('Should compress buffer (brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -730,7 +730,7 @@ test('Should compress buffer (native brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -753,7 +753,7 @@ test('Should compress buffer (gzip) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -776,7 +776,7 @@ test('Should compress buffer (gzip) with varied header case - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -799,7 +799,7 @@ test('Should compress buffer (deflate) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -822,7 +822,7 @@ test('Should compress buffer (brotli) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -845,7 +845,7 @@ test('Should compress buffer (native brotli) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), buf.toString())
+    t.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
@@ -868,7 +868,7 @@ test('Should compress json data (gzip)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -891,7 +891,7 @@ test('Should compress json data (deflate)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -914,7 +914,7 @@ test('Should compress json data (brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -937,7 +937,7 @@ test('Should compress json data (native brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -959,7 +959,7 @@ test('Should compress string data (gzip)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), 'hello')
+    t.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
@@ -981,7 +981,7 @@ test('Should compress string data (deflate)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), 'hello')
+    t.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
@@ -1003,7 +1003,7 @@ test('Should compress string data (brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), 'hello')
+    t.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
@@ -1025,7 +1025,7 @@ test('Should compress string data (native brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), 'hello')
+    t.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
@@ -1044,8 +1044,8 @@ test('Missing payload', t => {
   }, (err, res) => {
     t.error(err)
     const payload = JSON.parse(res.payload)
-    t.strictEqual(res.statusCode, 500)
-    t.deepEqual({
+    t.equal(res.statusCode, 500)
+    t.same({
       error: 'Internal Server Error',
       message: 'Internal server error',
       statusCode: 500
@@ -1072,7 +1072,7 @@ test('Should compress json data (gzip) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -1094,9 +1094,9 @@ test('Should not compress on x-no-compression header', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual(JSON.parse(res.payload), json)
+    t.same(JSON.parse(res.payload), json)
   })
 })
 
@@ -1119,9 +1119,9 @@ test('Should not compress text/event-stream', t => {
     method: 'GET'
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual(res.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
+    t.same(res.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
   })
 })
 
@@ -1143,9 +1143,9 @@ test('Should decompress compressed payloads on x-no-compression header', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual(JSON.parse('' + res.payload), json)
+    t.same(JSON.parse('' + res.payload), json)
   })
 })
 
@@ -1166,9 +1166,9 @@ test('Should not try compress missing payload', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.payload, '')
+    t.equal(res.payload, '')
   })
 })
 
@@ -1190,9 +1190,9 @@ test('Should not compress if content-type is a invalid type', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.payload, 'a message')
+    t.equal(res.payload, 'a message')
   })
 })
 
@@ -1213,9 +1213,9 @@ test('Should not compress if content-type is a invalid type', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.payload, 'a message')
+    t.equal(res.payload, 'a message')
   })
 })
 
@@ -1236,9 +1236,9 @@ test('Should not compress if payload length is smaller than threshold', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.payload, 'a message')
+    t.equal(res.payload, 'a message')
   })
 })
 
@@ -1261,7 +1261,7 @@ test('Should compress json data (deflate) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -1284,7 +1284,7 @@ test('Should compress json data (brotli) - global', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -1307,7 +1307,7 @@ test('Should compress json data (native brotli)', t => {
   }, (err, res) => {
     t.error(err)
     const payload = zlib.brotliDecompressSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -1330,7 +1330,7 @@ test('identity header (compress)', t => {
     t.error(err)
     const payload = JSON.parse(res.payload)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual({ hello: 'world' }, payload)
+    t.same({ hello: 'world' }, payload)
   })
 })
 
@@ -1353,7 +1353,7 @@ test('identity header (hook)', t => {
     t.error(err)
     const payload = JSON.parse(res.payload)
     t.notOk(res.headers['content-encoding'])
-    t.deepEqual({ hello: 'world' }, payload)
+    t.same({ hello: 'world' }, payload)
   })
 })
 
@@ -1377,9 +1377,9 @@ test('should support stream1 (reply compress)', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
+    t.same(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 })
 
@@ -1403,9 +1403,9 @@ test('should support stream1 (global hook)', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
+    t.same(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 })
 
@@ -1427,9 +1427,9 @@ test('accept-encoding can contain white space', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), JSON.stringify(json))
+    t.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
@@ -1455,11 +1455,11 @@ test('compress should remove content-length', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -1485,11 +1485,11 @@ test('onSend hook should remove content-length', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     t.notOk(res.headers['content-length'], 'no content length')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -1510,10 +1510,10 @@ test('Should compress if customTypes is set and matches content type', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(res.rawPayload)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -1535,7 +1535,7 @@ test('Should not compress if customTypes is set and does not match content type 
   }, (err, res) => {
     t.error(err)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
   })
 })
 
@@ -1557,7 +1557,7 @@ test('Should not apply customTypes if value passed is not RegExp', t => {
   }, (err, res) => {
     t.error(err)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
   })
 })
 
@@ -1578,8 +1578,8 @@ test('Should only use `encodings` if passed', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.headers['content-encoding'], 'deflate')
+    t.equal(res.statusCode, 200)
   })
 })
 
@@ -1624,9 +1624,9 @@ test('Should not compress mime types with undefined compressible values', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.statusCode, 200)
+    t.equal(res.statusCode, 200)
     t.notOk(res.headers['content-encoding'])
-    t.strictEqual(res.payload, 'hello')
+    t.equal(res.payload, 'hello')
   })
 })
 
@@ -1657,10 +1657,10 @@ test('Should send data compressed according to brotliOptions', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'br')
+    t.equal(res.headers['content-encoding'], 'br')
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(res.rawPayload, brotliOptions)
-    t.strictEqual(payload.toString('utf-8'), file)
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -1689,7 +1689,7 @@ test('Should send data deflated according to zlibOptions', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'deflate')
+    t.equal(res.headers['content-encoding'], 'deflate')
     const fileBuffer = readFileSync('./package.json')
     t.same(res.rawPayload, zlib.deflateSync(fileBuffer, zlibOptions))
   })
@@ -1719,7 +1719,7 @@ test('Should send data gzipped according to zlibOptions', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.strictEqual(res.headers['content-encoding'], 'gzip')
+    t.equal(res.headers['content-encoding'], 'gzip')
     const fileBuffer = readFileSync('./package.json')
     t.same(res.rawPayload, zlib.gzipSync(fileBuffer, zlibOptions))
   })
@@ -1791,7 +1791,7 @@ test('should concat accept-encoding to vary header if present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.deepEqual(res.headers.vary, ['different-header', 'accept-encoding'])
+    t.same(res.headers.vary, ['different-header', 'accept-encoding'])
   })
 
   fastify.inject({
@@ -1802,7 +1802,7 @@ test('should concat accept-encoding to vary header if present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.deepEqual(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
+    t.same(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
   })
 })
 
@@ -1830,7 +1830,7 @@ test('should not add accept-encoding to vary header if already present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.deepEqual(res.headers.vary, 'accept-encoding,different-header')
+    t.same(res.headers.vary, 'accept-encoding,different-header')
   })
 
   fastify.inject({
@@ -1841,6 +1841,6 @@ test('should not add accept-encoding to vary header if already present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.deepEqual(res.headers.vary, ['accept-encoding', 'different-header', 'my-header'])
+    t.same(res.headers.vary, ['accept-encoding', 'different-header', 'my-header'])
   })
 })
