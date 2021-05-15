@@ -39,6 +39,8 @@ fastify.register(
 ```
 Remember that thanks to the Fastify encapsulation model, you can set a global compression, but run it only in a subset of routes if you wrap them inside a plugin.
 
+Important note! If you are using `fastify-compress` plugin together with `fastify-static` plugin, you must register the `fastify-compress` (with *global hook*) **before** registering `fastify-static`.
+
 ### Per Route options
 You can specify different options for compression per route by passing in the `compress` options on the route's configuration.
 ```javascript
