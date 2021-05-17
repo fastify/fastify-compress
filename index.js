@@ -223,6 +223,11 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     if (payload == null) {
       return next()
     }
+    const responseEncoding = reply.getHeader('Content-Encoding')
+    if (responseEncoding && responseEncoding !== 'identity') {
+      // response is already compressed
+      return next()
+    }
     setVaryHeader(reply)
 
     let stream, encoding
