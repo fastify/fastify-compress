@@ -1769,6 +1769,7 @@ test('stream onEnd handler should log an error if exists', t => {
   const logger = new Writable({
     write (chunk, encoding, callback) {
       actual = JSON.parse(chunk.toString())
+      callback()
     }
   })
 
