@@ -195,16 +195,21 @@ test('should support quality syntax', t => {
   })
 })
 
-test('onSend hook should not double-compress Stream if already zipped', t => {
-  t.plan(3)
+test('onSend hook should not double-compress Stream if already gzipped', t => {
+  t.plan(4)
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: true })
+  fastify.register(compressPlugin, {
+    global: true,
+    threshold: 0
+  })
 
+  const file = readFileSync('./package.json', 'utf8')
   fastify.get('/', (req, reply) => {
-    reply.type('text/plain').compress(
-      createReadStream('./package.json')
-        .pipe(zlib.createGzip())
-    )
+    const payload = zlib.gzipSync(file)
+    reply.type('application/json')
+      .header('content-encoding', 'gzip')
+      .header('content-length', payload.length)
+      .send(payload)
   })
 
   fastify.inject({
@@ -216,8 +221,40 @@ test('onSend hook should not double-compress Stream if already zipped', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.headers['content-encoding'], 'gzip')
-    const file = readFileSync('./package.json', 'utf8')
+    t.equal(res.headers['content-length'], res.rawPayload.length)
     const payload = zlib.gunzipSync(res.rawPayload)
+    t.equal(payload.toString('utf-8'), file)
+  })
+})
+
+test('onSend hook should not double-compress Stream if already brotli compressed', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: true,
+    threshold: 0
+  })
+
+  const file = readFileSync('./package.json', 'utf8')
+  fastify.get('/', (req, reply) => {
+    const payload = zlib.brotliCompressSync(file)
+    reply.type('application/json')
+      .header('content-encoding', 'br')
+      .header('content-length', payload.length)
+      .send(payload)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'br,gzip,deflate'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.headers['content-encoding'], 'br')
+    t.equal(res.headers['content-length'], res.rawPayload.length)
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
     t.equal(payload.toString('utf-8'), file)
   })
 })
@@ -1732,6 +1769,7 @@ test('stream onEnd handler should log an error if exists', t => {
   const logger = new Writable({
     write (chunk, encoding, callback) {
       actual = JSON.parse(chunk.toString())
+      callback()
     }
   })
 
