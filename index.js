@@ -403,7 +403,7 @@ function setVaryHeader (reply) {
   if (reply.hasHeader('Vary')) {
     const varyHeader = Array.isArray(reply.getHeader('Vary')) ? reply.getHeader('Vary') : [reply.getHeader('Vary')]
     if (!varyHeader.some((h) => h.includes('accept-encoding'))) {
-      reply.header('Vary', [...varyHeader, 'accept-encoding'])
+      reply.header('Vary', `${varyHeader.join(', ')}, accept-encoding`)
     }
   } else {
     reply.header('Vary', 'accept-encoding')
