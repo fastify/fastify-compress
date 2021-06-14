@@ -1829,7 +1829,7 @@ test('should concat accept-encoding to vary header if present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.same(res.headers.vary, ['different-header', 'accept-encoding'])
+    t.same(res.headers.vary, 'different-header, accept-encoding')
   })
 
   fastify.inject({
@@ -1840,7 +1840,7 @@ test('should concat accept-encoding to vary header if present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.same(res.headers.vary, ['different-header', 'my-header', 'accept-encoding'])
+    t.same(res.headers.vary, 'different-header, my-header, accept-encoding')
   })
 })
 
@@ -1856,7 +1856,7 @@ test('should not add accept-encoding to vary header if already present', t => {
   })
 
   fastify.get('/foo', (req, reply) => {
-    reply.header('vary', ['accept-encoding', 'different-header', 'my-header'])
+    reply.header('vary', 'accept-encoding, different-header, my-header')
     reply.type('text/plain').compress(createReadStream('./package.json'))
   })
 
@@ -1879,6 +1879,6 @@ test('should not add accept-encoding to vary header if already present', t => {
     }
   }, (err, res) => {
     t.error(err)
-    t.same(res.headers.vary, ['accept-encoding', 'different-header', 'my-header'])
+    t.same(res.headers.vary, 'accept-encoding, different-header, my-header')
   })
 })
