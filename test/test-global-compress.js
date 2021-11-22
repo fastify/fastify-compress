@@ -1191,7 +1191,31 @@ test('Should not compress text/event-stream', t => {
   })
 })
 
-test('Should decompress compressed payloads on x-no-compression header', t => {
+test('Should decompress compressed payloads on x-no-compression header (deflate)', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.deflateSync(JSON.stringify(json)))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.same(JSON.parse('' + res.payload), json)
+  })
+})
+
+test('Should decompress compressed payloads on x-no-compression header (gzip)', t => {
   t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
