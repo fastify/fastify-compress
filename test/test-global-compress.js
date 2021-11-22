@@ -356,6 +356,60 @@ test('should follow the encoding order', t => {
   })
 })
 
+test('should sort and follow the custom `encodings` options', (t) => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: false,
+    encodings: ['gzip', 'br']
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'hello,gzip,br'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.headers['content-encoding'], 'br')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+})
+
+test('should sort and follow the custom `requestEncodings` options', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, requestEncodings: ['gzip', 'br'] })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'hello,gzip,br'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.headers['content-encoding'], 'br')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.brotliDecompressSync(res.rawPayload)
+    t.equal(payload.toString('utf-8'), file)
+  })
+})
+
 test('should send uncompressed if unsupported encoding', t => {
   t.plan(4)
   const fastify = Fastify()
