@@ -1500,6 +1500,34 @@ test('accept-encoding can contain white space', t => {
   })
 })
 
+test('Should remove `content-length` header for a Stream when `inflateIfDeflated` is true on `x-no-compression` header', (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, inflateIfDeflated: true })
+
+  fastify.get('/', (req, reply) => {
+    const stream = createReadStream('./package.json')
+    reply.type('application/octet-stream').compress(stream)
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'x-no-compression': true
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      const file = readFileSync('./package.json', 'utf8')
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(file, res.payload)
+    }
+  )
+})
+
 test('Should add `content-encoding` header for a Stream when `inflateIfDeflated` is true and `encoding` is undefined', (t) => {
   t.plan(4)
   const fastify = Fastify()
