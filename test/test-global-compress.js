@@ -539,7 +539,28 @@ test('should not compress on missing header', t => {
   })
 })
 
-test('should decompress compressed Buffers on missing header', t => {
+test('should decompress compressed Buffers on missing header (deflate)', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.deflateSync(JSON.stringify(json)))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.same(JSON.parse('' + res.payload), json)
+  })
+})
+
+test('should decompress compressed Buffers on missing header (gzip)', t => {
   t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
@@ -583,7 +604,28 @@ test('should decompress data that has been compressed multiple times on missing 
   })
 })
 
-test('should decompress compressed Streams on missing header', t => {
+test('should decompress compressed Streams on missing header (deflate)', t => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+
+  fastify.get('/', (req, reply) => {
+    reply.send(createReadStream('./package.json').pipe(zlib.createDeflate()))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET'
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    const file = readFileSync('./package.json', 'utf8')
+    t.equal(res.rawPayload.toString('utf-8'), file)
+  })
+})
+
+test('should decompress compressed Streams on missing header (gzip)', t => {
   t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
