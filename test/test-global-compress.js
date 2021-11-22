@@ -1262,7 +1262,7 @@ test('Should not try compress missing payload', t => {
   })
 })
 
-test('Should not compress if content-type is a invalid type', t => {
+test('Should not compress if content-type is an invalid type', t => {
   t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
@@ -1286,7 +1286,7 @@ test('Should not compress if content-type is a invalid type', t => {
   })
 })
 
-test('Should not compress if content-type is a invalid type', t => {
+test('Should not compress if content-type is an invalid type', t => {
   t.plan(4)
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0 })
@@ -1378,10 +1378,75 @@ test('Should compress json data (brotli) - global', t => {
   })
 })
 
+test('Should return a serialized payload when `inflateIfDeflated` is true on x-no-compression header', t => {
+  t.plan(8)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+  const compressedBufferPayload = zlib.brotliCompressSync(Buffer.from(json.toString()))
+
+  fastify.get('/one', (req, reply) => {
+    reply.send(json)
+  })
+
+  fastify.inject({
+    url: '/one',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.same(JSON.parse(res.payload), json)
+  })
+
+  fastify.get('/two', (req, reply) => {
+    reply.send(compressedBufferPayload)
+  })
+
+  fastify.inject({
+    url: '/two',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.notOk(res.headers['content-encoding'])
+    t.equal(res.payload, compressedBufferPayload.toString())
+  })
+})
+
 test('identity header (compress)', t => {
   t.plan(3)
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false, threshold: 0 })
+
+  fastify.get('/', (req, reply) => {
+    reply.compress({ hello: 'world' })
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'identity'
+    }
+  }, (err, res) => {
+    t.error(err)
+    const payload = JSON.parse(res.payload)
+    t.notOk(res.headers['content-encoding'])
+    t.same({ hello: 'world' }, payload)
+  })
+})
+
+test('identity header and `inflateIfDeflated` is true (compress)', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, threshold: 0, inflateIfDeflated: true })
 
   fastify.get('/', (req, reply) => {
     reply.compress({ hello: 'world' })
