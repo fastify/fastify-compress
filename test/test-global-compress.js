@@ -3,6 +3,7 @@
 const t = require('tap')
 const test = t.test
 const zlib = require('zlib')
+const admZip = require('adm-zip')
 const fs = require('fs')
 const JSONStream = require('jsonstream')
 const { Readable, Writable, PassThrough } = require('stream')
@@ -1237,6 +1238,35 @@ test('Should decompress compressed payloads on x-no-compression header (gzip)', 
     t.notOk(res.headers['content-encoding'])
     t.same(JSON.parse('' + res.payload), json)
   })
+})
+
+test('Should decompress compressed payloads on x-no-compression header (zip)', (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const json = { hello: 'world' }
+  const zip = new admZip()
+  zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(zip.toBuffer())
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'x-no-compression': true
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-encoding'])
+      t.same(JSON.parse(res.payload), json)
+    }
+  )
 })
 
 test('Should not try compress missing payload', t => {
