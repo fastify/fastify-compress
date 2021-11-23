@@ -1651,6 +1651,44 @@ test('Should add `content-encoding` header for a Stream when `inflateIfDeflated`
   )
 })
 
+test('Should send an uncompressed Stream and add `content-encoding` header', (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: true,
+    inflateIfDeflated: true,
+    encodings: ['deflate', 'gzip']
+  })
+
+  fastify.get('/', {
+    compress: {
+      encodings: ['gzip'],
+      inflateIfDeflated: true,
+      threshold: 0
+    }
+  }, (req, reply) => {
+    reply.send(createReadStream('./package.json'))
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'accept-encoding': 'identity'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equal(res.headers['content-encoding'], 'identity')
+      const file = readFileSync('./package.json', 'utf-8')
+      t.same(res.payload, file)
+    }
+  )
+})
+
 test('compress should remove content-length', t => {
   t.plan(4)
   const fastify = Fastify()
