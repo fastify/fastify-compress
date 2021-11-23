@@ -19,8 +19,6 @@ const { inherits, format } = require('util')
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
-const compressAdded = Symbol('fastify-compress.added')
-
 function compressPlugin (fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
   const globalDecompressParams = processDecompressParams(opts)
@@ -181,18 +179,8 @@ function processDecompressParams (opts) {
 }
 
 function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
-  // This methods works by altering the routeOptions, it has side effects.
-  // There is the possibility that the same options are set for more than
-  // one route, so we just need to make sure that the hook is addded only
-  // once.
-  if (routeOptions[compressAdded]) {
-    return
-  }
-
-  routeOptions[compressAdded] = true
-
-  // In order to provide a compress method with the same parameter set as the route itself has
-  // we do the decorate the reply at the start of the request
+  // In order to provide a compress method with the same parameter set as the route itself,
+  // we decorate the reply at the start of the request
   if (Array.isArray(routeOptions.onRequest)) {
     routeOptions.onRequest.push(onRequest)
   } else if (typeof routeOptions.onRequest === 'function') {
