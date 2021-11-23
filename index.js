@@ -119,14 +119,14 @@ function processCompressParams (opts) {
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/(?!event-stream)|\+json$|\+text$|\+xml$|octet-stream$/
   params.compressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
+    br: () => ((opts.zlib || zlib).createBrotliCompress)(params.brotliOptions),
+    gzip: () => ((opts.zlib || zlib).createGzip)(params.zlibOptions),
+    deflate: () => ((opts.zlib || zlib).createDeflate)(params.zlibOptions)
   }
   params.uncompressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
+    br: () => ((opts.zlib || zlib).createBrotliDecompress)(params.brotliOptions),
+    gzip: () => ((opts.zlib || zlib).createGunzip)(params.zlibOptions),
+    deflate: () => ((opts.zlib || zlib).createInflate)(params.zlibOptions)
   }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
