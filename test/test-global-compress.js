@@ -540,6 +540,62 @@ test('should not compress on missing header', t => {
   })
 })
 
+test('should decompress compressed Buffers on missing header with the fallback zlib.createInflate (deflate)', (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    threshold: 0,
+    inflateIfDeflated: true,
+    zlib: true // will trigger a fallback on the default zlib.createInflate
+  })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.deflateSync(JSON.stringify(json)))
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET'
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-encoding'])
+      t.same(JSON.parse('' + res.payload), json)
+    }
+  )
+})
+
+test('should decompress compressed Buffers on missing header with the fallback zlib.createGunzip (gzip)', (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    threshold: 0,
+    inflateIfDeflated: true,
+    zlib: true // will trigger a fallback on the default zlib.createGunzip
+  })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.send(zlib.gzipSync(JSON.stringify(json)))
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET'
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-encoding'])
+      t.same(JSON.parse('' + res.payload), json)
+    }
+  )
+})
+
 test('should decompress compressed Buffers on missing header (deflate)', t => {
   t.plan(4)
   const fastify = Fastify()
@@ -1072,6 +1128,94 @@ test('Should compress string data (deflate)', t => {
     const payload = zlib.inflateSync(res.rawPayload)
     t.equal(payload.toString('utf-8'), 'hello')
   })
+})
+
+test('Should compress json data with the fallback zlib.createBrotliCompress (brotli)', (t) => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: false,
+    threshold: 0,
+    zlib: true // will trigger a fallback on the default zlib.createBrotliCompress
+  })
+  const json = { hello: 'world' }
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(json)
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'br'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      const payload = zlib.brotliDecompressSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    }
+  )
+})
+
+test('Should compress string data with the fallback zlib.createGzip (gzip)', (t) => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: false,
+    threshold: 0,
+    zlib: true // will trigger a fallback on the default zlib.createGzip
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress('hello')
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      const payload = zlib.gunzipSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), 'hello')
+    }
+  )
+})
+
+test('Should compress string data with the fallback zlib.createDeflate (deflate)', (t) => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, {
+    global: false,
+    threshold: 0,
+    zlib: true // will trigger a fallback on the default zlib.createDeflate
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress('hello')
+  })
+
+  fastify.inject(
+    {
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), 'hello')
+    }
+  )
 })
 
 test('Should compress string data (brotli)', t => {
