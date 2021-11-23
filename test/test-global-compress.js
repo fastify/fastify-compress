@@ -2033,3 +2033,321 @@ test('should not add accept-encoding to vary header if already present', t => {
     t.same(res.headers.vary, 'accept-encoding, different-header, my-header')
   })
 })
+
+test('Should correctly add onRequest hooks', (t) => {
+  t.plan(17)
+  const fastify = Fastify()
+
+  fastify.addHook('onRequest', async (request, reply) => {
+    reply.header('x-fastify-global-test', 'ok')
+  })
+
+  fastify.register(compressPlugin, { global: true, threshold: 0 })
+
+  fastify.get(
+    '/one',
+    {
+      onRequest: [
+        async (request, reply) => {
+          reply.header('x-fastify-test-one', 'ok')
+        }
+      ]
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/one',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-one'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/two',
+    {
+      onRequest: async (request, reply) => {
+        reply.header('x-fastify-test-two', 'ok')
+      }
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/two',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-two'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/three',
+    {
+      onRequest: null
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/three',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+})
+
+test('Should correctly add onSend hooks', (t) => {
+  t.plan(17)
+  const fastify = Fastify()
+
+  fastify.addHook('onSend', async (request, reply) => {
+    reply.header('x-fastify-global-test', 'ok')
+  })
+
+  fastify.register(compressPlugin, { global: true, threshold: 0 })
+
+  fastify.get(
+    '/one',
+    {
+      onSend: [
+        async (request, reply) => {
+          reply.header('x-fastify-test-one', 'ok')
+        }
+      ]
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/one',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-one'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/two',
+    {
+      onSend: async (request, reply) => {
+        reply.header('x-fastify-test-two', 'ok')
+      }
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/two',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-two'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/three',
+    {
+      onSend: null
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/three',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+})
+
+test('Should correctly add preParsing hooks', (t) => {
+  t.plan(17)
+  const fastify = Fastify()
+
+  fastify.addHook('preParsing', async (request, reply) => {
+    reply.header('x-fastify-global-test', 'ok')
+  })
+
+  fastify.register(compressPlugin, { global: true, threshold: 0 })
+
+  fastify.get(
+    '/one',
+    {
+      preParsing: [
+        async (request, reply) => {
+          reply.header('x-fastify-test-one', 'ok')
+        }
+      ]
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/one',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-one'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/two',
+    {
+      preParsing: async (request, reply) => {
+        reply.header('x-fastify-test-two', 'ok')
+      }
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/two',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      t.equal(res.headers['x-fastify-test-two'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+
+  fastify.get(
+    '/three',
+    {
+      preParsing: null
+    },
+    (req, reply) => {
+      reply.type('text/plain').compress(createReadStream('./package.json'))
+    }
+  )
+
+  fastify.inject(
+    {
+      url: '/three',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.notOk(res.headers['content-length'], 'no content length')
+      t.equal(res.headers['x-fastify-global-test'], 'ok')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.inflateSync(res.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+    }
+  )
+})
