@@ -1749,6 +1749,35 @@ test('onSend hook should remove content-length', t => {
   })
 })
 
+test('Should not compress if content is not detected as a compressible type when a reply `Content-Type` header is not set', t => {
+  t.plan(3)
+  const fastify = Fastify()
+  const json = { hello: 'world' }
+
+  fastify.register(compressPlugin, { threshold: 0 })
+
+  fastify.addHook('onSend', async (req, res) => {
+    res.header('content-type', undefined)
+  })
+
+  fastify.get('/', (req, reply) => {
+    reply.compress(json)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      'accept-encoding': 'identity'
+    }
+  }, (err, res) => {
+    t.error(err)
+    t.notOk(res.headers['content-encoding'])
+    t.equal(res.payload, JSON.stringify(json))
+  })
+})
+
 test('Should compress if customTypes is set and matches content type', t => {
   t.plan(3)
   const fastify = Fastify()
