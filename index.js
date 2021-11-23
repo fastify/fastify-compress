@@ -67,7 +67,7 @@ function compressPlugin (fastify, opts, next) {
         throw new Error('Unknown value for route compress configuration')
       }
     } else if (globalCompressParams.global) {
-      // if the plugin is set globally ( meaning that all the routes will be compressed )
+      // if the plugin is set globally (meaning that all the routes will be compressed)
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
       buildRouteCompress(fastify, globalCompressParams, routeOptions)
     } else {
@@ -91,7 +91,7 @@ function compressPlugin (fastify, opts, next) {
         throw new Error('Unknown value for route decompress configuration')
       }
     } else if (globalDecompressParams.global) {
-      // if the plugin is set globally ( meaning that all the routes will be decompressed )
+      // if the plugin is set globally (meaning that all the routes will be decompressed)
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
       buildRouteDecompress(fastify, globalDecompressParams, routeOptions)
     }
@@ -117,14 +117,14 @@ function processCompressParams (opts) {
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/(?!event-stream)|\+json$|\+text$|\+xml$|octet-stream$/
   params.compressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliCompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createDeflate)(params.zlibOptions)
+    br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
+    gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
+    deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
   }
   params.uncompressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliDecompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGunzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createInflate)(params.zlibOptions)
+    br: () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
+    gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
+    deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
   }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
