@@ -3,7 +3,7 @@
 const t = require('tap')
 const test = t.test
 const zlib = require('zlib')
-const admZip = require('adm-zip')
+const AdmZip = require('adm-zip')
 const fs = require('fs')
 const JSONStream = require('jsonstream')
 const { Readable, Writable, PassThrough } = require('stream')
@@ -1245,7 +1245,7 @@ test('Should decompress compressed payloads on x-no-compression header (zip)', (
   const fastify = Fastify()
   fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
   const json = { hello: 'world' }
-  const zip = new admZip()
+  const zip = new AdmZip()
   zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
 
   fastify.get('/', (req, reply) => {
