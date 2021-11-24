@@ -38,7 +38,7 @@
     "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
     "test": "standard && npm run unit && npm run typescript",
     "typescript": "tsd",
-    "unit": "tap test/*.js --no-check-coverage"
+    "unit": "tap -J test/*.js"
   },
   "keywords": [
     "fastify",
