@@ -19,8 +19,6 @@ const { inherits, format } = require('util')
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
-const compressAdded = Symbol('fastify-compress.added')
-
 function compressPlugin (fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
   const globalDecompressParams = processDecompressParams(opts)
@@ -69,7 +67,7 @@ function compressPlugin (fastify, opts, next) {
         throw new Error('Unknown value for route compress configuration')
       }
     } else if (globalCompressParams.global) {
-      // if the plugin is set globally ( meaning that all the routes will be compressed )
+      // if the plugin is set globally (meaning that all the routes will be compressed)
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
       buildRouteCompress(fastify, globalCompressParams, routeOptions)
     } else {
@@ -93,7 +91,7 @@ function compressPlugin (fastify, opts, next) {
         throw new Error('Unknown value for route decompress configuration')
       }
     } else if (globalDecompressParams.global) {
-      // if the plugin is set globally ( meaning that all the routes will be decompressed )
+      // if the plugin is set globally (meaning that all the routes will be decompressed)
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
       buildRouteDecompress(fastify, globalDecompressParams, routeOptions)
     }
@@ -124,7 +122,9 @@ function processCompressParams (opts) {
     deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
   }
   params.uncompressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
+    // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
+    // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
+    br: /* istanbul ignore next */ () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
     gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
     deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
   }
@@ -181,18 +181,8 @@ function processDecompressParams (opts) {
 }
 
 function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
-  // This methods works by altering the routeOptions, it has side effects.
-  // There is the possibility that the same options are set for more than
-  // one route, so we just need to make sure that the hook is addded only
-  // once.
-  if (routeOptions[compressAdded]) {
-    return
-  }
-
-  routeOptions[compressAdded] = true
-
-  // In order to provide a compress method with the same parameter set as the route itself has
-  // we do the decorate the reply at the start of the request
+  // In order to provide a compress method with the same parameter set as the route itself,
+  // we decorate the reply at the start of the request
   if (Array.isArray(routeOptions.onRequest)) {
     routeOptions.onRequest.push(onRequest)
   } else if (typeof routeOptions.onRequest === 'function') {
@@ -504,6 +494,8 @@ function zipStream (deflate, encoding) {
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
   return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+    /* istanbul ignore if */
+    // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
     switch (isCompressed(data)) {
       case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
