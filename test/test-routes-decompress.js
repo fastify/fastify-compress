@@ -36,10 +36,8 @@ test('should decompress a inflated data with custom inflate', t => {
   })
 
   fastify.post('/custom', {
-    config: {
-      decompress: {
-        zlib: customZlib
-      }
+    decompress: {
+      zlib: customZlib
     }
   }, (req, reply) => {
     reply.send(req.body.name)
@@ -98,10 +96,8 @@ test('should decompress a inflated data with custom gzip', t => {
   })
 
   fastify.post('/custom', {
-    config: {
-      decompress: {
-        zlib: customZlib
-      }
+    decompress: {
+      zlib: customZlib
     }
   }, (req, reply) => {
     reply.send(req.body.name)
@@ -157,11 +153,7 @@ test('should not decompress if route decompression disabled', t => {
     reply.send(req.body.name)
   })
 
-  fastify.post('/custom', {
-    config: {
-      decompress: false
-    }
-  }, (req, reply) => {
+  fastify.post('/custom', { decompress: false }, (req, reply) => {
     reply.send(req.body.name)
   })
 
@@ -208,11 +200,7 @@ test('should throw an error on invalid decompression setting', t => {
   const fastify = Fastify()
   fastify.register(compressPlugin, { global: false })
 
-  fastify.post('/', {
-    config: {
-      decompress: 'bad config'
-    }
-  }, (req, reply) => {
+  fastify.post('/', { decompress: 'bad config' }, (req, reply) => {
     reply.send(req.body.name)
   })
 
