@@ -61,6 +61,6 @@
     "node": ">=10.16"
   },
   "tsd": {
-    "directory": "test"
+    "directory": "test/types"
   }
 }
