@@ -53,15 +53,15 @@ function compressPlugin (fastify, opts, next) {
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
     // Manage compression options
-    if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
-      if (typeof routeOptions.config.compress === 'object') {
+    if (typeof routeOptions.compress !== 'undefined') {
+      if (typeof routeOptions.compress === 'object') {
         const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.config.compress)
+          {}, globalCompressParams, processCompressParams(routeOptions.compress)
         )
 
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
-      } else if (routeOptions.config.compress === false) {
+      } else if (routeOptions.compress === false) {
         // don't apply any compress settings
       } else {
         throw new Error('Unknown value for route compress configuration')
@@ -77,15 +77,15 @@ function compressPlugin (fastify, opts, next) {
     }
 
     // Manage decompression options
-    if (routeOptions.config && typeof routeOptions.config.decompress !== 'undefined') {
-      if (typeof routeOptions.config.decompress === 'object') {
+    if (typeof routeOptions.decompress !== 'undefined') {
+      if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
         const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.config.decompress)
+          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
         )
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
-      } else if (routeOptions.config.decompress === false) {
+      } else if (routeOptions.decompress === false) {
         // don't apply any decompress settings
       } else {
         throw new Error('Unknown value for route decompress configuration')
