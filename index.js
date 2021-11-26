@@ -81,7 +81,7 @@ function compressPlugin (fastify, opts, next) {
       buildRouteCompress(fastify, globalCompressParams, routeOptions, true)
     }
 
-    // If route config.compress has been set it takes precedence over compress
+    // If route config.decompress has been set it takes precedence over compress
     if (routeOptions.config && typeof routeOptions.config.decompress !== 'undefined') {
       routeOptions.decompress = routeOptions.config.decompress
     }
