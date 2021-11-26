@@ -3,6 +3,7 @@
   "version": "3.6.1",
   "description": "Fastify compression utils",
   "main": "index.js",
+  "types": "index.d.ts",
   "dependencies": {
     "encoding-negotiator": "^2.0.1",
     "fastify-plugin": "^3.0.0",
