@@ -216,3 +216,94 @@ test('should throw an error on invalid decompression setting', t => {
     t.equal(err.message, 'Unknown value for route decompress configuration')
   })
 })
+
+test('should work with the old `{ config: decompress }` option', t => {
+  t.plan(10)
+
+  let usedCustomGlobal = false
+  let usedCustom = false
+
+  const customZlibGlobal = { createGunzip: () => (usedCustomGlobal = true) && zlib.createGunzip() }
+  const customZlib = { createGunzip: () => (usedCustom = true) && zlib.createGunzip() }
+
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { zlib: customZlibGlobal })
+
+  fastify.post('/', (req, reply) => {
+    reply.send(req.body.name)
+  })
+
+  fastify.post('/custom', {
+    config: {
+      decompress: {
+        zlib: customZlib
+      }
+    }
+  }, (req, reply) => {
+    reply.send(req.body.name)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'content-encoding': 'gzip'
+    },
+    payload: createPayload(zlib.createGzip)
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equal(res.body, 'fastify-compress')
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
+
+    usedCustom = false
+    usedCustomGlobal = false
+
+    fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createGzip)
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equal(res.body, 'fastify-compress')
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
+    })
+  })
+})
+
+test('should throw an error: `{ config: decompress }` option value takes precedence over `decompress` option value', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.post('/', {
+    decompress: {
+      zlib: { createGunzip: () => zlib.createGunzip() }
+    },
+    config: {
+      decompress: 'bad config'
+    }
+  }, (req, reply) => {
+    reply.send(req.body.name)
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-encoding': 'gzip'
+    },
+    payload: ''
+  }, (err, res) => {
+    t.type(err, Error)
+    t.equal(err.message, 'Unknown value for route decompress configuration')
+  })
+})

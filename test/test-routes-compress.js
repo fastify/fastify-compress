@@ -224,6 +224,90 @@ test('should throw an error on invalid compression setting', t => {
   })
 })
 
+test('should work with the old `{ config: compress }` option', t => {
+  t.plan(10)
+  let usedCustomGlobal = false
+  let usedCustom = false
+  const customZlibGlobal = { createGzip: () => (usedCustomGlobal = true) && zlib.createGzip() }
+  const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
+
+  fastify.get('/', (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/custom', {
+    config: {
+      compress: { zlib: customZlib }
+    }
+  }, (req, reply) => {
+    reply.type('text/plain').compress(createReadStream('./package.json'))
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, response) => {
+    t.error(err)
+    t.equal(response.headers['content-encoding'], 'gzip')
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(payload.toString('utf-8'), file)
+    t.equal(usedCustom, false)
+    t.equal(usedCustomGlobal, true)
+
+    usedCustom = false
+    usedCustomGlobal = false
+    fastify.inject({
+      url: '/custom',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    }, (err, response) => {
+      t.error(err)
+      t.equal(response.headers['content-encoding'], 'gzip')
+      const file = readFileSync('./package.json', 'utf8')
+      const payload = zlib.gunzipSync(response.rawPayload)
+      t.equal(payload.toString('utf-8'), file)
+      t.equal(usedCustom, true)
+      t.equal(usedCustomGlobal, false)
+    })
+  })
+})
+
+test('should throw an error: `{ config: compress }` option value takes precedence over `compress` option value', t => {
+  t.plan(2)
+  const fastify = Fastify()
+  fastify.register(compressPlugin, { global: false })
+
+  fastify.get('/', {
+    compress: {
+      zlib: { createGzip: () => zlib.createGzip() }
+    },
+    config: {
+      compress: 'bad config'
+    }
+  }, (req, reply) => {
+    reply.send('')
+  })
+
+  fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  }, (err, response) => {
+    t.type(err, Error)
+    t.equal(err.message, 'Unknown value for route compress configuration')
+  })
+})
+
 test('avoid double onSend', t => {
   t.plan(2)
 
