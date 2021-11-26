@@ -1,12 +1,12 @@
-import fastify from 'fastify'
+import fastify, { FastifyInstance } from 'fastify'
 import { createReadStream } from 'fs'
-import fastifyCompress from '..'
+import { expectError, expectType } from 'tsd'
+import * as zlib from 'zlib'
+import fastifyCompress, { FastifyCompressOptions } from '../..'
 
-const zlib = require('zlib')
+const stream = createReadStream('./package.json')
 
-const app = fastify()
-
-app.register(fastifyCompress, {
+const withGlobalOptions: FastifyCompressOptions = {
   global: true,
   threshold: 10,
   zlib: zlib,
@@ -22,14 +22,73 @@ app.register(fastifyCompress, {
   encodings: ['gzip', 'br', 'identity', 'deflate'],
   requestEncodings: ['gzip', 'br', 'identity', 'deflate'],
   forceRequestEncoding: 'gzip'
+}
+
+const app: FastifyInstance = fastify()
+app.register(fastifyCompress, withGlobalOptions)
+
+app.get('/test-one', async (request, reply) => {
+  expectType<void>(reply.compress(stream))
 })
 
-const appWithoutGlobal = fastify()
+app.get('/test-two', async (request, reply) => {
+  expectError(reply.compress())
+})
 
+// Instanciation of an app without global
+const appWithoutGlobal: FastifyInstance = fastify()
 appWithoutGlobal.register(fastifyCompress, { global: false })
-
-appWithoutGlobal.get('/', (req, reply) => {
-  reply
-    .type('text/plain')
-    .compress(createReadStream('./package.json'))
+appWithoutGlobal.get('/', {
+  compress: {
+    zlib: {
+      createGzip: () => zlib.createGzip()
+    }
+  },
+  decompress: {
+    forceRequestEncoding: 'gzip',
+    zlib: {
+      createGunzip: () => zlib.createGunzip()
+    }
+  }
+}, (req, reply) => {
+  expectType<void>(reply.type('text/plain').compress(stream))
 })
+
+expectError(
+  appWithoutGlobal.get('/throw-a-ts-arg-error-on-shorthand-route', {
+    compress: 'bad compress route option value',
+    decompress: 'bad decompress route option value'
+  }, (req, reply) => {
+    expectType<void>(reply.type('text/plain').compress(stream))
+  })
+)
+
+expectError(
+  appWithoutGlobal.route({
+    method: 'GET',
+    path: '/throw-a-ts-arg-error',
+    compress: 'bad compress route option value',
+    decompress: 'bad decompress route option value',
+    handler: (req, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
+  })
+)
+
+appWithoutGlobal.inject(
+  {
+    method: 'GET',
+    path: '/throw-a-ts-arg-error',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  },
+  (err) => {
+    expectType<Error>(err)
+  }
+)
+
+// Instanciation of an app that should trigger a typescript error
+const appThatTriggerAnError = fastify()
+expectError(appThatTriggerAnError.register(fastifyCompress, {
+  global: true,
+  thisOptionDoesNotExist: 'trigger a typescript error'
+}))
