@@ -52,6 +52,11 @@ function compressPlugin (fastify, opts, next) {
 
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
+    // If route config.compress has been set it takes precedence over compress
+    if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
+      routeOptions.compress = routeOptions.config.compress
+    }
+
     // Manage compression options
     if (typeof routeOptions.compress !== 'undefined') {
       if (typeof routeOptions.compress === 'object') {
@@ -74,6 +79,11 @@ function compressPlugin (fastify, opts, next) {
       // if no options are specified and the plugin is not global, then we still want to decorate
       // the reply in this case
       buildRouteCompress(fastify, globalCompressParams, routeOptions, true)
+    }
+
+    // If route config.compress has been set it takes precedence over compress
+    if (routeOptions.config && typeof routeOptions.config.decompress !== 'undefined') {
+      routeOptions.decompress = routeOptions.config.decompress
     }
 
     // Manage decompression options
