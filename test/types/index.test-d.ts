@@ -50,7 +50,7 @@ appWithoutGlobal.get('/', {
       createGunzip: () => zlib.createGunzip()
     }
   }
-}, (req, reply) => {
+}, (request, reply) => {
   expectType<void>(reply.type('text/plain').compress(stream))
 })
 
@@ -58,7 +58,7 @@ expectError(
   appWithoutGlobal.get('/throw-a-ts-arg-error-on-shorthand-route', {
     compress: 'bad compress route option value',
     decompress: 'bad decompress route option value'
-  }, (req, reply) => {
+  }, (request, reply) => {
     expectType<void>(reply.type('text/plain').compress(stream))
   })
 )
@@ -69,7 +69,7 @@ expectError(
     path: '/throw-a-ts-arg-error',
     compress: 'bad compress route option value',
     decompress: 'bad decompress route option value',
-    handler: (req, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
+    handler: (request, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
   })
 )
 
