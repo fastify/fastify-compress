@@ -1,5 +1,11 @@
+import {
+  FastifyPluginCallback,
+  FastifyReply,
+  FastifyRequest,
+  RawServerBase,
+  RawServerDefault
+} from 'fastify'
 import * as fastify from 'fastify'
-import { FastifyPluginCallback, FastifyReply, FastifyRequest, RawServerBase, RawServerDefault } from 'fastify'
 import { Input, InputObject } from 'into-stream'
 import { Stream } from 'stream'
 import { BrotliOptions, ZlibOptions } from 'zlib'
@@ -42,16 +48,25 @@ interface RouteDecompressOptions extends Pick<FastifyCompressOptions,
 > {}
 
 interface FastifyCompressRouteOptions {
-  compress?: false | RouteCompressOptions;
-  decompress?: false | RouteDecompressOptions;
+  compress?: RouteCompressOptions | false;
+  decompress?: RouteDecompressOptions | false;
 }
 
 export interface RouteOptions extends fastify.RouteOptions, FastifyCompressRouteOptions {}
 
+export interface RoutesConfigCompressOptions {
+  /** @deprecated `config.compress` is deprecated, use `compress` shorthand option instead */
+  compress?: RouteCompressOptions | false;
+  /** @deprecated `config.decompress` is deprecated, use `decompress` shorthand option instead */
+  decompress?: RouteDecompressOptions | false;
+}
+
 declare module 'fastify' {
+  export interface FastifyContextConfig extends RoutesConfigCompressOptions {}
+
   export interface RouteShorthandOptions<
     RawServer extends RawServerBase = RawServerDefault
-  > extends FastifyCompressRouteOptions { }
+  > extends FastifyCompressRouteOptions {}
 
   interface FastifyReply {
     compress(input: Stream | Input | InputObject): void;

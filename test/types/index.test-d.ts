@@ -38,7 +38,8 @@ app.get('/test-two', async (request, reply) => {
 // Instanciation of an app without global
 const appWithoutGlobal: FastifyInstance = fastify()
 appWithoutGlobal.register(fastifyCompress, { global: false })
-appWithoutGlobal.get('/', {
+
+appWithoutGlobal.get('/one', {
   compress: {
     zlib: {
       createGzip: () => zlib.createGzip()
@@ -48,6 +49,24 @@ appWithoutGlobal.get('/', {
     forceRequestEncoding: 'gzip',
     zlib: {
       createGunzip: () => zlib.createGunzip()
+    }
+  }
+}, (request, reply) => {
+  expectType<void>(reply.type('text/plain').compress(stream))
+})
+
+appWithoutGlobal.get('/two', {
+  config: {
+    compress: {
+      zlib: {
+        createGzip: () => zlib.createGzip()
+      }
+    },
+    decompress: {
+      forceRequestEncoding: 'gzip',
+      zlib: {
+        createGunzip: () => zlib.createGunzip()
+      }
     }
   }
 }, (request, reply) => {
