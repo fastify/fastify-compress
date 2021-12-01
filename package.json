@@ -42,7 +42,7 @@
     "lint:types": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin typescript *.d.ts",
     "test": "npm run lint && npm run unit && npm run test:typescript",
     "test:typescript": "tsd",
-    "unit": "tap -J test/*.js",
+    "unit": "tap -J test/*.test.js",
     "unit:report": "npm run unit -- --cov --coverage-report=html",
     "unit:verbose": "npm run unit -- -Rspec"
   },
