@@ -19,7 +19,7 @@ function createPayload (compresser) {
 }
 
 test('When using routes `decompress` settings :', async (t) => {
-  t.test('It should decompress data using the route specific custom provided `createInflate` method', (t) => {
+  t.test('It should decompress data using the route custom provided `createInflate` method', (t) => {
     t.plan(10)
 
     let usedCustomGlobal = false
@@ -81,7 +81,7 @@ test('When using routes `decompress` settings :', async (t) => {
     })
   })
 
-  t.test('It should decompress data with the route specific custom provided `createGunzip` method', (t) => {
+  t.test('It should decompress data using the route custom provided `createGunzip` method', (t) => {
     t.plan(10)
 
     let usedCustomGlobal = false
@@ -226,7 +226,7 @@ test('When using routes `decompress` settings :', async (t) => {
 })
 
 test('When using the old routes `{ config: decompress }` option :', async (t) => {
-  t.test('It should decompress data with the route specific custom provided `createGunzip` method', (t) => {
+  t.test('It should decompress data using the route custom provided `createGunzip` method', (t) => {
     t.plan(10)
 
     let usedCustomGlobal = false
