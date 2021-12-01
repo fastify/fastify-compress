@@ -3,6 +3,7 @@
   "version": "3.6.1",
   "description": "Fastify compression utils",
   "main": "index.js",
+  "types": "index.d.ts",
   "dependencies": {
     "encoding-negotiator": "^2.0.1",
     "fastify-plugin": "^3.0.0",
@@ -34,11 +35,16 @@
   },
   "scripts": {
     "coverage": "npm run unit -- --cov",
-    "coverage-report": "npm run coverage && tap --coverage-report=lcov",
-    "lint:typescript": "standard --fix --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
-    "test": "standard && npm run unit && npm run typescript",
-    "typescript": "tsd",
-    "unit": "tap -J test/*.js"
+    "coverage-report": "npm run coverage -- --coverage-report=lcov",
+    "lint": "standard",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
+    "lint:types": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin typescript *.d.ts",
+    "test": "npm run lint && npm run unit && npm run test:typescript",
+    "test:typescript": "tsd",
+    "unit": "tap -J test/*.js",
+    "unit:report": "npm run unit -- --cov --coverage-report=html",
+    "unit:verbose": "npm run unit -- -Rspec"
   },
   "keywords": [
     "fastify",
@@ -61,6 +67,6 @@
     "node": ">=10.16"
   },
   "tsd": {
-    "directory": "test"
+    "directory": "test/types"
   }
 }

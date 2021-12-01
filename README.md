@@ -51,18 +51,20 @@ fastify.register(
 
 // only compress if the payload is above a certain size and use brotli
 fastify.get('/custom-route', {
-    config: {
-      compress: {
-        threshold: 128
-        brotli: brotli
-      }
+  compress: {
+    inflateIfDeflated: true,
+    threshold: 128,
+    zlib: {
+      createBrotliCompress: () => createYourCustomBrotliCompress(),
+      createGzip: () => createYourCustomGzip(),
+      createDeflate: () => createYourCustomDeflate()
     }
   }, (req, reply) => {
     // ...
   })
 ```
 
-Note: Setting `config.compress = false` on any route will disable compression on the route even if global compression is enabled.
+Note: Setting `compress = false` on any route will disable compression on the route even if global compression is enabled.
 
 ### `reply.compress`
 This plugin adds a `compress` method to `reply` that accepts a stream or a string, and compresses it based on the `accept-encoding` header. If a JS object is passed in, it will be stringified to JSON. 
@@ -204,12 +206,15 @@ fastify.register(
 
 // Always decompress using gzip
 fastify.get('/custom-route', {
-    config: {
-      decompress: {
-        forceRequestEncoding: 'gzip'
-      }
+  decompress: {
+    forceRequestEncoding: 'gzip',
+    zlib: {
+      createBrotliDecompress: () => createYourCustomBrotliDecompress(),
+      createGunzip: () => createYourCustomGunzip(),
+      createInflate: () => createYourCustomInflate()
     }
-  }, (req, reply) => {
+  }
+}, (req, reply) => {
     // ...
   })
 ```
