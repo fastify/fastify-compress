@@ -8,11 +8,11 @@ const pump = require('pump')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 
-function createPayload (compresser) {
+function createPayload (compressor) {
   let payload = createReadStream(path.resolve(__dirname, '../package.json'))
 
-  if (compresser) {
-    payload = pump(payload, compresser())
+  if (compressor) {
+    payload = pump(payload, compressor())
   }
 
   return payload
