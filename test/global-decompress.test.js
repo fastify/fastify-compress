@@ -19,7 +19,7 @@ function createPayload (compressor) {
 }
 
 test('It should decompress the request payload :', async (t) => {
-  t.test('Using brotli algorithm when the request `Content-Encoding` header value is set to `br`', async (t) => {
+  t.test('using brotli algorithm when `Content-Encoding` request header value is set to `br`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -42,7 +42,7 @@ test('It should decompress the request payload :', async (t) => {
     t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('Using deflate algorithm when the request `Content-Encoding` header value is set to `deflate`', async (t) => {
+  t.test('using deflate algorithm when `Content-Encoding` request header value is set to `deflate`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -65,7 +65,7 @@ test('It should decompress the request payload :', async (t) => {
     t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('Using gzip algorithm when the request `Content-Encoding` header value is set to `gzip`', async (t) => {
+  t.test('using gzip algorithm when `Content-Encoding` request header value is set to `gzip`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -88,7 +88,7 @@ test('It should decompress the request payload :', async (t) => {
     t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('Using the `forceRequestEncoding` provided algorithm over the request `Content-Encoding` header value', async (t) => {
+  t.test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -113,7 +113,7 @@ test('It should decompress the request payload :', async (t) => {
 })
 
 test('It should not decompress :', async (t) => {
-  t.test('When the request `Content-Encoding` header is missing', async (t) => {
+  t.test('when `Content-Encoding` request header is missing', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -135,7 +135,7 @@ test('It should not decompress :', async (t) => {
     t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('When the request `Content-Encoding` header is set to `identity`', async (t) => {
+  t.test('when `Content-Encoding` request header value is set to `identity`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -160,7 +160,7 @@ test('It should not decompress :', async (t) => {
 })
 
 test('It should return an error :', async (t) => {
-  t.test('When the request `Content-Encoding` header value is not supported', async (t) => {
+  t.test('when `Content-Encoding` request header value is not supported', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -188,7 +188,7 @@ test('It should return an error :', async (t) => {
     })
   })
 
-  t.test('When the request `Content-Encoding` header value is disabled by the `requestEncodings` option', async (t) => {
+  t.test('when `Content-Encoding` request header value is disabled by the `requestEncodings` option', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -216,7 +216,7 @@ test('It should return an error :', async (t) => {
     })
   })
 
-  t.test('When the compressed payload is invalid according to the request `Content-Encoding` header value', async (t) => {
+  t.test('when the compressed payload is invalid according to `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -322,7 +322,7 @@ test('It should return the error returned by :', async (t) => {
 })
 
 test('It should return the default error :', async (t) => {
-  t.test('When `onUnsupportedRequestEncoding` throws', async (t) => {
+  t.test('when `onUnsupportedRequestEncoding` throws', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -354,7 +354,7 @@ test('It should return the default error :', async (t) => {
     })
   })
 
-  t.test('When `onInvalidRequestPayload` throws', async (t) => {
+  t.test('when `onInvalidRequestPayload` throws', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -399,7 +399,7 @@ test('It should validate `requestEncodings` option', (t) => {
 })
 
 test('It should make sure that at least one encoding value is supported :', async (t) => {
-  t.test('When setting `requestEncodings`', (t) => {
+  t.test('when setting `requestEncodings`', (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -410,7 +410,7 @@ test('It should make sure that at least one encoding value is supported :', asyn
     })
   })
 
-  t.test('When setting `forceRequestEncodings`', (t) => {
+  t.test('when setting `forceRequestEncodings`', (t) => {
     t.plan(1)
 
     const fastify = Fastify()
