@@ -7,8 +7,8 @@ const Fastify = require('fastify')
 const compressPlugin = require('../index')
 
 test('When using routes `compress` settings :', async (t) => {
-  t.test('It should compress data using the route custom provided `createDeflate` method', (t) => {
-    t.plan(12)
+  t.test('It should compress data using the route custom provided `createDeflate` method', async (t) => {
+    t.plan(10)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -16,7 +16,7 @@ test('When using routes `compress` settings :', async (t) => {
     const customZlib = { createDeflate: () => (usedCustom = true) && zlib.createDeflate() }
 
     const fastify = Fastify()
-    fastify.register(compressPlugin, { global: true, zlib: customZlibGlobal })
+    await fastify.register(compressPlugin, { global: true, zlib: customZlibGlobal })
 
     fastify.get('/', (request, reply) => {
       reply
@@ -32,15 +32,13 @@ test('When using routes `compress` settings :', async (t) => {
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.inject({
+    await fastify.inject({
       url: '/',
       method: 'GET',
       headers: {
         'accept-encoding': 'deflate'
       }
-    }, (err, response) => {
-      t.error(err)
-
+    }).then(async (response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -52,27 +50,29 @@ test('When using routes `compress` settings :', async (t) => {
 
       usedCustom = false
       usedCustomGlobal = false
-      fastify.inject({
+      await fastify.inject({
         url: '/custom',
         method: 'GET',
         headers: {
           'accept-encoding': 'deflate'
         }
-      }, (err, response) => {
-        t.error(err)
-        const file = readFileSync('./package.json', 'utf8')
-        const payload = zlib.inflateSync(response.rawPayload)
+      }).then((response) => {
         t.equal(usedCustom, true)
         t.equal(usedCustomGlobal, false)
+
+        const file = readFileSync('./package.json', 'utf8')
+        const payload = zlib.inflateSync(response.rawPayload)
         t.equal(response.headers['content-encoding'], 'deflate')
         t.notOk(response.headers['content-length'], 'no content length')
         t.equal(payload.toString('utf-8'), file)
       })
+    }).catch((err) => {
+      t.error(err)
     })
   })
 
-  t.test('It should compress data using the route custom provided `createGzip` method', (t) => {
-    t.plan(10)
+  t.test('It should compress data using the route custom provided `createGzip` method', async (t) => {
+    t.plan(8)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -80,7 +80,7 @@ test('When using routes `compress` settings :', async (t) => {
     const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
 
     const fastify = Fastify()
-    fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
+    await fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
 
     fastify.get('/', (request, reply) => {
       reply
@@ -94,14 +94,13 @@ test('When using routes `compress` settings :', async (t) => {
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.inject({
+    await fastify.inject({
       url: '/',
       method: 'GET',
       headers: {
         'accept-encoding': 'gzip'
       }
-    }, (err, response) => {
-      t.error(err)
+    }).then(async (response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -112,15 +111,13 @@ test('When using routes `compress` settings :', async (t) => {
 
       usedCustom = false
       usedCustomGlobal = false
-      fastify.inject({
+      await fastify.inject({
         url: '/custom',
         method: 'GET',
         headers: {
           'accept-encoding': 'gzip'
         }
-      }, (err, response) => {
-        t.error(err)
-
+      }).then((response) => {
         t.equal(usedCustom, true)
         t.equal(usedCustomGlobal, false)
 
@@ -129,17 +126,19 @@ test('When using routes `compress` settings :', async (t) => {
         t.equal(response.headers['content-encoding'], 'gzip')
         t.equal(payload.toString('utf-8'), file)
       })
+    }).catch((err) => {
+      t.error(err)
     })
   })
 
-  t.test('It should not compress data when `global` is `false` unless `compress` routes settings have been set up', (t) => {
-    t.plan(12)
+  t.test('It should not compress data when `global` is `false` unless `compress` routes settings have been set up', async (t) => {
+    t.plan(9)
 
     let usedCustom = false
     const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
 
     const fastify = Fastify()
-    fastify.register(compressPlugin, { global: false })
+    await fastify.register(compressPlugin, { global: false })
 
     fastify.get('/', (request, reply) => {
       // compress function should still be available
@@ -162,30 +161,26 @@ test('When using routes `compress` settings :', async (t) => {
       reply.send({ foo: 1 })
     })
 
-    fastify.inject({
+    await fastify.inject({
       url: '/',
       method: 'GET',
       headers: {
         'accept-encoding': 'gzip'
       }
-    }, (err, response) => {
-      t.error(err)
-
+    }).then(async (response) => {
       t.equal(usedCustom, false)
 
       t.equal(response.headers['content-encoding'], undefined)
       t.equal(response.rawPayload.toString('utf-8'), JSON.stringify({ foo: 1 }))
 
       usedCustom = false
-      fastify.inject({
+      await fastify.inject({
         url: '/custom',
         method: 'GET',
         headers: {
           'accept-encoding': 'gzip'
         }
-      }, (err, response) => {
-        t.error(err)
-
+      }).then(async (response) => {
         t.equal(usedCustom, true)
 
         const file = readFileSync('./package.json', 'utf8')
@@ -193,20 +188,20 @@ test('When using routes `compress` settings :', async (t) => {
         t.equal(response.headers['content-encoding'], 'gzip')
         t.equal(payload.toString('utf-8'), file)
 
-        fastify.inject({
+        await fastify.inject({
           url: '/standard',
           method: 'GET',
           headers: {
             'accept-encoding': 'gzip'
           }
-        }, (err, response) => {
-          t.error(err)
-
+        }).then((response) => {
           const payload = zlib.gunzipSync(response.rawPayload)
           t.equal(response.headers['content-encoding'], 'gzip')
           t.equal(payload.toString('utf-8'), JSON.stringify({ foo: 1 }))
         })
       })
+    }).catch((err) => {
+      t.error(err)
     })
   })
 
@@ -261,8 +256,8 @@ test('When using routes `compress` settings :', async (t) => {
 })
 
 test('When using the old routes `{ config: compress }` option :', async (t) => {
-  t.test('It should compress data using the route custom provided `createGzip` method', (t) => {
-    t.plan(10)
+  t.test('It should compress data using the route custom provided `createGzip` method', async (t) => {
+    t.plan(8)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -270,7 +265,7 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
     const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
 
     const fastify = Fastify()
-    fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
+    await fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
 
     fastify.get('/', (request, reply) => {
       reply
@@ -288,15 +283,13 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.inject({
+    await fastify.inject({
       url: '/',
       method: 'GET',
       headers: {
         'accept-encoding': 'gzip'
       }
-    }, (err, response) => {
-      t.error(err)
-
+    }).then(async (response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -307,15 +300,13 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
 
       usedCustom = false
       usedCustomGlobal = false
-      fastify.inject({
+      await fastify.inject({
         url: '/custom',
         method: 'GET',
         headers: {
           'accept-encoding': 'gzip'
         }
-      }, (err, response) => {
-        t.error(err)
-
+      }).then((response) => {
         t.equal(usedCustom, true)
         t.equal(usedCustomGlobal, false)
 
@@ -324,6 +315,8 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
         t.equal(response.headers['content-encoding'], 'gzip')
         t.equal(payload.toString('utf-8'), file)
       })
+    }).catch((err) => {
+      t.error(err)
     })
   })
 
