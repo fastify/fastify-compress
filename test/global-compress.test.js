@@ -2654,7 +2654,7 @@ test('It should sort and follow custom `requestEncodings` options', async (t) =>
   t.equal(payload.toString('utf-8'), file)
 })
 
-test('When `Accept-Encoding` request header is missing, it should uncompress data :', async (t) => {
+test('It should uncompress data when `Accept-Encoding` request header is missing :', async (t) => {
   t.test('using the fallback Node.js `zlib.createInflate()` method', async (t) => {
     t.plan(3)
 
