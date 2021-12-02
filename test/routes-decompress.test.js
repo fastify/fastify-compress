@@ -19,7 +19,7 @@ function createPayload (compressor) {
 }
 
 test('When using routes `decompress` settings :', async (t) => {
-  t.test('It should decompress data using the route custom provided `createInflate` method', async (t) => {
+  t.test('it should decompress data using the route custom provided `createInflate` method', async (t) => {
     t.plan(8)
 
     let usedCustomGlobal = false
@@ -50,7 +50,7 @@ test('When using routes `decompress` settings :', async (t) => {
         'content-encoding': 'deflate'
       },
       payload: createPayload(zlib.createDeflate)
-    }).then(async (response) => {
+    }).then((response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -59,27 +59,24 @@ test('When using routes `decompress` settings :', async (t) => {
 
       usedCustom = false
       usedCustomGlobal = false
-      await fastify.inject({
-        url: '/custom',
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'content-encoding': 'deflate'
-        },
-        payload: createPayload(zlib.createDeflate)
-      }).then((response) => {
-        t.equal(usedCustom, true)
-        t.equal(usedCustomGlobal, false)
-
-        t.equal(response.statusCode, 200)
-        t.equal(response.body, 'fastify-compress')
-      })
-    }).catch((err) => {
-      t.error(err)
     })
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+    t.equal(usedCustom, true)
+    t.equal(usedCustomGlobal, false)
+
+    t.equal(response.statusCode, 200)
+    t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('It should decompress data using the route custom provided `createGunzip` method', async (t) => {
+  t.test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
     t.plan(8)
 
     let usedCustomGlobal = false
@@ -110,7 +107,7 @@ test('When using routes `decompress` settings :', async (t) => {
         'content-encoding': 'gzip'
       },
       payload: createPayload(zlib.createGzip)
-    }).then(async (response) => {
+    }).then((response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -119,27 +116,25 @@ test('When using routes `decompress` settings :', async (t) => {
 
       usedCustom = false
       usedCustomGlobal = false
-      await fastify.inject({
-        url: '/custom',
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'content-encoding': 'gzip'
-        },
-        payload: createPayload(zlib.createGzip)
-      }).then((response) => {
-        t.equal(usedCustom, true)
-        t.equal(usedCustomGlobal, false)
-
-        t.equal(response.statusCode, 200)
-        t.equal(response.body, 'fastify-compress')
-      })
-    }).catch((err) => {
-      t.error(err)
     })
+
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.equal(usedCustom, true)
+    t.equal(usedCustomGlobal, false)
+
+    t.equal(response.statusCode, 200)
+    t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('It should not decompress data when route `decompress` option is set to `false`', async (t) => {
+  t.test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
     t.plan(6)
 
     let usedCustomGlobal = false
@@ -164,38 +159,36 @@ test('When using routes `decompress` settings :', async (t) => {
         'content-encoding': 'gzip'
       },
       payload: createPayload(zlib.createGzip)
-    }).then(async (response) => {
+    }).then((response) => {
       t.equal(usedCustomGlobal, true)
 
       t.equal(response.statusCode, 200)
       t.equal(response.body, 'fastify-compress')
 
       usedCustomGlobal = false
-      await fastify.inject({
-        url: '/custom',
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'content-encoding': 'gzip'
-        },
-        payload: createPayload(zlib.createGzip)
-      }).then((response) => {
-        t.equal(usedCustomGlobal, false)
+    })
 
-        t.equal(response.statusCode, 400)
-        t.strictSame(response.json(), {
-          statusCode: 400,
-          code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
-          error: 'Bad Request',
-          message: 'Request body size did not match Content-Length'
-        })
-      })
-    }).catch((err) => {
-      t.error(err)
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.equal(usedCustomGlobal, false)
+
+    t.equal(response.statusCode, 400)
+    t.strictSame(response.json(), {
+      statusCode: 400,
+      code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
+      error: 'Bad Request',
+      message: 'Request body size did not match Content-Length'
     })
   })
 
-  t.test('It should throw an error on invalid route `decompress` settings', async (t) => {
+  t.test('it should throw an error on invalid route `decompress` settings', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -220,7 +213,7 @@ test('When using routes `decompress` settings :', async (t) => {
 })
 
 test('When using the old routes `{ config: decompress }` option :', async (t) => {
-  t.test('It should decompress data using the route custom provided `createGunzip` method', async (t) => {
+  t.test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
     t.plan(8)
 
     let usedCustomGlobal = false
@@ -253,7 +246,7 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
         'content-encoding': 'gzip'
       },
       payload: createPayload(zlib.createGzip)
-    }).then(async (response) => {
+    }).then((response) => {
       t.equal(usedCustom, false)
       t.equal(usedCustomGlobal, true)
 
@@ -262,27 +255,25 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
 
       usedCustom = false
       usedCustomGlobal = false
-      await fastify.inject({
-        url: '/custom',
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'content-encoding': 'gzip'
-        },
-        payload: createPayload(zlib.createGzip)
-      }).then((response) => {
-        t.equal(usedCustom, true)
-        t.equal(usedCustomGlobal, false)
-
-        t.equal(response.statusCode, 200)
-        t.equal(response.body, 'fastify-compress')
-      })
-    }).catch((err) => {
-      t.error(err)
     })
+
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.equal(usedCustom, true)
+    t.equal(usedCustomGlobal, false)
+
+    t.equal(response.statusCode, 200)
+    t.equal(response.body, 'fastify-compress')
   })
 
-  t.test('It should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {
+  t.test('it should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
