@@ -4,7 +4,6 @@ const { test } = require('tap')
 const { createReadStream, readFile, readFileSync } = require('fs')
 const { Readable, Writable, PassThrough } = require('stream')
 const zlib = require('zlib')
-const AdmZip = require('adm-zip')
 const JSONStream = require('jsonstream')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
@@ -704,32 +703,6 @@ test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header i
     t.equal(response.statusCode, 200)
     t.notOk(response.headers['content-encoding'])
     t.same(JSON.parse('' + response.payload), json)
-  })
-
-  t.test('it should uncompress payloads using the zip algorithm', async (t) => {
-    t.plan(3)
-
-    const fastify = Fastify()
-    await fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
-
-    const json = { hello: 'world' }
-    const zip = new AdmZip()
-    zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
-
-    fastify.get('/', (request, reply) => {
-      reply.compress(zip.toBuffer())
-    })
-
-    const response = await fastify.inject({
-      url: '/',
-      method: 'GET',
-      headers: {
-        'x-no-compression': true
-      }
-    })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse(response.payload), json)
   })
 })
 
