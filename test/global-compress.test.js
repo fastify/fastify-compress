@@ -707,7 +707,7 @@ test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header i
   })
 })
 
-test('it should uncompress payloads using the zip algorithm', async (t) => {
+test('it should not uncompress payloads using the zip algorithm', async (t) => {
   t.plan(4)
 
   const fastify = Fastify()
