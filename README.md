@@ -8,6 +8,8 @@
 Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/master/Reply/) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
 
+> **Important note:** since `fastify-compress` version 4.x payloads that are compressed using the `zip` algorithm are not automatically uncompressed anymore as it is out of the scope of this plugin.
+
 ## Install
 ```
 npm i fastify-compress
