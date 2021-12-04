@@ -22,7 +22,7 @@ export interface FastifyCompressOptions {
   onInvalidRequestPayload?: (encoding: string, request: FastifyRequest, error: Error) => Error | undefined | null;
   onUnsupportedEncoding?: (encoding: string, request: FastifyRequest, reply: FastifyReply) => string | Buffer | Stream;
   onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest, reply: FastifyReply) => Error | undefined | null;
-  removeContentLengthHeader: boolean;
+  removeContentLengthHeader?: boolean;
   requestEncodings?: EncodingToken[];
   threshold?: number;
   zlib?: unknown;
