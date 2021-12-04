@@ -171,6 +171,21 @@ You can tune compression by setting the `brotliOptions` and `zlibOptions` proper
   });
 ```
 
+### Manage `Content-Length` header removal with removeContentLengthHeader
+By default, `fastify-compress` removes the reply `Content-Length` header. You can change that by setting the `removeContentLengthHeader` to `false` either on a global scope or on a route specific scope.
+
+```javascript
+  // Global plugin scope
+  server.register(fastifyCompress, { global: true, removeContentLengthHeader: false });
+
+  // Route specific scope
+  fastify.get('/file', {
+    compress: { removeContentLengthHeader: false }
+  }, (req, reply) =>
+    reply.compress(fs.createReadStream('./file.gz'))
+  )
+```
+
 ## Usage - Decompress request payloads
 
 This plugin adds a `preParsing` hook that decompress the request payload according to the `content-encoding` request header.
