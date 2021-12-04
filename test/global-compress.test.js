@@ -705,32 +705,34 @@ test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header i
     t.notOk(response.headers['content-encoding'])
     t.same(JSON.parse('' + response.payload), json)
   })
+})
 
-  t.test('it should uncompress payloads using the zip algorithm', async (t) => {
-    t.plan(3)
+test('it should not uncompress payloads using the zip algorithm', async (t) => {
+  t.plan(4)
 
-    const fastify = Fastify()
-    await fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
 
-    const json = { hello: 'world' }
-    const zip = new AdmZip()
-    zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
+  const json = { hello: 'world' }
+  const zip = new AdmZip()
+  zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
+  const fileBuffer = zip.toBuffer()
 
-    fastify.get('/', (request, reply) => {
-      reply.compress(zip.toBuffer())
-    })
-
-    const response = await fastify.inject({
-      url: '/',
-      method: 'GET',
-      headers: {
-        'x-no-compression': true
-      }
-    })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse(response.payload), json)
+  fastify.get('/', (request, reply) => {
+    reply.compress(fileBuffer)
   })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'x-no-compression': true
+    }
+  })
+  t.equal(response.statusCode, 200)
+  t.notOk(response.headers['content-encoding'])
+  t.same(response.rawPayload, fileBuffer)
+  t.equal(response.payload, fileBuffer.toString('utf-8'))
 })
 
 test('It should not compress :', async (t) => {

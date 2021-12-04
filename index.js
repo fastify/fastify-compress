@@ -10,8 +10,6 @@ const peek = require('peek-stream')
 const Minipass = require('minipass')
 const pumpify = require('pumpify')
 const isGzip = require('is-gzip')
-const isZip = require('is-zip')
-const unZipper = require('unzipper')
 const isDeflate = require('is-deflate')
 const encodingNegotiator = require('encoding-negotiator')
 const { inherits, format } = require('util')
@@ -465,7 +463,6 @@ function shouldCompress (type, compressibleTypes) {
 function isCompressed (data) {
   if (isGzip(data)) return 1
   if (isDeflate(data)) return 2
-  if (isZip(data)) return 3
   return 0
 }
 
@@ -510,7 +507,6 @@ function unzipStream (inflate, maxRecursion) {
     switch (isCompressed(data)) {
       case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
       case 2: return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
-      case 3: return swap(null, pumpify(unZipper.ParseOne(), unzipStream(inflate, maxRecursion - 1)))
     }
     return swap(null, new Minipass())
   })
