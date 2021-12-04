@@ -2294,6 +2294,33 @@ test('`Accept-Encoding` request header values :', async (t) => {
     t.equal(payload.toString('utf-8'), buf.toString())
   })
 
+  t.test('should support `gzip` alias value `x-gzip`', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    fastify.get('/', (request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(
+          createReadStream('./package.json')
+        )
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'x-gzip'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(response.headers['content-encoding'], 'gzip')
+    t.equal(payload.toString('utf-8'), file)
+  })
+
   t.test('should support quality syntax', async (t) => {
     t.plan(2)
 
