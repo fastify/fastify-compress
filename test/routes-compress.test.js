@@ -1,7 +1,7 @@
 'use strict'
 
 const { test } = require('tap')
-const { createReadStream, readFileSync } = require('fs')
+const { createReadStream, readFile, readFileSync } = require('fs')
 const zlib = require('zlib')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
@@ -246,6 +246,78 @@ test('When using routes `compress` settings :', async (t) => {
       t.type(err, Error)
       t.equal(err.message, 'Unknown value for route compress configuration')
     })
+  })
+})
+
+test('When `compress.removeContentLengthHeader` is `false`, it should not remove `Content-Length` header :', async (t) => {
+  t.test('using `reply.compress()`', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    fastify.get('/', {
+      compress: { removeContentLengthHeader: false }
+    }, (request, reply) => {
+      readFile('./package.json', 'utf8', (err, data) => {
+        if (err) {
+          return reply.send(err)
+        }
+
+        reply
+          .type('text/plain')
+          .header('content-length', '' + data.length)
+          .compress(data)
+      })
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.inflateSync(response.rawPayload)
+    t.equal(response.headers['content-encoding'], 'deflate')
+    t.equal(response.headers['content-length'], payload.length.toString())
+    t.equal(payload.toString('utf-8'), file)
+  })
+
+  t.test('using `onSend` hook', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    fastify.get('/', {
+      compress: { removeContentLengthHeader: false }
+    }, (request, reply) => {
+      readFile('./package.json', 'utf8', (err, data) => {
+        if (err) {
+          return reply.send(err)
+        }
+
+        reply
+          .type('text/plain')
+          .header('content-length', '' + data.length)
+          .send(data)
+      })
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.inflateSync(response.rawPayload)
+    t.equal(response.headers['content-encoding'], 'deflate')
+    t.equal(response.headers['content-length'], payload.length.toString())
+    t.equal(payload.toString('utf-8'), file)
   })
 })
 

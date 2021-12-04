@@ -118,6 +118,7 @@ function processCompressParams (opts) {
     global: (typeof opts.global === 'boolean') ? opts.global : true
   }
 
+  params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
   params.brotliOptions = opts.brotliOptions
   params.zlibOptions = opts.zlibOptions
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
@@ -264,9 +265,11 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       payload = intoStream(payload)
     }
 
-    reply
-      .header('Content-Encoding', encoding)
-      .removeHeader('content-length')
+    params.removeContentLengthHeader
+      ? reply
+          .header('Content-Encoding', encoding)
+          .removeHeader('content-length')
+      : reply.header('Content-Encoding', encoding)
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(reply))
@@ -321,7 +324,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
       return next(null, raw)
     }
 
-    // Prepare decompression - If there is an decompress error, prepare the error for fastify handing
+    // Prepare decompression - If there is a decompress error, prepare the error for fastify handing
     const decompresser = params.decompressStream[encoding]()
     decompresser.receivedEncodedLength = 0
     decompresser.on('error', onDecompressError.bind(this, request, params, encoding))
@@ -387,9 +390,11 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
-    this
-      .header('Content-Encoding', encoding)
-      .removeHeader('content-length')
+    params.removeContentLengthHeader
+      ? this
+          .header('Content-Encoding', encoding)
+          .removeHeader('content-length')
+      : this.header('Content-Encoding', encoding)
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
