@@ -446,7 +446,10 @@ function getEncodingHeader (encodings, request) {
   let header = request.headers['accept-encoding']
   if (header != null) {
     header = header.toLowerCase()
-      .replace(/\*/g, 'gzip') // consider the no-preference token as gzip for downstream compat
+      // consider the no-preference token as gzip for downstream compat
+      // and x-gzip as an alias of gzip
+      // ref.: [HTTP/1.1 RFC 7230 section 4.2.3](https://datatracker.ietf.org/doc/html/rfc7230#section-4.2.3)
+      .replace(/\*|x-gzip/g, 'gzip')
     return encodingNegotiator.negotiate(header, encodings)
   } else {
     return undefined
