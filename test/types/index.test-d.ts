@@ -21,7 +21,8 @@ const withGlobalOptions: FastifyCompressOptions = {
   customTypes: /x-protobuf$/,
   encodings: ['gzip', 'br', 'identity', 'deflate'],
   requestEncodings: ['gzip', 'br', 'identity', 'deflate'],
-  forceRequestEncoding: 'gzip'
+  forceRequestEncoding: 'gzip',
+  removeContentLengthHeader: true
 }
 
 const app: FastifyInstance = fastify()
@@ -43,7 +44,8 @@ appWithoutGlobal.get('/one', {
   compress: {
     zlib: {
       createGzip: () => zlib.createGzip()
-    }
+    },
+    removeContentLengthHeader: false
   },
   decompress: {
     forceRequestEncoding: 'gzip',
