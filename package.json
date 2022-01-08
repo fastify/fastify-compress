@@ -10,7 +10,6 @@
     "into-stream": "^6.0.0",
     "is-deflate": "^1.0.0",
     "is-gzip": "^2.0.0",
-    "is-stream": "^2.0.1",
     "is-zip": "^1.0.0",
     "mime-db": "^1.51.0",
     "minipass": "^3.1.5",
