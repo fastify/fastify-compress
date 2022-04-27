@@ -55,7 +55,7 @@ test('When using routes `decompress` settings :', async (t) => {
       t.equal(usedCustomGlobal, true)
 
       t.equal(response.statusCode, 200)
-      t.equal(response.body, 'fastify-compress')
+      t.equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -73,7 +73,7 @@ test('When using routes `decompress` settings :', async (t) => {
     t.equal(usedCustomGlobal, false)
 
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
@@ -112,7 +112,7 @@ test('When using routes `decompress` settings :', async (t) => {
       t.equal(usedCustomGlobal, true)
 
       t.equal(response.statusCode, 200)
-      t.equal(response.body, 'fastify-compress')
+      t.equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -131,7 +131,7 @@ test('When using routes `decompress` settings :', async (t) => {
     t.equal(usedCustomGlobal, false)
 
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
@@ -163,7 +163,7 @@ test('When using routes `decompress` settings :', async (t) => {
       t.equal(usedCustomGlobal, true)
 
       t.equal(response.statusCode, 200)
-      t.equal(response.body, 'fastify-compress')
+      t.equal(response.body, '@fastify/compress')
 
       usedCustomGlobal = false
     })
@@ -251,7 +251,7 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
       t.equal(usedCustomGlobal, true)
 
       t.equal(response.statusCode, 200)
-      t.equal(response.body, 'fastify-compress')
+      t.equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -270,7 +270,7 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
     t.equal(usedCustomGlobal, false)
 
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('it should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {

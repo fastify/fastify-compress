@@ -39,7 +39,7 @@ test('It should decompress the request payload :', async (t) => {
       payload: createPayload(zlib.createBrotliCompress)
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('using deflate algorithm when `Content-Encoding` request header value is set to `deflate`', async (t) => {
@@ -62,7 +62,7 @@ test('It should decompress the request payload :', async (t) => {
       payload: createPayload(zlib.createDeflate)
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('using gzip algorithm when `Content-Encoding` request header value is set to `gzip`', async (t) => {
@@ -85,7 +85,7 @@ test('It should decompress the request payload :', async (t) => {
       payload: createPayload(zlib.createGzip)
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
@@ -108,7 +108,7 @@ test('It should decompress the request payload :', async (t) => {
       payload: createPayload(zlib.createGzip)
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 })
 
@@ -132,7 +132,7 @@ test('It should not decompress :', async (t) => {
       payload: createPayload()
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 
   t.test('when `Content-Encoding` request header value is set to `identity`', async (t) => {
@@ -155,7 +155,7 @@ test('It should not decompress :', async (t) => {
       payload: createPayload()
     })
     t.equal(response.statusCode, 200)
-    t.equal(response.body, 'fastify-compress')
+    t.equal(response.body, '@fastify/compress')
   })
 })
 
