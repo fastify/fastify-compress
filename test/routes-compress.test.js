@@ -225,27 +225,20 @@ test('When using routes `compress` settings :', async (t) => {
   })
 
   t.test('it should throw an error on invalid route `compress` settings', async (t) => {
-    t.plan(2)
+    t.plan(1)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false })
 
-    fastify.get('/', {
-      compress: 'bad config'
-    }, (request, reply) => {
-      reply.send('')
-    })
-
-    await fastify.inject({
-      url: '/',
-      method: 'GET',
-      headers: {
-        'accept-encoding': 'gzip'
-      }
-    }).catch((err) => {
-      t.type(err, Error)
+    try {
+      fastify.get('/', {
+        compress: 'bad config'
+      }, (request, reply) => {
+        reply.send('')
+      })
+    } catch (err) {
       t.equal(err.message, 'Unknown value for route compress configuration')
-    })
+    }
   })
 })
 
@@ -385,32 +378,25 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
   })
 
   t.test('it should use the old routes `{ config: compress }` options over routes `compress` options', async (t) => {
-    t.plan(2)
+    t.plan(1)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false })
 
-    fastify.get('/', {
-      compress: {
-        zlib: { createGzip: () => zlib.createGzip() }
-      },
-      config: {
-        compress: 'bad config'
-      }
-    }, (request, reply) => {
-      reply.send('')
-    })
-
-    await fastify.inject({
-      url: '/',
-      method: 'GET',
-      headers: {
-        'accept-encoding': 'gzip'
-      }
-    }).catch((err) => {
-      t.type(err, Error)
+    try {
+      fastify.get('/', {
+        compress: {
+          zlib: { createGzip: () => zlib.createGzip() }
+        },
+        config: {
+          compress: 'bad config'
+        }
+      }, (request, reply) => {
+        reply.send('')
+      })
+    } catch (err) {
       t.equal(err.message, 'Unknown value for route compress configuration')
-    })
+    }
   })
 })
 

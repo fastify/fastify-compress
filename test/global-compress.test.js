@@ -8,6 +8,7 @@ const AdmZip = require('adm-zip')
 const JSONStream = require('jsonstream')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
+const { once } = require('events')
 
 test('When `global` is not set, it is `true` by default :', async (t) => {
   t.test('it should compress Buffer data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
@@ -343,7 +344,7 @@ test('It should send compressed Buffer data when `global` is `true` :', async (t
     t.plan(1)
 
     const fastify = Fastify()
-    fastify.register(compressPlugin, { global: true, threshold: 0 })
+    await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const buf = Buffer.from('hello world')
     fastify.get('/', (request, reply) => {
@@ -1639,14 +1640,16 @@ test('It should return a serialized payload when `inflateIfDeflated` is `true` a
   t.equal(two.payload, compressedBufferPayload.toString())
 })
 
-test('It should close the stream', (t) => {
-  t.plan(4)
+test('It should close the stream', async (t) => {
+  t.plan(3)
 
   const fastify = Fastify()
-  fastify.register(compressPlugin, { global: true })
+  await fastify.register(compressPlugin, { global: true })
+
+  const stream = createReadStream('./package.json')
+  const closed = once(stream, 'close')
 
   fastify.get('/', (request, reply) => {
-    const stream = createReadStream('./package.json')
     stream.on('close', () => t.ok('stream closed'))
 
     reply
@@ -1654,16 +1657,15 @@ test('It should close the stream', (t) => {
       .compress(stream)
   })
 
-  fastify.inject({
+  const response = await fastify.inject({
     url: '/',
     method: 'GET'
-  }, (err, response) => {
-    t.error(err)
-
-    const file = readFileSync('./package.json', 'utf8')
-    t.equal(response.statusCode, 200)
-    t.equal(file, response.payload)
   })
+
+  const file = readFileSync('./package.json', 'utf8')
+  t.equal(response.statusCode, 200)
+  t.equal(file, response.payload)
+  await closed
 })
 
 test('It should log an existing error with stream onEnd handler', async (t) => {

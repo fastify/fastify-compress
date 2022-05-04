@@ -189,26 +189,18 @@ test('When using routes `decompress` settings :', async (t) => {
   })
 
   t.test('it should throw an error on invalid route `decompress` settings', async (t) => {
-    t.plan(2)
+    t.plan(1)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false })
 
-    fastify.post('/', { decompress: 'bad config' }, (request, reply) => {
-      reply.send(request.body.name)
-    })
-
-    await fastify.inject({
-      url: '/',
-      method: 'POST',
-      headers: {
-        'content-encoding': 'gzip'
-      },
-      payload: ''
-    }).catch((err) => {
-      t.type(err, Error)
+    try {
+      fastify.post('/', { decompress: 'bad config' }, (request, reply) => {
+        reply.send(request.body.name)
+      })
+    } catch (err) {
       t.equal(err.message, 'Unknown value for route decompress configuration')
-    })
+    }
   })
 })
 
@@ -274,32 +266,24 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
   })
 
   t.test('it should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {
-    t.plan(2)
+    t.plan(1)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false })
 
-    fastify.post('/', {
-      decompress: {
-        zlib: { createGunzip: () => zlib.createGunzip() }
-      },
-      config: {
-        decompress: 'bad config'
-      }
-    }, (request, reply) => {
-      reply.send(request.body.name)
-    })
-
-    await fastify.inject({
-      url: '/',
-      method: 'POST',
-      headers: {
-        'content-encoding': 'gzip'
-      },
-      payload: ''
-    }).catch((err) => {
-      t.type(err, Error)
+    try {
+      fastify.post('/', {
+        decompress: {
+          zlib: { createGunzip: () => zlib.createGunzip() }
+        },
+        config: {
+          decompress: 'bad config'
+        }
+      }, (request, reply) => {
+        reply.send(request.body.name)
+      })
+    } catch (err) {
       t.equal(err.message, 'Unknown value for route decompress configuration')
-    })
+    }
   })
 })
