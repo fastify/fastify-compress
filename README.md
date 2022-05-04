@@ -34,8 +34,8 @@ The plugin automatically decides if a payload should be compressed based on its 
 ### Global hook
 The global compression hook is enabled by default. To disable it, pass the option `{ global: false }`:
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { global: false }
 )
 ```
@@ -46,8 +46,8 @@ Important note! If you are using `@fastify/compress` plugin together with `@fast
 ### Per Route options
 You can specify different options for compression per route by passing in the `compress` options on the route's configuration.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { global: false }
 )
 
@@ -74,21 +74,19 @@ Note that the compress method is configured with either the per route parameters
 the plugin was defined as global.
 
 ```javascript
-const fs = require('fs')
-const fastify = require('fastify')()
+import fs from 'fs'
+import fastify from 'fastify'
 
-fastify.register(require('@fastify/compress'), { global: false })
+const app = fastify()
+await app.register(import('@fastify/compress'), { global: false })
 
-fastify.get('/', (req, reply) => {
+app.get('/', (req, reply) => {
   reply
     .type('text/plain')
     .compress(fs.createReadStream('./package.json'))
 })
 
-fastify.listen(3000, function (err) {
-  if (err) throw err
-  console.log(`server listening on ${fastify.server.address().port}`)
-})
+await app.listen(3000)
 ```
 
 ## Compress Options
@@ -96,16 +94,16 @@ fastify.listen(3000, function (err) {
 ### threshold
 The minimum byte size for a response to be compressed. Defaults to `1024`.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { threshold: 2048 }
 )
 ```
 ### customTypes
 [mime-db](https://github.com/jshttp/mime-db) is used to determine if a `content-type` should be compressed. You can compress additional content types via regular expression.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { customTypes: /x-protobuf$/ }
 )
 ```
@@ -113,8 +111,8 @@ fastify.register(
 ### onUnsupportedEncoding
 When the encoding is not supported, a custom error response can be sent in place of the uncompressed payload by setting the `onUnsupportedEncoding(encoding, request, reply)` option to be a function that can modify the reply and return a `string | Buffer | Stream | Error` payload.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   {
     onUnsupportedEncoding: (encoding, request, reply) => {
       reply.code(406)
@@ -130,8 +128,8 @@ You can selectively disable response compression by using the `x-no-compression`
 ### Inflate pre-compressed bodies for clients that do not support compression
 Optional feature to inflate pre-compressed data if the client does not include one of the supported compression types in its `accept-encoding` header.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { inflateIfDeflated: true }
 )
 
@@ -146,8 +144,8 @@ fastify.get('/file', (req, reply) =>
 By default, `@fastify/compress` prioritizes compression as described [at the beginning of §Usage - Compress replies](#usage). You can change that by passing an array of compression tokens to the `encodings` option:
 
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   // Only support gzip and deflate, and prefer deflate to gzip
   { encodings: ['deflate', 'gzip'] }
 )
@@ -176,7 +174,7 @@ By default, `@fastify/compress` removes the reply `Content-Length` header. You c
 
 ```javascript
   // Global plugin scope
-  server.register(fastifyCompress, { global: true, removeContentLengthHeader: false });
+  await server.register(fastifyCompress, { global: true, removeContentLengthHeader: false });
 
   // Route specific scope
   fastify.get('/file', {
@@ -204,8 +202,8 @@ If the request header is missing, the plugin will not do anything and yield to t
 
 The global request decompression hook is enabled by default. To disable it, pass the option `{ global: false }`:
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { global: false }
 )
 ```
@@ -216,8 +214,8 @@ Remember that thanks to the Fastify encapsulation model, you can set a global de
 
 You can specify different options for decompression per route by passing in the `decompress` options on the route's configuration.
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   { global: false }
 )
 
@@ -241,8 +239,8 @@ fastify.get('/custom-route', {
 By default, `@fastify/compress` accepts all encodings specified [at the beginning of §Usage - Decompress request payloads](#usage). You can change that by passing an array of compression tokens to the `requestEncodings` option:
 
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   // Only support gzip
   { requestEncodings: ['gzip'] }
 )
@@ -261,8 +259,8 @@ Note that if the request payload is not compressed, `@fastify/compress` will try
 When the request payload encoding is not supported, you can customize the response error by setting the `onUnsupportedEncoding(request, encoding)` option to be a function that returns an error.
 
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   {
      onUnsupportedRequestEncoding: (request, encoding) => {
       return {
@@ -281,8 +279,8 @@ fastify.register(
 When the request payload cannot be decompressed using the detected algorithm, you can customize the response error setting the `onInvalidRequestPayload(request, encoding)` option to be a function that returns an error.
 
 ```javascript
-fastify.register(
-  require('@fastify/compress'),
+await fastify.register(
+  import('@fastify/compress'),
   {
     onInvalidRequestPayload: (request, encoding, error) => {
       return {
