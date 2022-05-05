@@ -143,8 +143,8 @@ function processCompressParams (opts) {
 
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
-        .filter(encoding => opts.encodings.includes(encoding))
-        .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .filter(encoding => opts.encodings.includes(encoding))
+      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
 
   return params
@@ -175,8 +175,8 @@ function processDecompressParams (opts) {
 
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
-        .filter(encoding => opts.requestEncodings.includes(encoding))
-        .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .filter(encoding => opts.requestEncodings.includes(encoding))
+      .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
     : supportedEncodings
 
   if (opts.forceRequestEncoding) {
@@ -268,8 +268,8 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
 
     params.removeContentLengthHeader
       ? reply
-          .header('Content-Encoding', encoding)
-          .removeHeader('content-length')
+        .header('Content-Encoding', encoding)
+        .removeHeader('content-length')
       : reply.header('Content-Encoding', encoding)
 
     stream = zipStream(params.compressStream, encoding)
@@ -393,8 +393,8 @@ function compress (params) {
 
     params.removeContentLengthHeader
       ? this
-          .header('Content-Encoding', encoding)
-          .removeHeader('content-length')
+        .header('Content-Encoding', encoding)
+        .removeHeader('content-length')
       : this.header('Content-Encoding', encoding)
 
     stream = zipStream(params.compressStream, encoding)
@@ -551,6 +551,6 @@ function createError (code, message, statusCode) {
 }
 
 module.exports = fp(compressPlugin, {
-  fastify: '3.x',
-  name: 'fastify-compress'
+  fastify: '4.x',
+  name: '@fastify/compress'
 })
