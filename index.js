@@ -552,5 +552,5 @@ function createError (code, message, statusCode) {
 
 module.exports = fp(compressPlugin, {
   fastify: '4.x',
-  name: 'fastify-compress'
+  name: '@fastify/compress'
 })
