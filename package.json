@@ -61,9 +61,6 @@
     "type": "git",
     "url": "git+https://github.com/fastify/fastify-compress.git"
   },
-  "engines": {
-    "node": ">=10.16"
-  },
   "tsd": {
     "directory": "test/types"
   },
