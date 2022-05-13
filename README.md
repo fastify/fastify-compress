@@ -2,7 +2,6 @@
 
 ![CI](https://github.com/fastify/fastify-compress/workflows/CI/badge.svg)
 [![NPM version](https://img.shields.io/npm/v/@fastify/compress.svg?style=flat)](https://www.npmjs.com/package/@fastify/compress)
-[![Known Vulnerabilities](https://snyk.io/test/github/fastify/fastify-compress/badge.svg)](https://snyk.io/test/github/fastify/fastify-compress)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://standardjs.com/)
 
 Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
