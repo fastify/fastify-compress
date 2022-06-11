@@ -8,12 +8,10 @@ const intoStream = require('into-stream')
 const peek = require('peek-stream')
 const Minipass = require('minipass')
 const pumpify = require('pumpify')
-const isGzip = require('is-gzip')
-const isDeflate = require('is-deflate')
 const encodingNegotiator = require('encoding-negotiator')
 const { inherits, format } = require('util')
 
-const { isStream } = require('./lib/utils')
+const { isStream, isGzip, isDeflate } = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
