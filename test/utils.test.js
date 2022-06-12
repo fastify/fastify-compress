@@ -27,12 +27,15 @@ test('isStream() utility should be able to detect Streams', async (t) => {
 })
 
 test('isDeflate() utility should be able to detect deflate compressed Buffer', async (t) => {
-  t.plan(11)
+  t.plan(14)
 
   t.equal(isDeflate(Buffer.alloc(0)), false)
   t.equal(isDeflate(Buffer.alloc(0)), false)
   t.equal(isDeflate(Buffer.from([0x78])), false)
   t.equal(isDeflate(Buffer.from([0x78, 0x00])), false)
+  t.equal(isDeflate(Buffer.from([0x7a, 0x01])), false)
+  t.equal(isDeflate(Buffer.from([0x88, 0x01])), false)
+  t.equal(isDeflate(Buffer.from([0x78, 0x11])), false)
   t.equal(isDeflate(Buffer.from([0x78, 0x01])), true)
   t.equal(isDeflate(Buffer.from([0x78, 0x9c])), true)
   t.equal(isDeflate(Buffer.from([0x78, 0xda])), true)
