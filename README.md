@@ -163,7 +163,7 @@ You can tune compression by setting the `brotliOptions` and `zlibOptions` proper
       },
     },
     zlibOptions: {
-      level: 9, // default is 9, max is 9, min is 0
+      level: 6, // default is typically 6, max is 9, min is 0
     }
   });
 ```
