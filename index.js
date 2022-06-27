@@ -8,7 +8,7 @@ const intoStream = require('into-stream')
 const peek = require('peek-stream')
 const Minipass = require('minipass')
 const pumpify = require('pumpify')
-const encodingNegotiator = require('encoding-negotiator')
+const encodingNegotiator = require('@fastify/accept-negotiator')
 const { inherits, format } = require('util')
 
 const { isStream, isGzip, isDeflate } = require('./lib/utils')
