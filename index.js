@@ -2,14 +2,13 @@
 
 const fp = require('fastify-plugin')
 const zlib = require('zlib')
-const pump = require('pump')
 const mimedb = require('mime-db')
 const intoStream = require('into-stream')
-const peek = require('peek-stream')
+const peek = require('./lib/peek')
 const Minipass = require('minipass')
-const pumpify = require('pumpify')
 const encodingNegotiator = require('encoding-negotiator')
 const { inherits, format } = require('util')
+const { finished, pipeline } = require('readable-stream')
 
 const { isStream, isGzip, isDeflate } = require('./lib/utils')
 
@@ -252,7 +251,8 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
         encoding === undefined
           ? reply.removeHeader('Content-Encoding')
           : reply.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
+        payload = unzipStream(stream, params.uncompressStream)
+        finished(payload, onEnd.bind(reply))
       }
       return next(null, payload)
     }
@@ -270,8 +270,8 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
         .removeHeader('content-length')
       : reply.header('Content-Encoding', encoding)
 
-    stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(reply))
+    stream = zipStream(payload, params.compressStream, encoding)
+    finished(stream, onEnd.bind(reply))
     next(null, stream)
   }
 }
@@ -333,7 +333,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
     raw.on('data', trackEncodedLength.bind(decompresser))
     raw.on('end', removeEncodedLengthTracking)
 
-    next(null, pump(raw, decompresser))
+    next(null, pipeline(raw, decompresser, () => {}))
   }
 }
 
@@ -371,7 +371,8 @@ function compress (params) {
         encoding === undefined
           ? this.removeHeader('Content-Encoding')
           : this.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
+        payload = unzipStream(stream, params.uncompressStream)
+        finished(payload, onEnd.bind(this))
       }
       return this.send(payload)
     }
@@ -395,8 +396,8 @@ function compress (params) {
         .removeHeader('content-length')
       : this.header('Content-Encoding', encoding)
 
-    stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(this))
+    stream = zipStream(payload, params.compressStream, encoding)
+    finished(stream, onEnd.bind(this))
     this.send(stream)
   }
 }
@@ -495,27 +496,23 @@ function maybeUnzip (payload, serialize) {
   return intoStream(result)
 }
 
-function zipStream (deflate, encoding) {
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+function zipStream (stream, deflate, encoding) {
+  return peek(stream, { maxBuffer: 10 }, function (data) {
     switch (isCompressed(data)) {
-      case 1: return swap(null, new Minipass())
-      case 2: return swap(null, new Minipass())
+      case 1: return new Minipass()
+      case 2: return new Minipass()
     }
-    return swap(null, deflate[encoding]())
+    return deflate[encoding]()
   })
 }
 
-function unzipStream (inflate, maxRecursion) {
-  if (!(maxRecursion >= 0)) maxRecursion = 3
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
-    /* istanbul ignore if */
-    // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
-    if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
+function unzipStream (stream, inflate, maxRecursion) {
+  return peek(stream, { maxBuffer: 10 }, function (data) {
     switch (isCompressed(data)) {
-      case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
-      case 2: return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
+      case 1: return inflate.gzip()
+      case 2: return inflate.deflate()
     }
-    return swap(null, new Minipass())
+    return new Minipass()
   })
 }
 

@@ -1569,7 +1569,7 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
     t.test('when `inflateIfDeflated` is `true` and `encodings` is set', async (t) => {
       t.plan(3)
 
-      const fastify = Fastify()
+      const fastify = Fastify({ logger: true })
       await fastify.register(compressPlugin, {
         global: true,
         inflateIfDeflated: true,
@@ -1712,7 +1712,7 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
   t.equal(actual.msg, expect.message)
 })
 
-test('It should support stream1 :', async (t) => {
+test('It should support stream1 :', { only: true }, async (t) => {
   t.test('when using `reply.compress()`', async (t) => {
     t.plan(2)
 
@@ -1809,7 +1809,7 @@ test('It should remove `Content-Length` header :', async (t) => {
   t.test('using `reply.compress()` on a Stream when `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
     t.plan(3)
 
-    const fastify = Fastify()
+    const fastify = Fastify({ logger: true })
     await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
 
     fastify.get('/', (request, reply) => {
@@ -2904,34 +2904,6 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
     t.equal(response.statusCode, 200)
     t.notOk(response.headers['content-encoding'])
     t.equal(response.rawPayload.toString('utf-8'), file)
-  })
-
-  t.test('when the data has been compressed multiple times', async (t) => {
-    t.plan(3)
-
-    const fastify = Fastify()
-    await fastify.register(compressPlugin, {
-      global: true,
-      inflateIfDeflated: true,
-      threshold: 0
-    })
-
-    const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
-      reply.send(
-        [0, 1, 2, 3, 4, 5, 6].reduce(
-          (x) => zlib.gzipSync(x), JSON.stringify(json)
-        )
-      )
-    })
-
-    const response = await fastify.inject({
-      url: '/',
-      method: 'GET'
-    })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
   })
 })
 
