@@ -15,13 +15,13 @@
     "pumpify": "^2.0.1"
   },
   "devDependencies": {
+    "@fastify/pre-commit": "^2.0.2",
     "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
     "adm-zip": "^0.5.9",
     "fastify": "^4.0.0-rc.2",
     "jsonstream": "^1.0.3",
-    "pre-commit": "^1.2.2",
     "standard": "^17.0.0",
     "tap": "^16.0.0",
     "tsd": "^0.22.0",
