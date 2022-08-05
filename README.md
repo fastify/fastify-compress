@@ -85,7 +85,7 @@ app.get('/', (req, reply) => {
     .compress(fs.createReadStream('./package.json'))
 })
 
-await app.listen(3000)
+await app.listen({ port: 3000 })
 ```
 
 ## Compress Options
