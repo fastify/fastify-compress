@@ -11,20 +11,51 @@ import { Stream } from 'stream'
 import { BrotliOptions, ZlibOptions } from 'zlib'
 
 declare module 'fastify' {
-  export interface FastifyContextConfig extends fastifyCompress.RoutesConfigCompressOptions { }
+  export interface FastifyContextConfig {
+    /** @deprecated `config.compress` is deprecated, use `compress` shorthand option instead */
+    compress?: RouteCompressOptions | false;
+    /** @deprecated `config.decompress` is deprecated, use `decompress` shorthand option instead */
+    decompress?: RouteDecompressOptions | false;
+  }
 
   export interface RouteShorthandOptions<
     RawServer extends RawServerBase = RawServerDefault
-  > extends fastifyCompress.FastifyCompressRouteOptions { }
+  > {
+    compress?: RouteCompressOptions | false;
+    decompress?: RouteDecompressOptions | false;
+  }
 
   interface FastifyReply {
     compress(input: Stream | Input | InputObject): void;
   }
 
-  export interface RouteOptions extends fastifyCompress.FastifyCompressRouteOptions { }
+  export interface RouteOptions {
+    compress?: RouteCompressOptions | false;
+    decompress?: RouteDecompressOptions | false;
+  }
 }
 
 type FastifyCompress = FastifyPluginCallback<fastifyCompress.FastifyCompressOptions>
+
+type RouteCompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
+  | 'brotliOptions'
+  | 'customTypes'
+  | 'encodings'
+  | 'inflateIfDeflated'
+  | 'onUnsupportedEncoding'
+  | 'removeContentLengthHeader'
+  | 'threshold'
+  | 'zlib'
+  | 'zlibOptions'
+>
+
+type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
+  | 'forceRequestEncoding'
+  | 'onInvalidRequestPayload'
+  | 'onUnsupportedRequestEncoding'
+  | 'requestEncodings'
+  | 'zlib'
+>
 
 type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity';
 
@@ -46,26 +77,6 @@ declare namespace fastifyCompress {
     zlib?: unknown;
     zlibOptions?: ZlibOptions;
   }
-
-  interface RouteCompressOptions extends Pick<FastifyCompressOptions,
-    | 'brotliOptions'
-    | 'customTypes'
-    | 'encodings'
-    | 'inflateIfDeflated'
-    | 'onUnsupportedEncoding'
-    | 'removeContentLengthHeader'
-    | 'threshold'
-    | 'zlib'
-    | 'zlibOptions'
-  > { }
-
-  interface RouteDecompressOptions extends Pick<FastifyCompressOptions,
-    | 'forceRequestEncoding'
-    | 'onInvalidRequestPayload'
-    | 'onUnsupportedRequestEncoding'
-    | 'requestEncodings'
-    | 'zlib'
-  > { }
 
   export interface FastifyCompressRouteOptions {
     compress?: RouteCompressOptions | false;

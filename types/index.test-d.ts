@@ -2,7 +2,7 @@ import fastify, { FastifyInstance } from 'fastify'
 import { createReadStream } from 'fs'
 import { expectError, expectType } from 'tsd'
 import * as zlib from 'zlib'
-import fastifyCompress, { FastifyCompressOptions } from '../..'
+import fastifyCompress, { FastifyCompressOptions } from '..'
 
 const stream = createReadStream('./package.json')
 
