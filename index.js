@@ -16,7 +16,7 @@ const { isStream, isGzip, isDeflate } = require('./lib/utils')
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
-function compressPlugin (fastify, opts, next) {
+function fastifyCompress (fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
   const globalDecompressParams = processDecompressParams(opts)
 
@@ -548,7 +548,9 @@ function createError (code, message, statusCode) {
   return FastifyCompressError
 }
 
-module.exports = fp(compressPlugin, {
+module.exports = fp(fastifyCompress, {
   fastify: '4.x',
   name: '@fastify/compress'
 })
+module.exports.default = fastifyCompress
+module.exports.fastifyCompress = fastifyCompress
