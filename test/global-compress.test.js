@@ -2703,7 +2703,7 @@ test('It should sort and follow custom `encodings` options', async (t) => {
   const fastify = Fastify()
   await fastify.register(compressPlugin, {
     global: true,
-    encodings: ['gzip', 'br']
+    encodings: ['br', 'gzip']
   })
 
   fastify.get('/', (request, reply) => {
@@ -2722,6 +2722,35 @@ test('It should sort and follow custom `encodings` options', async (t) => {
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.brotliDecompressSync(response.rawPayload)
   t.equal(response.headers['content-encoding'], 'br')
+  t.equal(payload.toString('utf-8'), file)
+})
+
+test('It should sort and prefer the order of custom `encodings` options', async (t) => {
+  t.plan(2)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: true,
+    encodings: ['gzip', 'deflate', 'br']
+  })
+
+  fastify.get('/', (request, reply) => {
+    reply
+      .type('text/plain')
+      .compress(createReadStream('./package.json'))
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'hello,gzip,br'
+    }
+  })
+
+  const file = readFileSync('./package.json', 'utf8')
+  const payload = zlib.gunzipSync(response.rawPayload)
+  t.equal(response.headers['content-encoding'], 'gzip')
   t.equal(payload.toString('utf-8'), file)
 })
 
