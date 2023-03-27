@@ -142,7 +142,7 @@ function processCompressParams (opts) {
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
       .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
     : supportedEncodings
 
   return params
@@ -174,7 +174,7 @@ function processDecompressParams (opts) {
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
       .filter(encoding => opts.requestEncodings.includes(encoding))
-      .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .sort((a, b) => opts.requestEncodings.indexOf(a) - opts.requestEncodings.indexOf(b))
     : supportedEncodings
 
   if (opts.forceRequestEncoding) {
