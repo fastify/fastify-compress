@@ -3069,7 +3069,7 @@ for (const contentType of defaultSupportedContentTypes) {
 
     fastify.get('/', (request, reply) => {
       reply
-        .type('text/xml; charset=utf-8')
+        .type(contentType)
         .send(createReadStream('./package.json'))
     })
 
@@ -3093,14 +3093,14 @@ const notByDefaultSupportedContentTypes = [
 ]
 
 for (const contentType of notByDefaultSupportedContentTypes) {
-  test(`It should compress data if content-type is supported by default, ${contentType}`, async (t) => {
+  test(`It should not compress data if content-type is not supported by default, ${contentType}`, async (t) => {
     t.plan(2)
     const fastify = Fastify()
     await fastify.register(compressPlugin)
 
     fastify.get('/', (request, reply) => {
       reply
-        .type('text/xml; charset=utf-8')
+        .type(contentType)
         .send(createReadStream('./package.json'))
     })
 
@@ -3112,8 +3112,7 @@ for (const contentType of notByDefaultSupportedContentTypes) {
       }
     })
     const file = readFileSync('./package.json', 'utf8')
-    const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.notOk(response.headers['content-encoding'])
+    t.equal(response.rawPayload.toString('utf-8'), file)
   })
 }
