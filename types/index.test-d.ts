@@ -28,6 +28,10 @@ const withGlobalOptions: FastifyCompressOptions = {
 const app: FastifyInstance = fastify()
 app.register(fastifyCompress, withGlobalOptions)
 
+app.register(fastifyCompress, {
+  customTypes: value => value === 'application/json'
+})
+
 app.get('/test-one', async (request, reply) => {
   expectType<void>(reply.compress(stream))
 })
