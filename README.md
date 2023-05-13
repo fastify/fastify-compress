@@ -113,7 +113,7 @@ or
 ```javascript
 await fastify.register(
   import('@fastify/compress'),
-  { customTypes: value => value.endsWith('x-protobuf') }
+  { customTypes: contentType => contentType.endsWith('x-protobuf') }
 )
 ```
 

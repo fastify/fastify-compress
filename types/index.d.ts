@@ -59,7 +59,7 @@ type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
 
 type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity';
 
-type CompressibleContentTypeFunction = (value: string) => boolean;
+type CompressibleContentTypeFunction = (contentType: string) => boolean;
 
 declare namespace fastifyCompress {
 
