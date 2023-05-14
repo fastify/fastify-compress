@@ -107,6 +107,8 @@ function fastifyCompress (fastify, opts, next) {
   next()
 }
 
+const defaultCompressibleTypes = /^text\/(?!event-stream)|\+json$|\+text$|\+xml$|octet-stream$/
+
 function processCompressParams (opts) {
   /* istanbul ignore next */
   if (!opts) {
@@ -123,7 +125,11 @@ function processCompressParams (opts) {
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : /^text\/(?!event-stream)|\+json$|\+text$|\+xml$|octet-stream$/
+  params.compressibleTypes = opts.customTypes instanceof RegExp
+    ? opts.customTypes.test.bind(opts.customTypes)
+    : typeof opts.customTypes === 'function'
+      ? opts.customTypes
+      : defaultCompressibleTypes.test.bind(defaultCompressibleTypes)
   params.compressStream = {
     br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
     gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
@@ -461,7 +467,7 @@ function getEncodingHeader (encodings, request) {
 }
 
 function shouldCompress (type, compressibleTypes) {
-  if (compressibleTypes.test(type)) return true
+  if (compressibleTypes(type)) return true
   const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible === true

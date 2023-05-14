@@ -59,11 +59,13 @@ type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
 
 type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity';
 
+type CompressibleContentTypeFunction = (contentType: string) => boolean;
+
 declare namespace fastifyCompress {
 
   export interface FastifyCompressOptions {
     brotliOptions?: BrotliOptions;
-    customTypes?: RegExp;
+    customTypes?: RegExp | CompressibleContentTypeFunction;
     encodings?: EncodingToken[];
     forceRequestEncoding?: EncodingToken;
     global?: boolean;

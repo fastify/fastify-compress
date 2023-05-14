@@ -785,6 +785,29 @@ test('It should not compress :', async (t) => {
       t.equal(response.statusCode, 200)
     })
 
+    t.test('when `customTypes` is a function and returns false on the provided `Content-Type` reply header`', async (t) => {
+      t.plan(2)
+
+      const fastify = Fastify()
+      await fastify.register(compressPlugin, { customTypes: value => value === 'application/x-user-header' })
+
+      fastify.get('/', (request, reply) => {
+        reply
+          .type('application/x-other-type')
+          .compress(createReadStream('./package.json'))
+      })
+
+      const response = await fastify.inject({
+        url: '/',
+        method: 'GET',
+        headers: {
+          'accept-encoding': 'gzip'
+        }
+      })
+      t.notOk(response.headers['content-encoding'])
+      t.equal(response.statusCode, 200)
+    })
+
     t.test('when `X-No-Compression` request header is `true`', async (t) => {
       t.plan(3)
 
@@ -2443,7 +2466,31 @@ test('It should compress data if `customTypes` is set and matches `Content-Type`
   t.equal(payload.toString('utf-8'), file)
 })
 
-test('It should not apply `customTypes` option if the passed value is not a RegExp', async (t) => {
+test('It should compress data if `customTypes` is a function and returns true on the provided `Content-Type` reply header value', async (t) => {
+  t.plan(2)
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { customTypes: value => value === 'application/x-user-header' })
+
+  fastify.get('/', (request, reply) => {
+    reply
+      .type('application/x-user-header')
+      .send(createReadStream('./package.json'))
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+  const file = readFileSync('./package.json', 'utf8')
+  const payload = zlib.gunzipSync(response.rawPayload)
+  t.equal(response.headers['content-encoding'], 'gzip')
+  t.equal(payload.toString('utf-8'), file)
+})
+
+test('It should not apply `customTypes` option if the passed value is not a RegExp or Function', async (t) => {
   t.plan(2)
 
   const fastify = Fastify()

@@ -99,11 +99,21 @@ await fastify.register(
 )
 ```
 ### customTypes
-[mime-db](https://github.com/jshttp/mime-db) is used to determine if a `content-type` should be compressed. You can compress additional content types via regular expression.
+[mime-db](https://github.com/jshttp/mime-db) is used to determine if a `content-type` should be compressed. You can compress additional content types via regular expression or by providing a function.
+
 ```javascript
 await fastify.register(
   import('@fastify/compress'),
   { customTypes: /x-protobuf$/ }
+)
+```
+
+or
+
+```javascript
+await fastify.register(
+  import('@fastify/compress'),
+  { customTypes: contentType => contentType.endsWith('x-protobuf') }
 )
 ```
 
