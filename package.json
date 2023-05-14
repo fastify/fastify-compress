@@ -1,6 +1,6 @@
 {
   "name": "@fastify/compress",
-  "version": "6.2.0",
+  "version": "6.3.0",
   "description": "Fastify compression utils",
   "main": "index.js",
   "types": "types/index.d.ts",
@@ -9,14 +9,14 @@
     "fastify-plugin": "^4.0.0",
     "into-stream": "^6.0.0",
     "mime-db": "^1.51.0",
-    "minipass": "^4.0.0",
+    "minipass": "^5.0.0",
     "peek-stream": "^1.1.3",
     "pump": "^3.0.0",
     "pumpify": "^2.0.1"
   },
   "devDependencies": {
     "@fastify/pre-commit": "^2.0.2",
-    "@types/node": "^18.0.0",
+    "@types/node": "^20.1.0",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
     "adm-zip": "^0.5.9",

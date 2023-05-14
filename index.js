@@ -6,7 +6,7 @@ const pump = require('pump')
 const mimedb = require('mime-db')
 const intoStream = require('into-stream')
 const peek = require('peek-stream')
-const Minipass = require('minipass')
+const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const { inherits, format } = require('util')
@@ -125,7 +125,11 @@ function processCompressParams (opts) {
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  params.compressibleTypes = opts.customTypes instanceof RegExp ? opts.customTypes : defaultCompressibleTypes
+  params.compressibleTypes = opts.customTypes instanceof RegExp
+    ? opts.customTypes.test.bind(opts.customTypes)
+    : typeof opts.customTypes === 'function'
+      ? opts.customTypes
+      : defaultCompressibleTypes.test.bind(defaultCompressibleTypes)
   params.compressStream = {
     br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
     gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
@@ -144,7 +148,7 @@ function processCompressParams (opts) {
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
       .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
     : supportedEncodings
 
   return params
@@ -176,7 +180,7 @@ function processDecompressParams (opts) {
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
       .filter(encoding => opts.requestEncodings.includes(encoding))
-      .sort((a, b) => opts.requestEncodings.indexOf(a) - supportedEncodings.indexOf(b))
+      .sort((a, b) => opts.requestEncodings.indexOf(a) - opts.requestEncodings.indexOf(b))
     : supportedEncodings
 
   if (opts.forceRequestEncoding) {
@@ -463,7 +467,7 @@ function getEncodingHeader (encodings, request) {
 }
 
 function shouldCompress (type, compressibleTypes) {
-  if (compressibleTypes.test(type)) return true
+  if (compressibleTypes(type)) return true
   const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible === true
