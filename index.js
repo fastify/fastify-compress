@@ -107,7 +107,7 @@ function fastifyCompress (fastify, opts, next) {
   next()
 }
 
-const defaultCompressibleTypes = /^text\/(?!event-stream)|\+json$|\+text$|\+xml$|octet-stream$/
+const defaultCompressibleTypes = /^text\/(?!event-stream)|(\+|\/)json(;|$)|(\+|\/)text(;|$)|(\+|\/)xml(;|$)|octet-stream(;|$)/
 
 function processCompressParams (opts) {
   /* istanbul ignore next */

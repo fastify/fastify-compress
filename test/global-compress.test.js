@@ -3124,3 +3124,71 @@ test('It should return an error when using `reply.compress()` with a missing pay
     statusCode: 500
   }, payload)
 })
+
+const defaultSupportedContentTypes = [
+  'application/json',
+  'application/json; charset=utf-8',
+  'application/graphql-response+json',
+  'application/graphql-response+json; charset=utf-8',
+  'application/xml',
+  'application/xml; charset=utf-8',
+  'octet-stream',
+  'text/xml',
+  'text/xml; charset=utf-8'
+]
+
+for (const contentType of defaultSupportedContentTypes) {
+  test(`It should compress data if content-type is supported by default, ${contentType}`, async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.get('/', (request, reply) => {
+      reply
+        .type(contentType)
+        .send(createReadStream('./package.json'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(response.headers['content-encoding'], 'gzip')
+    t.equal(payload.toString('utf-8'), file)
+  })
+}
+
+const notByDefaultSupportedContentTypes = [
+  'application/fastify',
+  'text/event-stream'
+]
+
+for (const contentType of notByDefaultSupportedContentTypes) {
+  test(`It should not compress data if content-type is not supported by default, ${contentType}`, async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.get('/', (request, reply) => {
+      reply
+        .type(contentType)
+        .send(createReadStream('./package.json'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    t.notOk(response.headers['content-encoding'])
+    t.equal(response.rawPayload.toString('utf-8'), file)
+  })
+}
