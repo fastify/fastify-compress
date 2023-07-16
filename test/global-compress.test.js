@@ -1442,7 +1442,7 @@ test('It should not double-compress :', async (t) => {
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
     t.equal(response.headers['content-encoding'], 'br')
-    t.equal(Number(response.headers['content-length']), response.rawPayload.length)
+    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
   })
 
@@ -1472,7 +1472,7 @@ test('It should not double-compress :', async (t) => {
     })
     const payload = zlib.inflateSync(response.rawPayload)
     t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(Number(response.headers['content-length']), response.rawPayload.length)
+    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
   })
 
@@ -1502,7 +1502,7 @@ test('It should not double-compress :', async (t) => {
     })
     const payload = zlib.gunzipSync(response.rawPayload)
     t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(Number(response.headers['content-length']), response.rawPayload.length)
+    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
   })
 })
