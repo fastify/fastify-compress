@@ -34,7 +34,7 @@
     "lint:fix:types": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
-    "test:unit": "tap \"test/**/*.test.js\"",
+    "test:unit": "tap",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
   "keywords": [
