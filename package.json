@@ -31,7 +31,7 @@
     "coverage": "npm run test:unit -- --coverage-report=html",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
-    "lint:fix:types": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
+    "lint:fix:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
     "test:unit": "tap",
