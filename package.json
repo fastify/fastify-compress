@@ -28,17 +28,14 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "coverage": "npm run unit -- --cov",
-    "coverage-report": "npm run coverage -- --coverage-report=lcov",
+    "coverage": "npm run test:unit -- --coverage-report=html",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
-    "lint:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin typescript test/types/*.ts",
-    "lint:types": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin typescript *.d.ts",
-    "test": "npm run lint && npm run unit && npm run test:typescript",
+    "lint:fix:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
+    "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
-    "unit": "tap -J test/*.test.js",
-    "unit:report": "npm run unit -- --cov --coverage-report=html",
-    "unit:verbose": "npm run unit -- -Rspec"
+    "test:unit": "tap",
+    "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
   "keywords": [
     "fastify",
