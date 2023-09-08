@@ -1,14 +1,14 @@
 'use strict'
 
 const { test } = require('tap')
-const { createReadStream, readFile, readFileSync } = require('fs')
-const { Readable, Writable, PassThrough } = require('stream')
-const zlib = require('zlib')
+const { createReadStream, readFile, readFileSync } = require('node:fs')
+const { Readable, Writable, PassThrough } = require('node:stream')
+const zlib = require('node:zlib')
 const AdmZip = require('adm-zip')
 const JSONStream = require('jsonstream')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
-const { once } = require('events')
+const { once } = require('node:events')
 
 test('When `global` is not set, it is `true` by default :', async (t) => {
   t.test('it should compress Buffer data using brotli when `Accept-Encoding` request header is `br`', async (t) => {

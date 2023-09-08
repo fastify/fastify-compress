@@ -1,15 +1,16 @@
 'use strict'
 
+const zlib = require('node:zlib')
+const { inherits, format } = require('node:util')
+
 const fp = require('fastify-plugin')
-const zlib = require('zlib')
+const encodingNegotiator = require('@fastify/accept-negotiator')
 const pump = require('pump')
 const mimedb = require('mime-db')
 const intoStream = require('into-stream')
 const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
-const encodingNegotiator = require('@fastify/accept-negotiator')
-const { inherits, format } = require('util')
 
 const { isStream, isGzip, isDeflate } = require('./lib/utils')
 
