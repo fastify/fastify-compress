@@ -1,8 +1,8 @@
 'use strict'
 
 const { test } = require('tap')
-const { createReadStream, readFile, readFileSync } = require('fs')
-const zlib = require('zlib')
+const { createReadStream, readFile, readFileSync } = require('node:fs')
+const zlib = require('node:zlib')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 

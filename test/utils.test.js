@@ -1,8 +1,8 @@
 'use strict'
 
-const { createReadStream } = require('fs')
-const { Socket } = require('net')
-const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('stream')
+const { createReadStream } = require('node:fs')
+const { Socket } = require('node:net')
+const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
 const { test } = require('tap')
 const { isStream, isDeflate, isGzip } = require('../lib/utils')
 
