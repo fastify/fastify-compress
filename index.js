@@ -453,6 +453,8 @@ function onDecompressError (request, params, encoding, error) {
   Object.assign(error, errorPayload)
 }
 
+const gzipAlias = /\*|x-gzip/gu
+
 function getEncodingHeader (encodings, request) {
   let header = request.headers['accept-encoding']
   if (header != null) {
@@ -460,7 +462,7 @@ function getEncodingHeader (encodings, request) {
       // consider the no-preference token as gzip for downstream compat
       // and x-gzip as an alias of gzip
       // ref.: [HTTP/1.1 RFC 7230 section 4.2.3](https://datatracker.ietf.org/doc/html/rfc7230#section-4.2.3)
-      .replace(/\*|x-gzip/gu, 'gzip')
+      .replace(gzipAlias, 'gzip')
     return encodingNegotiator.negotiate(header, encodings)
   } else {
     return undefined
