@@ -766,7 +766,7 @@ test('It should not compress :', async (t) => {
       t.plan(2)
 
       const fastify = Fastify()
-      await fastify.register(compressPlugin, { customTypes: /x-user-header$/ })
+      await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
       fastify.get('/', (request, reply) => {
         reply
@@ -1101,7 +1101,7 @@ test('It should not compress :', async (t) => {
       t.plan(2)
 
       const fastify = Fastify()
-      await fastify.register(compressPlugin, { customTypes: /x-user-header$/ })
+      await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
       fastify.get('/', (request, reply) => {
         reply
@@ -2445,7 +2445,7 @@ test('`Accept-Encoding` request header values :', async (t) => {
 test('It should compress data if `customTypes` is set and matches `Content-Type` reply header value', async (t) => {
   t.plan(2)
   const fastify = Fastify()
-  await fastify.register(compressPlugin, { customTypes: /x-user-header$/ })
+  await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
   fastify.get('/', (request, reply) => {
     reply
