@@ -51,12 +51,12 @@ function fastifyCompress (fastify, opts, next) {
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
     // If route config.compress has been set it takes precedence over compress
-    if (routeOptions.config && typeof routeOptions.config.compress !== 'undefined') {
+    if (routeOptions.config?.compress !== undefined) {
       routeOptions.compress = routeOptions.config.compress
     }
 
     // Manage compression options
-    if (typeof routeOptions.compress !== 'undefined') {
+    if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
         const mergedCompressParams = Object.assign(
           {}, globalCompressParams, processCompressParams(routeOptions.compress)
@@ -80,12 +80,12 @@ function fastifyCompress (fastify, opts, next) {
     }
 
     // If route config.decompress has been set it takes precedence over compress
-    if (routeOptions.config && typeof routeOptions.config.decompress !== 'undefined') {
+    if (routeOptions.config?.decompress !== undefined) {
       routeOptions.decompress = routeOptions.config.decompress
     }
 
     // Manage decompression options
-    if (typeof routeOptions.decompress !== 'undefined') {
+    if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
         const mergedDecompressParams = Object.assign(
