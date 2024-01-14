@@ -4,7 +4,7 @@
 [![NPM version](https://img.shields.io/npm/v/@fastify/compress.svg?style=flat)](https://www.npmjs.com/package/@fastify/compress)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://standardjs.com/)
 
-Adds compression utils to [the Fastify `reply` object](https://www.fastify.io/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
+Adds compression utils to [the Fastify `reply` object](https://www.fastify.dev/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
 
 > **Important note:** since `@fastify/compress` version 4.x payloads that are compressed using the `zip` algorithm are not automatically uncompressed anymore. `@fastify/compress` main feature is to provide response compression mechanism to your server, however the `zip` format does not appear in the [IANA maintained Table of Content Encodings](https://www.iana.org/assignments/http-parameters/http-parameters.xml#content-coding) and thus such behavior was out of the scope of this plugin.
