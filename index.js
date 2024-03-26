@@ -117,16 +117,16 @@ function processCompressParams (opts) {
   }
 
   const params = {
-    global: (typeof opts.global === 'boolean') ? opts.global : true,
-    /**
-     * Default of 4 as 11 has a heavy impact on performance.
-     * @see {@link https://blog.cloudflare.com/this-is-brotli-from-origin#testing}
-     */
-    brotliOptions: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4, ...opts.brotliOptions }
+    global: (typeof opts.global === 'boolean') ? opts.global : true
   }
 
   params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
-  params.brotliOptions = opts.brotliOptions
+  params.brotliOptions = {
+    // Default of 4 as 11 has a heavy impact on performance.
+    // https://blog.cloudflare.com/this-is-brotli-from-origin#testing
+    params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 },
+    ...opts.brotliOptions
+  }
   params.zlibOptions = opts.zlibOptions
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true

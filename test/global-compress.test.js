@@ -2534,36 +2534,69 @@ test('When `encodings` option is set, it should only use the registered value', 
   t.equal(response.statusCode, 200)
 })
 
-test('It should send data compressed according to `brotliOptions`', async (t) => {
-  t.plan(2)
-  const brotliOptions = {
-    params: {
-      [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
-      [zlib.constants.BROTLI_PARAM_QUALITY]: 4
+test('It should send data compressed according to `brotliOptions` :', async (t) => {
+  t.test('when using br encoding', async (t) => {
+    t.plan(3)
+    const brotliOptions = {
+      params: {
+        [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
+        [zlib.constants.BROTLI_PARAM_QUALITY]: 8
+      }
     }
-  }
 
-  const fastify = Fastify()
-  await fastify.register(compressPlugin, { global: true, brotliOptions })
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, brotliOptions })
 
-  fastify.get('/', (request, reply) => {
-    reply
-      .type('text/plain')
-      .compress(createReadStream('./package.json'))
+    fastify.get('/', (request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(createReadStream('./package.json'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'br'
+      }
+    })
+
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.brotliDecompressSync(response.rawPayload, brotliOptions)
+    t.equal(response.headers['content-encoding'], 'br')
+    t.equal(payload.toString('utf-8'), file)
+
+    const compressedBufferPayload = zlib.brotliCompressSync(file, brotliOptions)
+    t.same(response.rawPayload, compressedBufferPayload)
   })
 
-  const response = await fastify.inject({
-    url: '/',
-    method: 'GET',
-    headers: {
-      'accept-encoding': 'br'
-    }
-  })
+  t.test('default BROTLI_PARAM_QUALITY to be 4', async (t) => {
+    t.plan(1)
 
-  const file = readFileSync('./package.json', 'utf8')
-  const payload = zlib.brotliDecompressSync(response.rawPayload, brotliOptions)
-  t.equal(response.headers['content-encoding'], 'br')
-  t.equal(payload.toString('utf-8'), file)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    const file = readFileSync('./package.json', 'utf8')
+    fastify.get('/', (request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(file)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'br'
+      }
+    })
+
+    const defaultBrotliOptions = {
+      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 }
+    }
+    const compressedBufferPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
+    t.same(response.rawPayload, compressedBufferPayload)
+  })
 })
 
 test('It should send data compressed according to `zlibOptions` :', async (t) => {
