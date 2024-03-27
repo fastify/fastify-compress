@@ -18,8 +18,8 @@
   "devDependencies": {
     "@fastify/pre-commit": "^2.0.2",
     "@types/node": "^20.4.2",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "adm-zip": "^0.5.10",
     "fastify": "^4.19.2",
     "jsonstream": "^1.0.3",
