@@ -107,7 +107,7 @@ appWithoutGlobal.inject(
     }
   },
   (err) => {
-    expectType<Error>(err)
+    expectType<Error | undefined>(err)
   }
 )
 
