@@ -1015,8 +1015,8 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.statusCode, 200)
+      t.notOk(response.headers.vary)
       t.equal(response.payload, file)
     })
 
@@ -1040,8 +1040,8 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.statusCode, 200)
+      t.notOk(response.headers.vary)
       t.equal(response.payload, file)
     })
 
@@ -1360,8 +1360,8 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.statusCode, 200)
+      t.notOk(response.headers.vary)
       t.equal(response.payload, file)
     })
 
@@ -1468,11 +1468,11 @@ test('It should not double-compress :', async (t) => {
       url: '/',
       method: 'GET',
       headers: {
-        'accept-encoding': 'br,gzip,deflate'
+        'accept-encoding': 'br'
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
+    t.notOk(response.headers.vary)
     t.equal(response.headers['content-encoding'], 'br')
     t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
@@ -1499,11 +1499,11 @@ test('It should not double-compress :', async (t) => {
       url: '/',
       method: 'GET',
       headers: {
-        'accept-encoding': 'br,gzip,deflate'
+        'accept-encoding': 'deflate'
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
+    t.notOk(response.headers.vary)
     t.equal(response.headers['content-encoding'], 'deflate')
     t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
@@ -1534,7 +1534,7 @@ test('It should not double-compress :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
+    t.notOk(response.headers.vary)
     t.equal(response.headers['content-encoding'], 'gzip')
     t.equal(response.headers['content-length'], response.rawPayload.length.toString())
     t.equal(payload.toString('utf-8'), file)
@@ -1564,7 +1564,7 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
       })
       const file = readFileSync('./package.json', 'utf8')
       t.equal(response.statusCode, 200)
-      t.equal(response.headers.vary, 'accept-encoding')
+      t.notOk(response.headers.vary)
       t.equal(response.headers['content-encoding'], 'identity')
       t.equal(file, response.payload)
     })
@@ -1593,7 +1593,7 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
       })
       const file = readFileSync('./package.json', 'utf-8')
       t.equal(response.statusCode, 200)
-      t.equal(response.headers.vary, 'accept-encoding')
+      t.notOk(response.headers.vary)
       t.equal(response.headers['content-encoding'], 'identity')
       t.same(response.payload, file)
     })
@@ -1621,7 +1621,7 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
       })
       const file = readFileSync('./package.json', 'utf8')
       t.equal(response.statusCode, 200)
-      t.equal(response.headers.vary, 'accept-encoding')
+      t.notOk(response.headers.vary)
       t.equal(response.headers['content-encoding'], 'identity')
       t.equal(file, response.payload)
     })
@@ -1893,8 +1893,8 @@ test('It should remove `Content-Length` header :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     t.equal(response.statusCode, 200)
-    t.notOk(response.headers['content-length'], 'no content length')
     t.notOk(response.headers.vary)
+    t.notOk(response.headers['content-length'], 'no content length')
     t.equal(file, response.payload)
   })
 
@@ -1953,8 +1953,8 @@ test('It should remove `Content-Length` header :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     t.equal(response.statusCode, 200)
-    t.notOk(response.headers['content-length'], 'no content length')
     t.notOk(response.headers.vary)
+    t.notOk(response.headers['content-length'], 'no content length')
     t.equal(file, response.payload)
   })
 })
@@ -2495,7 +2495,7 @@ test('`Accept-Encoding` request header values :', async (t) => {
 })
 
 test('It should compress data if `customTypes` is set and matches `Content-Type` reply header value', async (t) => {
-  t.plan(4)
+  t.plan(3)
   const fastify = Fastify()
   await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
@@ -2516,7 +2516,6 @@ test('It should compress data if `customTypes` is set and matches `Content-Type`
   const payload = zlib.gunzipSync(response.rawPayload)
   t.equal(response.headers.vary, 'accept-encoding')
   t.equal(response.headers['content-encoding'], 'gzip')
-  t.equal(response.headers.vary, 'accept-encoding')
   t.equal(payload.toString('utf-8'), file)
 })
 
@@ -3142,7 +3141,7 @@ test('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request head
       }
     })
     t.equal(response.statusCode, 406)
-    t.equal(response.headers.vary, 'accept-encoding')
+    t.notOk(response.headers.vary)
     t.same(JSON.parse(response.payload), { hello: 'hello' })
   })
 

@@ -242,7 +242,6 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       // response is already compressed
       return next()
     }
-    setVaryHeader(reply)
 
     let stream, encoding
     const noCompress =
@@ -280,6 +279,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       payload = intoStream(payload)
     }
 
+    setVaryHeader(reply)
     params.removeContentLengthHeader
       ? reply
         .header('Content-Encoding', encoding)
@@ -360,7 +360,6 @@ function compress (params) {
       return
     }
 
-    setVaryHeader(this)
     let stream, encoding
     const noCompress =
       // don't compress on x-no-compression header
@@ -405,6 +404,7 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
+    setVaryHeader(this)
     params.removeContentLengthHeader
       ? this
         .header('Content-Encoding', encoding)
@@ -419,9 +419,10 @@ function compress (params) {
 
 function setVaryHeader (reply) {
   if (reply.hasHeader('Vary')) {
-    const varyHeader = Array.isArray(reply.getHeader('Vary')) ? reply.getHeader('Vary') : [reply.getHeader('Vary')]
-    if (!varyHeader.some((h) => h.includes('accept-encoding'))) {
-      reply.header('Vary', `${varyHeader.join(', ')}, accept-encoding`)
+    const rawHeaderValue = reply.getHeader('Vary')
+    const headerValueArray = Array.isArray(rawHeaderValue) ? rawHeaderValue : [rawHeaderValue]
+    if (!headerValueArray.some((h) => h.includes('accept-encoding'))) {
+      reply.header('Vary', headerValueArray.concat('accept-encoding').join(', '))
     }
   } else {
     reply.header('Vary', 'accept-encoding')
