@@ -8,7 +8,7 @@ const compressPlugin = require('../index')
 
 test('When using routes `compress` settings :', async (t) => {
   t.test('it should compress data using the route custom provided `createDeflate` method', async (t) => {
-    t.plan(10)
+    t.plan(12)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -44,6 +44,7 @@ test('When using routes `compress` settings :', async (t) => {
 
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.inflateSync(response.rawPayload)
+      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.headers['content-encoding'], 'deflate')
       t.notOk(response.headers['content-length'], 'no content length')
       t.equal(payload.toString('utf-8'), file)
@@ -64,13 +65,14 @@ test('When using routes `compress` settings :', async (t) => {
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'deflate')
     t.notOk(response.headers['content-length'], 'no content length')
     t.equal(payload.toString('utf-8'), file)
   })
 
   t.test('it should compress data using the route custom provided `createGzip` method', async (t) => {
-    t.plan(8)
+    t.plan(10)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -104,6 +106,7 @@ test('When using routes `compress` settings :', async (t) => {
 
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.gunzipSync(response.rawPayload)
+      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.headers['content-encoding'], 'gzip')
       t.equal(payload.toString('utf-8'), file)
 
@@ -123,12 +126,13 @@ test('When using routes `compress` settings :', async (t) => {
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'gzip')
     t.equal(payload.toString('utf-8'), file)
   })
 
   t.test('it should not compress data when `global` is `false` unless `compress` routes settings have been set up', async (t) => {
-    t.plan(9)
+    t.plan(12)
 
     let usedCustom = false
     const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
@@ -165,8 +169,8 @@ test('When using routes `compress` settings :', async (t) => {
       }
     }).then((response) => {
       t.equal(usedCustom, false)
-
-      t.equal(response.headers['content-encoding'], undefined)
+      t.notOk(response.headers.vary)
+      t.notOk(response.headers['content-encoding'])
       t.equal(response.rawPayload.toString('utf-8'), JSON.stringify({ foo: 1 }))
 
       usedCustom = false
@@ -183,6 +187,7 @@ test('When using routes `compress` settings :', async (t) => {
 
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.gunzipSync(response.rawPayload)
+      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.headers['content-encoding'], 'gzip')
       t.equal(payload.toString('utf-8'), file)
     })
@@ -195,12 +200,13 @@ test('When using routes `compress` settings :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'gzip')
     t.equal(payload.toString('utf-8'), JSON.stringify({ foo: 1 }))
   })
 
   t.test('it should not compress data when route `compress` option is set to `false`', async (t) => {
-    t.plan(2)
+    t.plan(3)
 
     const content = { message: 'Hello World!' }
 
@@ -220,7 +226,8 @@ test('When using routes `compress` settings :', async (t) => {
         'accept-encoding': 'gzip'
       }
     })
-    t.equal(response.headers['content-encoding'], undefined)
+    t.notOk(response.headers.vary)
+    t.notOk(response.headers['content-encoding'])
     t.equal(response.rawPayload.toString('utf-8'), JSON.stringify(content))
   })
 
@@ -244,7 +251,7 @@ test('When using routes `compress` settings :', async (t) => {
 
 test('When `compress.removeContentLengthHeader` is `false`, it should not remove `Content-Length` header :', async (t) => {
   t.test('using `reply.compress()`', async (t) => {
-    t.plan(3)
+    t.plan(4)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
@@ -273,13 +280,14 @@ test('When `compress.removeContentLengthHeader` is `false`, it should not remove
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'deflate')
     t.equal(response.headers['content-length'], payload.length.toString())
     t.equal(payload.toString('utf-8'), file)
   })
 
   t.test('using `onSend` hook', async (t) => {
-    t.plan(3)
+    t.plan(4)
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
@@ -308,6 +316,7 @@ test('When `compress.removeContentLengthHeader` is `false`, it should not remove
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'deflate')
     t.equal(response.headers['content-length'], payload.length.toString())
     t.equal(payload.toString('utf-8'), file)
@@ -316,7 +325,7 @@ test('When `compress.removeContentLengthHeader` is `false`, it should not remove
 
 test('When using the old routes `{ config: compress }` option :', async (t) => {
   t.test('it should compress data using the route custom provided `createGzip` method', async (t) => {
-    t.plan(8)
+    t.plan(10)
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -354,6 +363,7 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
 
       const file = readFileSync('./package.json', 'utf8')
       const payload = zlib.gunzipSync(response.rawPayload)
+      t.equal(response.headers.vary, 'accept-encoding')
       t.equal(response.headers['content-encoding'], 'gzip')
       t.equal(payload.toString('utf-8'), file)
 
@@ -373,6 +383,7 @@ test('When using the old routes `{ config: compress }` option :', async (t) => {
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
+    t.equal(response.headers.vary, 'accept-encoding')
     t.equal(response.headers['content-encoding'], 'gzip')
     t.equal(payload.toString('utf-8'), file)
   })

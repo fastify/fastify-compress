@@ -242,7 +242,6 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       // response is already compressed
       return next()
     }
-    setVaryHeader(reply)
 
     let stream, encoding
     const noCompress =
@@ -280,11 +279,11 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       payload = intoStream(payload)
     }
 
-    params.removeContentLengthHeader
-      ? reply
-        .header('Content-Encoding', encoding)
-        .removeHeader('content-length')
-      : reply.header('Content-Encoding', encoding)
+    setVaryHeader(reply)
+    reply.header('Content-Encoding', encoding)
+    if (params.removeContentLengthHeader) {
+      reply.removeHeader('content-length')
+    }
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(reply))
@@ -360,7 +359,6 @@ function compress (params) {
       return
     }
 
-    setVaryHeader(this)
     let stream, encoding
     const noCompress =
       // don't compress on x-no-compression header
@@ -405,11 +403,11 @@ function compress (params) {
       payload = intoStream(payload)
     }
 
-    params.removeContentLengthHeader
-      ? this
-        .header('Content-Encoding', encoding)
-        .removeHeader('content-length')
-      : this.header('Content-Encoding', encoding)
+    setVaryHeader(this)
+    this.header('Content-Encoding', encoding)
+    if (params.removeContentLengthHeader) {
+      this.removeHeader('content-length')
+    }
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
@@ -419,9 +417,10 @@ function compress (params) {
 
 function setVaryHeader (reply) {
   if (reply.hasHeader('Vary')) {
-    const varyHeader = Array.isArray(reply.getHeader('Vary')) ? reply.getHeader('Vary') : [reply.getHeader('Vary')]
-    if (!varyHeader.some((h) => h.includes('accept-encoding'))) {
-      reply.header('Vary', `${varyHeader.join(', ')}, accept-encoding`)
+    const rawHeaderValue = reply.getHeader('Vary')
+    const headerValueArray = Array.isArray(rawHeaderValue) ? rawHeaderValue : [rawHeaderValue]
+    if (!headerValueArray.some((h) => h.includes('accept-encoding'))) {
+      reply.header('Vary', headerValueArray.concat('accept-encoding').join(', '))
     }
   } else {
     reply.header('Vary', 'accept-encoding')
