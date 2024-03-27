@@ -111,7 +111,7 @@ appWithoutGlobal.inject(
   }
 )
 
-// Instanciation of an app that should trigger a typescript error
+// Instantiation of an app that should trigger a typescript error
 const appThatTriggerAnError = fastify()
 expectError(appThatTriggerAnError.register(fastifyCompress, {
   global: true,

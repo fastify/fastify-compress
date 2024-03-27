@@ -2566,8 +2566,8 @@ test('It should send data compressed according to `brotliOptions` :', async (t) 
     t.equal(response.headers['content-encoding'], 'br')
     t.equal(payload.toString('utf-8'), file)
 
-    const compressedBufferPayload = zlib.brotliCompressSync(file, brotliOptions)
-    t.same(response.rawPayload, compressedBufferPayload)
+    const compressedPayload = zlib.brotliCompressSync(file, brotliOptions)
+    t.same(response.rawPayload, compressedPayload)
   })
 
   t.test('default BROTLI_PARAM_QUALITY to be 4', async (t) => {
@@ -2594,8 +2594,8 @@ test('It should send data compressed according to `brotliOptions` :', async (t) 
     const defaultBrotliOptions = {
       params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 }
     }
-    const compressedBufferPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
-    t.same(response.rawPayload, compressedBufferPayload)
+    const compressedPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
+    t.same(response.rawPayload, compressedPayload)
   })
 })
 
