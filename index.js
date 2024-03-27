@@ -280,11 +280,10 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     }
 
     setVaryHeader(reply)
-    params.removeContentLengthHeader
-      ? reply
-        .header('Content-Encoding', encoding)
-        .removeHeader('content-length')
-      : reply.header('Content-Encoding', encoding)
+    reply.header('Content-Encoding', encoding)
+    if (params.removeContentLengthHeader) {
+      reply.removeHeader('content-length')
+    }
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(reply))
@@ -405,11 +404,10 @@ function compress (params) {
     }
 
     setVaryHeader(this)
-    params.removeContentLengthHeader
-      ? this
-        .header('Content-Encoding', encoding)
-        .removeHeader('content-length')
-      : this.header('Content-Encoding', encoding)
+    this.header('Content-Encoding', encoding)
+    if (params.removeContentLengthHeader) {
+      this.removeHeader('content-length')
+    }
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
