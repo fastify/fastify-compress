@@ -109,6 +109,13 @@ function fastifyCompress (fastify, opts, next) {
 }
 
 const defaultCompressibleTypes = /^text\/(?!event-stream)|(?:\+|\/)json(?:;|$)|(?:\+|\/)text(?:;|$)|(?:\+|\/)xml(?:;|$)|octet-stream(?:;|$)/u
+const recommendedDefaultBrotliOptions = {
+  params: {
+    // Default of 4 as 11 has a heavy impact on performance.
+    // https://blog.cloudflare.com/this-is-brotli-from-origin#testing
+    [zlib.constants.BROTLI_PARAM_QUALITY]: 4
+  }
+}
 
 function processCompressParams (opts) {
   /* istanbul ignore next */
@@ -122,14 +129,7 @@ function processCompressParams (opts) {
 
   params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
   params.brotliOptions = params.global
-    ? {
-        params: {
-          // Default of 4 as 11 has a heavy impact on performance.
-          // https://blog.cloudflare.com/this-is-brotli-from-origin#testing
-          [zlib.constants.BROTLI_PARAM_QUALITY]: 4
-        },
-        ...opts.brotliOptions
-      }
+    ? { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
     : opts.brotliOptions
   params.zlibOptions = opts.zlibOptions
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding

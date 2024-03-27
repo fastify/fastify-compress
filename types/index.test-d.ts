@@ -40,7 +40,7 @@ app.get('/test-two', async (request, reply) => {
   expectError(reply.compress())
 })
 
-// Instanciation of an app without global
+// Instantiation of an app without global
 const appWithoutGlobal: FastifyInstance = fastify()
 appWithoutGlobal.register(fastifyCompress, { global: false })
 
