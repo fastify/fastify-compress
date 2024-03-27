@@ -40,7 +40,7 @@ app.get('/test-two', async (request, reply) => {
   expectError(reply.compress())
 })
 
-// Instanciation of an app without global
+// Instantiation of an app without global
 const appWithoutGlobal: FastifyInstance = fastify()
 appWithoutGlobal.register(fastifyCompress, { global: false })
 
@@ -107,11 +107,11 @@ appWithoutGlobal.inject(
     }
   },
   (err) => {
-    expectType<Error>(err)
+    expectType<Error | undefined>(err)
   }
 )
 
-// Instanciation of an app that should trigger a typescript error
+// Instantiation of an app that should trigger a typescript error
 const appThatTriggerAnError = fastify()
 expectError(appThatTriggerAnError.register(fastifyCompress, {
   global: true,
