@@ -64,15 +64,15 @@ test('isGzip() utility should be able to detect gzip compressed Buffer', async (
 
 test('intoAsyncIterator() utility should handle different data', async (t) => {
   t.plan(15)
-  
+
   const buf = Buffer.from('foo')
   const str = 'foo'
   const arr = [str, str]
   const arrayBuffer = new ArrayBuffer(8)
   const typedArray = new Int32Array(arrayBuffer)
-  const asyncIterator = (async function* () {
-    yield str;
-  })();
+  const asyncIterator = (async function * () {
+    yield str
+  })()
 
   for await (const buffer of intoAsyncIterator(buf)) {
     t.equal(buffer, buf)
