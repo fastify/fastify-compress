@@ -2,13 +2,12 @@ import {
   FastifyPluginCallback,
   FastifyReply,
   FastifyRequest,
+  RouteOptions as FastifyRouteOptions,
   RawServerBase,
-  RawServerDefault,
-  RouteOptions as FastifyRouteOptions
-} from 'fastify'
-import { Input, InputObject } from 'into-stream'
-import { Stream } from 'stream'
-import { BrotliOptions, ZlibOptions } from 'zlib'
+  RawServerDefault
+} from 'fastify';
+import { Stream } from 'stream';
+import { BrotliOptions, ZlibOptions } from 'zlib';
 
 declare module 'fastify' {
   export interface FastifyContextConfig {
@@ -26,7 +25,7 @@ declare module 'fastify' {
   }
 
   interface FastifyReply {
-    compress(input: Stream | Input | InputObject): void;
+    compress(input: Stream | Input): void;
   }
 
   export interface RouteOptions {
@@ -60,6 +59,14 @@ type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
 type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity';
 
 type CompressibleContentTypeFunction = (contentType: string) => boolean;
+
+type Input =
+  | Buffer
+  | NodeJS.TypedArray
+  | ArrayBuffer
+  | string
+  | Iterable<Buffer | string>
+  | AsyncIterable<Buffer | string>;
 
 declare namespace fastifyCompress {
 
