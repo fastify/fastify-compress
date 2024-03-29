@@ -3,7 +3,12 @@
 const { test } = require('tap')
 const Fastify = require('fastify')
 const fastifyCompress = require('..')
-const { fetch } = require('undici')
+const { fetch, setGlobalDispatcher, Agent } = require('undici')
+
+setGlobalDispatcher(new Agent({
+  keepAliveTimeout: 10,
+  keepAliveMaxTimeout: 10
+}))
 
 test('should not corrupt the file content', async (t) => {
   // provide 2 byte unicode content
