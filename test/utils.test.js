@@ -4,7 +4,7 @@ const { createReadStream } = require('node:fs')
 const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
 const { test } = require('tap')
-const { isStream, isDeflate, isGzip } = require('../lib/utils')
+const { isStream, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)
@@ -60,4 +60,46 @@ test('isGzip() utility should be able to detect gzip compressed Buffer', async (
   t.equal(isGzip(null), false)
   t.equal(isGzip(undefined), false)
   t.equal(isGzip(''), false)
+})
+
+test('intoAsyncIterator() utility should handle different data', async (t) => {
+  t.plan(8)
+
+  const buf = Buffer.from('foo')
+  const str = 'foo'
+  const arr = [str, str]
+  const arrayBuffer = new ArrayBuffer(8)
+  const typedArray = new Int32Array(arrayBuffer)
+  const asyncIterator = (async function * () {
+    yield str
+  })()
+  const obj = {}
+
+  for await (const buffer of intoAsyncIterator(buf)) {
+    t.equal(buffer, buf)
+  }
+
+  for await (const string of intoAsyncIterator(str)) {
+    t.equal(string, str)
+  }
+
+  for await (const chunk of intoAsyncIterator(arr)) {
+    t.equal(chunk, str)
+  }
+
+  for await (const chunk of intoAsyncIterator(arrayBuffer)) {
+    t.equal(chunk.toString(), Buffer.from(arrayBuffer).toString())
+  }
+
+  for await (const chunk of intoAsyncIterator(typedArray)) {
+    t.equal(chunk.toString(), Buffer.from(typedArray).toString())
+  }
+
+  for await (const chunk of intoAsyncIterator(asyncIterator)) {
+    t.equal(chunk, str)
+  }
+
+  for await (const chunk of intoAsyncIterator(obj)) {
+    t.equal(chunk, obj)
+  }
 })

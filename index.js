@@ -7,12 +7,12 @@ const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const pump = require('pump')
 const mimedb = require('mime-db')
-const intoStream = require('into-stream')
 const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
+const { Readable } = require('readable-stream')
 
-const { isStream, isGzip, isDeflate } = require('./lib/utils')
+const { isStream, isGzip, isDeflate, intoAsyncIterator } = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
@@ -276,7 +276,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       if (Buffer.byteLength(payload) < params.threshold) {
         return next()
       }
-      payload = intoStream(payload)
+      payload = Readable.from(intoAsyncIterator(payload))
     }
 
     setVaryHeader(reply)
@@ -400,7 +400,7 @@ function compress (params) {
       if (Buffer.byteLength(payload) < params.threshold) {
         return this.send(payload)
       }
-      payload = intoStream(payload)
+      payload = Readable.from(intoAsyncIterator(payload))
     }
 
     setVaryHeader(this)
@@ -509,7 +509,7 @@ function maybeUnzip (payload, serialize) {
   // handle case where serialize doesn't return a string or Buffer
   if (!Buffer.isBuffer(buf)) return result
   if (isCompressed(buf) === 0) return result
-  return intoStream(result)
+  return Readable.from(intoAsyncIterator(result))
 }
 
 function zipStream (deflate, encoding) {
