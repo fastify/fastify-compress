@@ -63,7 +63,7 @@ test('isGzip() utility should be able to detect gzip compressed Buffer', async (
 })
 
 test('intoAsyncIterator() utility should handle different data', async (t) => {
-  t.plan(15)
+  t.plan(8)
 
   const buf = Buffer.from('foo')
   const str = 'foo'
@@ -73,6 +73,7 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   const asyncIterator = (async function * () {
     yield str
   })()
+  const obj = {}
 
   for await (const buffer of intoAsyncIterator(buf)) {
     t.equal(buffer, buf)
@@ -87,14 +88,18 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   }
 
   for await (const chunk of intoAsyncIterator(arrayBuffer)) {
-    t.equal(chunk, 0)
+    t.equal(chunk.toString(), Buffer.from(arrayBuffer).toString())
   }
 
   for await (const chunk of intoAsyncIterator(typedArray)) {
-    t.equal(chunk, 0)
+    t.equal(chunk.toString(), Buffer.from(typedArray).toString())
   }
 
   for await (const chunk of intoAsyncIterator(asyncIterator)) {
     t.equal(chunk, str)
+  }
+
+  for await (const chunk of intoAsyncIterator(obj)) {
+    t.equal(chunk, obj)
   }
 })
