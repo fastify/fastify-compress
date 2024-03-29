@@ -12,7 +12,6 @@ const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
 const { Readable } = require('readable-stream')
 
-
 const { isStream, isGzip, isDeflate, intoAsyncIterator } = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
