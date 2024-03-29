@@ -3,7 +3,7 @@
 const { test } = require('tap')
 const Fastify = require('fastify')
 const fastifyCompress = require('..')
-const { fetch, setGlobalDispatcher, Agent } = require('undici')
+const { request, setGlobalDispatcher, Agent } = require('undici')
 
 setGlobalDispatcher(new Agent({
   keepAliveTimeout: 10,
@@ -39,9 +39,10 @@ test('should not corrupt the file content', async (t) => {
 
   const { port } = fastify.server.address()
   const url = `http://localhost:${port}`
-  const response = await fetch(`${url}/issue`)
-  const response2 = await fetch(`${url}/good`)
-  const body = await response.text()
-  const body2 = await response2.text()
+
+  const response = await request(`${url}/issue`)
+  const response2 = await request(`${url}/good`)
+  const body = await response.body.text()
+  const body2 = await response2.body.text()
   t.equal(body, body2)
 })
