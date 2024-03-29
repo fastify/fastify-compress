@@ -3,7 +3,7 @@
 const { test } = require('tap')
 const Fastify = require('fastify')
 const fastifyCompress = require('..')
-const fsPromises = require("fs").promises
+const fsPromises = require('fs').promises
 const { join } = require('path')
 const { fetch } = require('undici')
 
@@ -14,17 +14,17 @@ test('should not corrupt the file content', async (t) => {
   fastify.register(async (instance, opts) => {
     await fastify.register(fastifyCompress)
     instance.get('/issue', async (req, reply) => {
-      const longStringWithEmoji = await fsPromises.readFile(join(__dirname, "./test.txt"), "utf-8");
+      const longStringWithEmoji = await fsPromises.readFile(join(__dirname, './test.txt'), 'utf-8')
 
-      return longStringWithEmoji  // <--- the file content is corrupt
+      return longStringWithEmoji // <--- the file content is corrupt
       // search for "hydra.alibaba.com" will see 2 wired question marks instead of emoji
     })
   })
 
   fastify.get('/good', async (req, reply) => {
-    const longStringWithEmoji = await fsPromises.readFile(join(__dirname, "./test.txt"), "utf-8");
+    const longStringWithEmoji = await fsPromises.readFile(join(__dirname, './test.txt'), 'utf-8')
 
-    return longStringWithEmoji  // <--- the file content is ok
+    return longStringWithEmoji // <--- the file content is ok
     // search for "hydra.alibaba.com" will see emoji
   })
 
