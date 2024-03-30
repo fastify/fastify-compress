@@ -25,24 +25,23 @@ test('should not corrupt the file content', async (t) => {
   fastify.register(async (instance, opts) => {
     await fastify.register(fastifyCompress)
     // compression
-    instance.get('/issue', async (req, reply) => {
+    instance.get('/compress', async (req, reply) => {
       return twoByteUnicodeContent
     })
   })
 
   // no compression
-  fastify.get('/good', async (req, reply) => {
+  fastify.get('/no-compress', async (req, reply) => {
     return twoByteUnicodeContent
   })
 
-  await fastify.listen({ port: 0 })
+  const address = await fastify.listen({ port: 0, host: '127.0.0.1' })
 
-  const { port } = fastify.server.address()
-  const url = `http://localhost:${port}`
-
-  const response = await request(`${url}/issue`)
-  const response2 = await request(`${url}/good`)
+  const response = await request(`${address}/compress`)
+  const response2 = await request(`${address}/no-compress`)
   const body = await response.body.text()
   const body2 = await response2.body.text()
+  t.equal(body.length, twoByteUnicodeContent.length)
+  t.equal(body2.length, twoByteUnicodeContent.length)
   t.equal(body, body2)
 })
