@@ -38,5 +38,4 @@ test('should not corrupt the file content', async (t) => {
   const body2 = await response2.text()
   t.equal(body1, body2)
   t.equal(body1.length, twoByteUnicodeContent.length)
-  t.equal(body2.length, twoByteUnicodeContent.length)
 })
