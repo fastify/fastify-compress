@@ -2,7 +2,7 @@
 
 const { test } = require('tap')
 const Fastify = require('fastify')
-const fastifyCompress = require('..')
+const fastifyCompress = require('../..')
 const fetch = require('node-fetch')
 
 test('should not corrupt the file content', async (t) => {
