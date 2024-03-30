@@ -3,12 +3,7 @@
 const { test } = require('tap')
 const Fastify = require('fastify')
 const fastifyCompress = require('..')
-const { request, setGlobalDispatcher, Agent } = require('undici')
-
-setGlobalDispatcher(new Agent({
-  keepAliveTimeout: 10,
-  keepAliveMaxTimeout: 10
-}))
+const fetch = require('node-fetch')
 
 test('should not corrupt the file content', async (t) => {
   // provide 2 byte unicode content
@@ -37,10 +32,10 @@ test('should not corrupt the file content', async (t) => {
 
   const address = await fastify.listen({ port: 0, host: '127.0.0.1' })
 
-  const response1 = await request(`${address}/compress`)
-  const response2 = await request(`${address}/no-compress`)
-  const body1 = await response1.body.text()
-  const body2 = await response2.body.text()
+  const response1 = await fetch(`${address}/compress`)
+  const response2 = await fetch(`${address}/no-compress`)
+  const body1 = await response1.text()
+  const body2 = await response2.text()
   t.equal(body1, body2)
   t.equal(body1.length, twoByteUnicodeContent.length)
   t.equal(body2.length, twoByteUnicodeContent.length)
