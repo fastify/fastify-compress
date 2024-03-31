@@ -23,11 +23,11 @@
     "adm-zip": "^0.5.10",
     "fastify": "^4.19.2",
     "jsonstream": "^1.0.3",
+    "node-fetch": "^2",
     "standard": "^17.1.0",
     "tap": "^16.3.7",
     "tsd": "^0.30.0",
-    "typescript": "^5.1.6",
-    "undici": "^5.28.3"
+    "typescript": "^5.1.6"
   },
   "scripts": {
     "coverage": "npm run test:unit -- --coverage-report=html",
