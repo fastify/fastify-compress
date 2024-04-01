@@ -3,9 +3,29 @@
 const { test } = require('tap')
 const Fastify = require('fastify')
 const fastifyCompress = require('../..')
-const fetch = require('node-fetch')
+const { request } = require('node:http')
+
+function fetch (url) {
+  return new Promise(function (resolve, reject) {
+    request(url, function (response) {
+      // we need to use Buffer.concat to prevent wrong utf8 handling
+      let body = Buffer.from('')
+      response.on('data', function (chunk) {
+        body = Buffer.concat([body, Buffer.from(chunk, 'utf-8')])
+      })
+      response.once('error', reject)
+      response.once('end', function () {
+        resolve(body.toString())
+      })
+    })
+      .once('error', reject)
+      .end()
+  })
+}
 
 test('should not corrupt the file content', async (t) => {
+  t.plan(2)
+
   // provide 2 byte unicode content
   const twoByteUnicodeContent = new Array(5_000)
     .fill('0')
@@ -32,10 +52,11 @@ test('should not corrupt the file content', async (t) => {
 
   const address = await fastify.listen({ port: 0, host: '127.0.0.1' })
 
-  const response1 = await fetch(`${address}/compress`)
-  const response2 = await fetch(`${address}/no-compress`)
-  const body1 = await response1.text()
-  const body2 = await response2.text()
+  const [body1, body2] = await Promise.all([
+    fetch(`${address}/compress`),
+    fetch(`${address}/no-compress`)
+  ])
+
   t.equal(body1, body2)
   t.equal(body1, twoByteUnicodeContent)
 })
