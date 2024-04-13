@@ -7,35 +7,35 @@
   "types": "types/index.d.ts",
   "dependencies": {
     "@fastify/accept-negotiator": "^1.1.0",
-    "fastify-plugin": "^4.5.0",
+    "fastify-plugin": "^4.5.1",
     "mime-db": "^1.52.0",
-    "minipass": "^7.0.2",
+    "minipass": "^7.0.4",
     "peek-stream": "^1.1.3",
     "pump": "^3.0.0",
     "pumpify": "^2.0.1",
     "readable-stream": "^4.5.2"
   },
   "devDependencies": {
-    "@fastify/pre-commit": "^2.0.2",
-    "@types/node": "^20.4.2",
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
-    "adm-zip": "^0.5.10",
-    "fastify": "^4.19.2",
+    "@fastify/pre-commit": "^2.1.0",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.6.0",
+    "@typescript-eslint/parser": "^7.6.0",
+    "adm-zip": "^0.5.12",
+    "fastify": "^4.26.2",
     "jsonstream": "^1.0.3",
     "standard": "^17.1.0",
-    "tap": "^16.3.7",
+    "tap": "^18.7.2",
     "tsd": "^0.31.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.5"
   },
   "scripts": {
-    "coverage": "npm run test:unit -- --coverage-report=html",
     "lint": "standard",
     "lint:fix": "npm run lint -- --fix",
     "lint:fix:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
     "test:unit": "tap",
+    "test:coverage": "npm run test:unit -- --coverage-report=html",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
   "keywords": [
