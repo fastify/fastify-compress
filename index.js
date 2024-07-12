@@ -566,7 +566,7 @@ function createError (code, message, statusCode) {
 }
 
 module.exports = fp(fastifyCompress, {
-  fastify: '4.x',
+  fastify: '5.x',
   name: '@fastify/compress'
 })
 module.exports.default = fastifyCompress
