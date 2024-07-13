@@ -1,6 +1,6 @@
 'use strict'
 
-const { test } = require('tap')
+const { test } = require('node:test')
 const Fastify = require('fastify')
 const fastifyCompress = require('../..')
 const { request } = require('node:http')
@@ -35,7 +35,7 @@ test('should not corrupt the file content', async (t) => {
     })
     .join('\n')
   const fastify = new Fastify()
-  t.teardown(() => fastify.close())
+  t.after(() => fastify.close())
 
   fastify.register(async (instance, opts) => {
     await fastify.register(fastifyCompress)
@@ -57,6 +57,6 @@ test('should not corrupt the file content', async (t) => {
     fetch(`${address}/no-compress`)
   ])
 
-  t.equal(body1, body2)
-  t.equal(body1, twoByteUnicodeContent)
+  t.assert.equal(body1, body2)
+  t.assert.equal(body1, twoByteUnicodeContent)
 })

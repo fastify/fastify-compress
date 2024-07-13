@@ -1,6 +1,6 @@
 'use strict'
 
-const { test } = require('tap')
+const { test, describe } = require('node:test')
 const { createReadStream } = require('node:fs')
 const path = require('node:path')
 const zlib = require('node:zlib')
@@ -18,9 +18,10 @@ function createPayload (compressor) {
   return payload
 }
 
-test('When using routes `decompress` settings :', async (t) => {
-  t.test('it should decompress data using the route custom provided `createInflate` method', async (t) => {
+describe('When using routes `decompress` settings :', async (suite) => {
+  test('it should decompress data using the route custom provided `createInflate` method', async (t) => {
     t.plan(8)
+    const equal = t.assert.equal
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -51,11 +52,11 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     }).then((response) => {
-      t.equal(usedCustom, false)
-      t.equal(usedCustomGlobal, true)
+      equal(usedCustom, false)
+      equal(usedCustomGlobal, true)
 
-      t.equal(response.statusCode, 200)
-      t.equal(response.body, '@fastify/compress')
+      equal(response.statusCode, 200)
+      equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -69,15 +70,16 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(usedCustom, true)
-    t.equal(usedCustomGlobal, false)
+    equal(usedCustom, true)
+    equal(usedCustomGlobal, false)
 
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    equal(response.statusCode, 200)
+    equal(response.body, '@fastify/compress')
   })
 
-  t.test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
+  test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
     t.plan(8)
+    const equal = t.assert.equal
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -108,11 +110,11 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     }).then((response) => {
-      t.equal(usedCustom, false)
-      t.equal(usedCustomGlobal, true)
+      equal(usedCustom, false)
+      equal(usedCustomGlobal, true)
 
-      t.equal(response.statusCode, 200)
-      t.equal(response.body, '@fastify/compress')
+      equal(response.statusCode, 200)
+      equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -127,15 +129,16 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(usedCustom, true)
-    t.equal(usedCustomGlobal, false)
+    equal(usedCustom, true)
+    equal(usedCustomGlobal, false)
 
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    equal(response.statusCode, 200)
+    equal(response.body, '@fastify/compress')
   })
 
-  t.test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
+  test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
     t.plan(6)
+    const equal = t.assert.equal
 
     let usedCustomGlobal = false
     const customZlibGlobal = { createGunzip: () => (usedCustomGlobal = true) && zlib.createGunzip() }
@@ -160,10 +163,10 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     }).then((response) => {
-      t.equal(usedCustomGlobal, true)
+      equal(usedCustomGlobal, true)
 
-      t.equal(response.statusCode, 200)
-      t.equal(response.body, '@fastify/compress')
+      equal(response.statusCode, 200)
+      equal(response.body, '@fastify/compress')
 
       usedCustomGlobal = false
     })
@@ -177,10 +180,10 @@ test('When using routes `decompress` settings :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(usedCustomGlobal, false)
+    equal(usedCustomGlobal, false)
 
-    t.equal(response.statusCode, 400)
-    t.strictSame(response.json(), {
+    equal(response.statusCode, 400)
+    t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
       error: 'Bad Request',
@@ -188,7 +191,7 @@ test('When using routes `decompress` settings :', async (t) => {
     })
   })
 
-  t.test('it should throw an error on invalid route `decompress` settings', async (t) => {
+  test('it should throw an error on invalid route `decompress` settings', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -199,14 +202,15 @@ test('When using routes `decompress` settings :', async (t) => {
         reply.send(request.body.name)
       })
     } catch (err) {
-      t.equal(err.message, 'Unknown value for route decompress configuration')
+      t.assert.equal(err.message, 'Unknown value for route decompress configuration')
     }
   })
 })
 
-test('When using the old routes `{ config: decompress }` option :', async (t) => {
-  t.test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
+describe('When using the old routes `{ config: decompress }` option :', async () => {
+  test('it should decompress data using the route custom provided `createGunzip` method', async (t) => {
     t.plan(8)
+    const equal = t.assert.equal
 
     let usedCustomGlobal = false
     let usedCustom = false
@@ -239,11 +243,11 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
       },
       payload: createPayload(zlib.createGzip)
     }).then((response) => {
-      t.equal(usedCustom, false)
-      t.equal(usedCustomGlobal, true)
+      equal(usedCustom, false)
+      equal(usedCustomGlobal, true)
 
-      t.equal(response.statusCode, 200)
-      t.equal(response.body, '@fastify/compress')
+      equal(response.statusCode, 200)
+      equal(response.body, '@fastify/compress')
 
       usedCustom = false
       usedCustomGlobal = false
@@ -258,14 +262,14 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(usedCustom, true)
-    t.equal(usedCustomGlobal, false)
+    equal(usedCustom, true)
+    equal(usedCustomGlobal, false)
 
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    equal(response.statusCode, 200)
+    equal(response.body, '@fastify/compress')
   })
 
-  t.test('it should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {
+  test('it should use the old routes `{ config: decompress }` options over routes `decompress` options', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -283,7 +287,7 @@ test('When using the old routes `{ config: decompress }` option :', async (t) =>
         reply.send(request.body.name)
       })
     } catch (err) {
-      t.equal(err.message, 'Unknown value for route decompress configuration')
+      t.assert.equal(err.message, 'Unknown value for route decompress configuration')
     }
   })
 })
