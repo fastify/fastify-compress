@@ -8,7 +8,6 @@
   "dependencies": {
     "@fastify/accept-negotiator": "^1.1.0",
     "fastify-plugin": "^4.5.1",
-    "mime-db": "^1.52.0",
     "minipass": "^7.0.4",
     "peek-stream": "^1.1.3",
     "pump": "^3.0.0",

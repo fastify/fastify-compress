@@ -6,12 +6,12 @@ const { inherits, format } = require('node:util')
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const pump = require('pump')
-const mimedb = require('mime-db')
 const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
 const { Readable } = require('readable-stream')
 
+const compressibles = require('./lib/compresibles')
 const { isStream, isGzip, isDeflate, intoAsyncIterator } = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
@@ -479,9 +479,7 @@ function getEncodingHeader (encodings, request) {
 
 function shouldCompress (type, compressibleTypes) {
   if (compressibleTypes(type)) return true
-  const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
-  if (data === undefined) return false
-  return data.compressible === true
+  return compressibles.includes(type.split(';', 1)[0].trim().toLowerCase())
 }
 
 function isCompressed (data) {
