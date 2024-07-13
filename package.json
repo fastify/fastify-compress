@@ -22,6 +22,7 @@
     "adm-zip": "^0.5.12",
     "fastify": "^5.0.0-alpha.3",
     "jsonstream": "^1.0.3",
+    "mime-db": "^1.53.0",
     "standard": "^17.1.0",
     "tap": "^18.7.2",
     "tsd": "^0.31.0",
@@ -35,7 +36,8 @@
     "test:typescript": "tsd",
     "test:unit": "tap",
     "test:coverage": "npm run test:unit -- --coverage-report=html",
-    "test:unit:verbose": "npm run test:unit -- -Rspec"
+    "test:unit:verbose": "npm run test:unit -- -Rspec",
+    "generate-compresibles": "node ./scripts/generate-compresibles.js && npm run lint:fix"
   },
   "keywords": [
     "fastify",
