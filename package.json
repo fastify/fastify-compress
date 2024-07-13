@@ -21,6 +21,7 @@
     "@typescript-eslint/eslint-plugin": "^7.6.0",
     "@typescript-eslint/parser": "^7.6.0",
     "adm-zip": "^0.5.12",
+    "c8": "^10.1.2",
     "fastify": "^5.0.0-alpha.3",
     "jsonstream": "^1.0.3",
     "standard": "^17.1.0",
@@ -34,7 +35,7 @@
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
     "test:unit": "node --test",
-    "test:coverage": "npm run test:unit -- --coverage-report=html",
+    "test:coverage": "c8 node --test && c8 report --reporter=html",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
   "keywords": [

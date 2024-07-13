@@ -118,7 +118,7 @@ const recommendedDefaultBrotliOptions = {
 }
 
 function processCompressParams (opts) {
-  /* istanbul ignore next */
+  /* c8 ignore next 3 */
   if (!opts) {
     return
   }
@@ -148,7 +148,7 @@ function processCompressParams (opts) {
   params.uncompressStream = {
     // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
     // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
-    br: /* istanbul ignore next */ () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
+    br: /* c8 ignore next */ () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
     gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
     deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
   }
@@ -165,7 +165,7 @@ function processCompressParams (opts) {
 }
 
 function processDecompressParams (opts) {
-  /* istanbul ignore next */
+  /* c8 ignore next 3 */
   if (!opts) {
     return
   }
@@ -527,6 +527,7 @@ function unzipStream (inflate, maxRecursion) {
   return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
     /* istanbul ignore if */
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
+    /* c8 ignore next */
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
     switch (isCompressed(data)) {
       case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
@@ -555,7 +556,7 @@ function createError (code, message, statusCode) {
 
   FastifyCompressError.prototype[Symbol.toStringTag] = 'Error'
 
-  /* istanbul ignore next */
+  /* c8 ignore next 3 */
   FastifyCompressError.prototype.toString = function () {
     return `${this.name} [${this.code}]: ${this.message}`
   }
