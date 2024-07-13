@@ -525,7 +525,6 @@ function zipStream (deflate, encoding) {
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
   return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
-    /* istanbul ignore if */
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
     /* c8 ignore next */
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
