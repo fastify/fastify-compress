@@ -21,10 +21,10 @@
     "@typescript-eslint/eslint-plugin": "^7.6.0",
     "@typescript-eslint/parser": "^7.6.0",
     "adm-zip": "^0.5.12",
+    "c8": "^10.1.2",
     "fastify": "^5.0.0-alpha.3",
     "jsonstream": "^1.0.3",
     "standard": "^17.1.0",
-    "tap": "^18.7.2",
     "tsd": "^0.31.0",
     "typescript": "^5.4.5"
   },
@@ -34,8 +34,8 @@
     "lint:fix:typescript": "npm run lint:fix -- --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin \"**/*.d.ts\"",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tsd",
-    "test:unit": "tap",
-    "test:coverage": "npm run test:unit -- --coverage-report=html",
+    "test:unit": "node --test",
+    "test:coverage": "c8 node --test && c8 report --reporter=html",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
   "keywords": [

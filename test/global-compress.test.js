@@ -1,6 +1,6 @@
 'use strict'
 
-const { test } = require('tap')
+const { describe, test } = require('node:test')
 const { createReadStream, readFile, readFileSync } = require('node:fs')
 const { Readable, Writable, PassThrough } = require('node:stream')
 const zlib = require('node:zlib')
@@ -10,8 +10,8 @@ const Fastify = require('fastify')
 const compressPlugin = require('../index')
 const { once } = require('node:events')
 
-test('When `global` is not set, it is `true` by default :', async (t) => {
-  t.test('it should compress Buffer data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
+describe('When `global` is not set, it is `true` by default :', async () => {
+  test('it should compress Buffer data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -30,10 +30,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('it should compress Buffer data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
+  test('it should compress Buffer data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -52,10 +52,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('it should compress Buffer data using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
+  test('it should compress Buffer data using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -74,10 +74,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('it should compress JSON data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
+  test('it should compress JSON data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -97,10 +97,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('it should compress JSON data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
+  test('it should compress JSON data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -120,10 +120,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('it should compress JSON data using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
+  test('it should compress JSON data using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -142,10 +142,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('it should compress string data using brotli when `Accept-Encoding` request header is `br', async (t) => {
+  test('it should compress string data using brotli when `Accept-Encoding` request header is `br', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -165,10 +165,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 
-  t.test('it should compress string data using deflate when `Accept-Encoding` request header is `deflate', async (t) => {
+  test('it should compress string data using deflate when `Accept-Encoding` request header is `deflate', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -188,10 +188,10 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 
-  t.test('it should compress string data using gzip when `Accept-Encoding` request header is `gzip', async (t) => {
+  test('it should compress string data using gzip when `Accept-Encoding` request header is `gzip', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -211,12 +211,12 @@ test('When `global` is not set, it is `true` by default :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
-test('It should send compressed Stream data when `global` is `true` :', async (t) => {
-  t.test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
+describe('It should send compressed Stream data when `global` is `true` :', async () => {
+  test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -237,12 +237,12 @@ test('It should send compressed Stream data when `global` is `true` :', async (t
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'br')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'br')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
+  test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -263,13 +263,13 @@ test('It should send compressed Stream data when `global` is `true` :', async (t
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
+  test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -290,14 +290,14 @@ test('It should send compressed Stream data when `global` is `true` :', async (t
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
-test('It should send compressed Buffer data when `global` is `true` :', async (t) => {
-  t.test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
+describe('It should send compressed Buffer data when `global` is `true` :', async () => {
+  test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -316,10 +316,10 @@ test('It should send compressed Buffer data when `global` is `true` :', async (t
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
+  test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -338,10 +338,10 @@ test('It should send compressed Buffer data when `global` is `true` :', async (t
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
+  test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -360,12 +360,12 @@ test('It should send compressed Buffer data when `global` is `true` :', async (t
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 })
 
-test('It should send compressed JSON data when `global` is `true` :', async (t) => {
-  t.test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
+describe('It should send compressed JSON data when `global` is `true` :', async () => {
+  test('using brotli when `Accept-Encoding` request header is `br`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -384,10 +384,10 @@ test('It should send compressed JSON data when `global` is `true` :', async (t) 
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
+  test('using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -406,10 +406,10 @@ test('It should send compressed JSON data when `global` is `true` :', async (t) 
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
+  test('using gzip when `Accept-Encoding` request header is `gzip`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -428,12 +428,12 @@ test('It should send compressed JSON data when `global` is `true` :', async (t) 
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 })
 
-test('It should fallback to the default `gzip` encoding compression :', async (t) => {
-  t.test('when `Accept-Encoding` request header value is set to `*`', async (t) => {
+describe('It should fallback to the default `gzip` encoding compression :', async () => {
+  test('when `Accept-Encoding` request header value is set to `*`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -454,12 +454,12 @@ test('It should fallback to the default `gzip` encoding compression :', async (t
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('when `Accept-Encoding` request header value is set to multiple `*` directives', async (t) => {
+  test('when `Accept-Encoding` request header value is set to multiple `*` directives', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -480,14 +480,14 @@ test('It should fallback to the default `gzip` encoding compression :', async (t
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
-test('When a custom `zlib` option is provided, it should compress data :`', async (t) => {
-  t.test('using the custom `createBrotliCompress()` method', async (t) => {
+describe('When a custom `zlib` option is provided, it should compress data :`', async () => {
+  test('using the custom `createBrotliCompress()` method', async (t) => {
     t.plan(5)
 
     let usedCustom = false
@@ -509,17 +509,17 @@ test('When a custom `zlib` option is provided, it should compress data :`', asyn
         'accept-encoding': 'br'
       }
     })
-    t.equal(usedCustom, true)
+    t.assert.equal(usedCustom, true)
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'br')
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'br')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using the custom `createDeflate()` method', async (t) => {
+  test('using the custom `createDeflate()` method', async (t) => {
     t.plan(5)
 
     let usedCustom = false
@@ -541,17 +541,17 @@ test('When a custom `zlib` option is provided, it should compress data :`', asyn
         'accept-encoding': 'deflate'
       }
     })
-    t.equal(usedCustom, true)
+    t.assert.equal(usedCustom, true)
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using the custom `createGzip()` method', async (t) => {
+  test('using the custom `createGzip()` method', async (t) => {
     t.plan(4)
 
     let usedCustom = false
@@ -573,18 +573,18 @@ test('When a custom `zlib` option is provided, it should compress data :`', asyn
         'accept-encoding': 'gzip'
       }
     })
-    t.equal(usedCustom, true)
+    t.assert.equal(usedCustom, true)
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
-test('When a malformed custom `zlib` option is provided, it should compress data :', async (t) => {
-  t.test('using the fallback default Node.js core `zlib.createBrotliCompress()` method', async (t) => {
+describe('When a malformed custom `zlib` option is provided, it should compress data :', async () => {
+  test('using the fallback default Node.js core `zlib.createBrotliCompress()` method', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -608,10 +608,10 @@ test('When a malformed custom `zlib` option is provided, it should compress data
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 
-  t.test('using the fallback default Node.js core `zlib.createDeflate()` method', async (t) => {
+  test('using the fallback default Node.js core `zlib.createDeflate()` method', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -635,10 +635,10 @@ test('When a malformed custom `zlib` option is provided, it should compress data
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 
-  t.test('using the fallback default Node.js core `zlib.createGzip()` method', async (t) => {
+  test('using the fallback default Node.js core `zlib.createGzip()` method', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -662,12 +662,12 @@ test('When a malformed custom `zlib` option is provided, it should compress data
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), 'hello')
+    t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 })
 
-test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true` :', async (t) => {
-  t.test('it should uncompress payloads using the deflate algorithm', async (t) => {
+describe('When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true` :', async () => {
+  test('it should uncompress payloads using the deflate algorithm', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -685,13 +685,13 @@ test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header i
         'x-no-compression': true
       }
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 
-  t.test('it should uncompress payloads using the gzip algorithm', async (t) => {
+  test('it should uncompress payloads using the gzip algorithm', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -709,10 +709,10 @@ test('When `inflateIfDeflated` is `true` and `X-No-Compression` request header i
         'x-no-compression': true
       }
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 })
 
@@ -738,16 +738,16 @@ test('it should not uncompress payloads using the zip algorithm', async (t) => {
       'x-no-compression': true
     }
   })
-  t.equal(response.statusCode, 200)
-  t.notOk(response.headers.vary)
-  t.notOk(response.headers['content-encoding'])
-  t.same(response.rawPayload, fileBuffer)
-  t.equal(response.payload, fileBuffer.toString('utf-8'))
+  t.assert.equal(response.statusCode, 200)
+  t.assert.ok(!response.headers.vary)
+  t.assert.ok(!response.headers['content-encoding'])
+  t.assert.deepEqual(response.rawPayload, fileBuffer)
+  t.assert.equal(response.payload, fileBuffer.toString('utf-8'))
 })
 
-test('It should not compress :', async (t) => {
-  t.test('Using `reply.compress()` :', async (t) => {
-    t.test('when payload length is smaller than the `threshold` defined value', async (t) => {
+describe('It should not compress :', async () => {
+  describe('Using `reply.compress()` :', async () => {
+    test('when payload length is smaller than the `threshold` defined value', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -766,13 +766,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'deflate'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'a message')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'a message')
     })
 
-    t.test('when `customTypes` is set and does not match `Content-Type` reply header or `mime-db`', async (t) => {
+    test('when `customTypes` is set and does not match `Content-Type` reply header or `mime-db`', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -791,12 +791,12 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip'
         }
       })
-      t.notOk(response.headers.vary, 'accept-encoding')
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary, 'accept-encoding')
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.statusCode, 200)
     })
 
-    t.test('when `customTypes` is a function and returns false on the provided `Content-Type` reply header`', async (t) => {
+    test('when `customTypes` is a function and returns false on the provided `Content-Type` reply header`', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -815,12 +815,12 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip'
         }
       })
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.statusCode, 200)
     })
 
-    t.test('when `X-No-Compression` request header is `true`', async (t) => {
+    test('when `X-No-Compression` request header is `true`', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -838,13 +838,13 @@ test('It should not compress :', async (t) => {
           'x-no-compression': true
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same(JSON.parse(response.payload), json)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual(JSON.parse(response.payload), json)
     })
 
-    t.test('when `Content-Type` reply header is not set and the content is not detected as a compressible type', async (t) => {
+    test('when `Content-Type` reply header is not set and the content is not detected as a compressible type', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -868,12 +868,12 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'identity'
         }
       })
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, JSON.stringify(json))
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, JSON.stringify(json))
     })
 
-    t.test('when `Content-Type` reply header is a mime type with undefined compressible values', async (t) => {
+    test('when `Content-Type` reply header is a mime type with undefined compressible values', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -892,13 +892,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip, deflate, br'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'hello')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'hello')
     })
 
-    t.test('when `Content-Type` reply header value is `text/event-stream`', async (t) => {
+    test('when `Content-Type` reply header value is `text/event-stream`', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -920,13 +920,13 @@ test('It should not compress :', async (t) => {
         url: '/',
         method: 'GET'
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same(response.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual(response.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
     })
 
-    t.test('when `Content-Type` reply header value is an invalid type', async (t) => {
+    test('when `Content-Type` reply header value is an invalid type', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -945,13 +945,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'deflate'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'a message')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'a message')
     })
 
-    t.test('when `Accept-Encoding` request header is missing', async (t) => {
+    test('when `Accept-Encoding` request header is missing', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -967,12 +967,12 @@ test('It should not compress :', async (t) => {
         url: '/',
         method: 'GET'
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
     })
 
-    t.test('when `Accept-Encoding` request header is set to `identity`', async (t) => {
+    test('when `Accept-Encoding` request header is set to `identity`', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -990,12 +990,12 @@ test('It should not compress :', async (t) => {
         }
       })
       const payload = JSON.parse(response.payload)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same({ hello: 'world' }, payload)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual({ hello: 'world' }, payload)
     })
 
-    t.test('when `Accept-Encoding` request header value is not supported', async (t) => {
+    test('when `Accept-Encoding` request header value is not supported', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1015,12 +1015,12 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.payload, file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.payload, file)
     })
 
-    t.test('when `Accept-Encoding` request header value is not supported (with quality value)', async (t) => {
+    test('when `Accept-Encoding` request header value is not supported (with quality value)', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1040,12 +1040,12 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.payload, file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.payload, file)
     })
 
-    t.test('when `Accept-Encoding` request header is set to `identity and `inflateIfDeflated` is `true``', async (t) => {
+    test('when `Accept-Encoding` request header is set to `identity and `inflateIfDeflated` is `true``', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1063,14 +1063,14 @@ test('It should not compress :', async (t) => {
         }
       })
       const payload = JSON.parse(response.payload)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same({ hello: 'world' }, payload)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual({ hello: 'world' }, payload)
     })
   })
 
-  t.test('Using `onSend` hook :', async (t) => {
-    t.test('when there is no payload', async (t) => {
+  describe('Using `onSend` hook :', async () => {
+    test('when there is no payload', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1087,13 +1087,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, '')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, '')
     })
 
-    t.test('when payload length is smaller than the `threshold` defined value', async (t) => {
+    test('when payload length is smaller than the `threshold` defined value', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1112,13 +1112,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'deflate'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'a message')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'a message')
     })
 
-    t.test('when `customTypes` is set and does not match `Content-Type` reply header or `mime-db`', async (t) => {
+    test('when `customTypes` is set and does not match `Content-Type` reply header or `mime-db`', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1137,12 +1137,12 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip'
         }
       })
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.statusCode, 200)
     })
 
-    t.test('when `X-No-Compression` request header is `true`', async (t) => {
+    test('when `X-No-Compression` request header is `true`', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1160,13 +1160,13 @@ test('It should not compress :', async (t) => {
           'x-no-compression': true
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same(JSON.parse(response.payload), json)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual(JSON.parse(response.payload), json)
     })
 
-    t.test('when `Content-Type` reply header is not set and the content is not detected as a compressible type', async (t) => {
+    test('when `Content-Type` reply header is not set and the content is not detected as a compressible type', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1190,12 +1190,12 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'identity'
         }
       })
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, JSON.stringify(json))
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, JSON.stringify(json))
     })
 
-    t.test('when `Content-Type` reply header is a mime type with undefined compressible values', async (t) => {
+    test('when `Content-Type` reply header is a mime type with undefined compressible values', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1214,13 +1214,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'gzip, deflate, br'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'hello')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'hello')
     })
 
-    t.test('when `Content-Type` reply header value is `text/event-stream`', async (t) => {
+    test('when `Content-Type` reply header value is `text/event-stream`', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1242,13 +1242,13 @@ test('It should not compress :', async (t) => {
         url: '/',
         method: 'GET'
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same(response.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual(response.payload, 'event: open\n\nevent: change\ndata: schema\n\n')
     })
 
-    t.test('when `Content-Type` reply header value is an invalid type', async (t) => {
+    test('when `Content-Type` reply header value is an invalid type', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1267,13 +1267,13 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'deflate'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.equal(response.payload, 'a message')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.equal(response.payload, 'a message')
     })
 
-    t.test('when `Accept-Encoding` request header is missing', async (t) => {
+    test('when `Accept-Encoding` request header is missing', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1289,12 +1289,12 @@ test('It should not compress :', async (t) => {
         url: '/',
         method: 'GET'
       })
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
     })
 
-    t.test('when `Accept-Encoding` request header is set to `identity`', async (t) => {
+    test('when `Accept-Encoding` request header is set to `identity`', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1312,12 +1312,12 @@ test('It should not compress :', async (t) => {
         }
       })
       const payload = JSON.parse(response.payload)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same({ hello: 'world' }, payload)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual({ hello: 'world' }, payload)
     })
 
-    t.test('when `Accept-Encoding` request header value is not supported', async (t) => {
+    test('when `Accept-Encoding` request header value is not supported', async (t) => {
       t.plan(2)
 
       const fastify = Fastify()
@@ -1336,11 +1336,11 @@ test('It should not compress :', async (t) => {
           'accept-encoding': 'invalid'
         }
       })
-      t.equal(response.statusCode, 200)
-      t.equal(response.payload, 'something')
+      t.assert.equal(response.statusCode, 200)
+      t.assert.equal(response.payload, 'something')
     })
 
-    t.test('when `Accept-Encoding` request header value is not supported (with quality value)', async (t) => {
+    test('when `Accept-Encoding` request header value is not supported (with quality value)', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1360,12 +1360,12 @@ test('It should not compress :', async (t) => {
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.payload, file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.payload, file)
     })
 
-    t.test('when `Accept-Encoding` request header is set to `identity and `inflateIfDeflated` is `true``', async (t) => {
+    test('when `Accept-Encoding` request header is set to `identity and `inflateIfDeflated` is `true``', async (t) => {
       t.plan(3)
 
       const fastify = Fastify()
@@ -1383,15 +1383,15 @@ test('It should not compress :', async (t) => {
         }
       })
       const payload = JSON.parse(response.payload)
-      t.notOk(response.headers.vary)
-      t.notOk(response.headers['content-encoding'])
-      t.same({ hello: 'world' }, payload)
+      t.assert.ok(!response.headers.vary)
+      t.assert.ok(!response.headers['content-encoding'])
+      t.assert.deepEqual({ hello: 'world' }, payload)
     })
   })
 })
 
-test('It should not double-compress :', async (t) => {
-  t.test('when using `reply.compress()` to send an already deflated Stream', async (t) => {
+describe('It should not double-compress :', async () => {
+  test('when using `reply.compress()` to send an already deflated Stream', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -1414,12 +1414,12 @@ test('It should not double-compress :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('when using `reply.compress()` to send an already gzipped Stream', async (t) => {
+  test('when using `reply.compress()` to send an already gzipped Stream', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -1442,12 +1442,12 @@ test('It should not double-compress :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('when using `onSend` hook to send an already brotli compressed Stream', async (t) => {
+  test('when using `onSend` hook to send an already brotli compressed Stream', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1472,13 +1472,13 @@ test('It should not double-compress :', async (t) => {
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
-    t.notOk(response.headers.vary)
-    t.equal(response.headers['content-encoding'], 'br')
-    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.ok(!response.headers.vary)
+    t.assert.equal(response.headers['content-encoding'], 'br')
+    t.assert.equal(response.headers['content-length'], response.rawPayload.length.toString())
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('when using `onSend` hook to send an already deflated Stream', async (t) => {
+  test('when using `onSend` hook to send an already deflated Stream', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1503,13 +1503,13 @@ test('It should not double-compress :', async (t) => {
       }
     })
     const payload = zlib.inflateSync(response.rawPayload)
-    t.notOk(response.headers.vary)
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.ok(!response.headers.vary)
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.equal(response.headers['content-length'], response.rawPayload.length.toString())
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('when using `onSend` hook to send an already gzipped Stream', async (t) => {
+  test('when using `onSend` hook to send an already gzipped Stream', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1534,16 +1534,16 @@ test('It should not double-compress :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.notOk(response.headers.vary)
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(response.headers['content-length'], response.rawPayload.length.toString())
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.ok(!response.headers.vary)
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(response.headers['content-length'], response.rawPayload.length.toString())
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
-test('It should not compress Stream data and add a `Content-Encoding` reply header :', async (t) => {
-  t.test('Using `onSend` hook if `Accept-Encoding` request header value is `identity`', async (t) => {
-    t.test('when `inflateIfDeflated` is `true` and `encodings` is not set', async (t) => {
+describe('It should not compress Stream data and add a `Content-Encoding` reply header :', async () => {
+  describe('Using `onSend` hook if `Accept-Encoding` request header value is `identity`', async () => {
+    test('when `inflateIfDeflated` is `true` and `encodings` is not set', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1563,13 +1563,13 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.headers['content-encoding'], 'identity')
-      t.equal(file, response.payload)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.headers['content-encoding'], 'identity')
+      t.assert.equal(file, response.payload)
     })
 
-    t.test('when `inflateIfDeflated` is `true` and `encodings` is set', async (t) => {
+    test('when `inflateIfDeflated` is `true` and `encodings` is set', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1592,15 +1592,15 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
         }
       })
       const file = readFileSync('./package.json', 'utf-8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.headers['content-encoding'], 'identity')
-      t.same(response.payload, file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.headers['content-encoding'], 'identity')
+      t.assert.deepEqual(response.payload, file)
     })
   })
 
-  t.test('Using `reply.compress()` if `Accept-Encoding` request header value is `identity`', async (t) => {
-    t.test('when `inflateIfDeflated` is `true` and `encodings` is not set', async (t) => {
+  describe('Using `reply.compress()` if `Accept-Encoding` request header value is `identity`', async () => {
+    test('when `inflateIfDeflated` is `true` and `encodings` is not set', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1620,13 +1620,13 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
         }
       })
       const file = readFileSync('./package.json', 'utf8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.headers['content-encoding'], 'identity')
-      t.equal(file, response.payload)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.headers['content-encoding'], 'identity')
+      t.assert.equal(file, response.payload)
     })
 
-    t.test('when `inflateIfDeflated` is `true` and `encodings` is set', async (t) => {
+    test('when `inflateIfDeflated` is `true` and `encodings` is set', async (t) => {
       t.plan(4)
 
       const fastify = Fastify()
@@ -1649,10 +1649,10 @@ test('It should not compress Stream data and add a `Content-Encoding` reply head
         }
       })
       const file = readFileSync('./package.json', 'utf-8')
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers.vary)
-      t.equal(response.headers['content-encoding'], 'identity')
-      t.same(response.payload, file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers.vary)
+      t.assert.equal(response.headers['content-encoding'], 'identity')
+      t.assert.deepEqual(response.payload, file)
     })
   })
 })
@@ -1685,10 +1685,10 @@ test('It should return a serialized payload when `inflateIfDeflated` is `true` a
       'x-no-compression': true
     }
   })
-  t.equal(one.statusCode, 200)
-  t.notOk(one.headers.vary)
-  t.notOk(one.headers['content-encoding'])
-  t.same(JSON.parse(one.payload), json)
+  t.assert.equal(one.statusCode, 200)
+  t.assert.ok(!one.headers.vary)
+  t.assert.ok(!one.headers['content-encoding'])
+  t.assert.deepEqual(JSON.parse(one.payload), json)
 
   const two = await fastify.inject({
     url: '/two',
@@ -1697,10 +1697,10 @@ test('It should return a serialized payload when `inflateIfDeflated` is `true` a
       'x-no-compression': true
     }
   })
-  t.equal(two.statusCode, 200)
-  t.notOk(two.headers.vary)
-  t.notOk(two.headers['content-encoding'])
-  t.equal(two.payload, compressedBufferPayload.toString())
+  t.assert.equal(two.statusCode, 200)
+  t.assert.ok(!two.headers.vary)
+  t.assert.ok(!two.headers['content-encoding'])
+  t.assert.equal(two.payload, compressedBufferPayload.toString())
 })
 
 test('It should close the stream', async (t) => {
@@ -1713,7 +1713,7 @@ test('It should close the stream', async (t) => {
   const closed = once(stream, 'close')
 
   fastify.get('/', (request, reply) => {
-    stream.on('close', () => t.ok('stream closed'))
+    stream.on('close', () => t.assert.ok('stream closed'))
 
     reply
       .type('text/plain')
@@ -1726,8 +1726,8 @@ test('It should close the stream', async (t) => {
   })
 
   const file = readFileSync('./package.json', 'utf8')
-  t.equal(response.statusCode, 200)
-  t.equal(file, response.payload)
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(file, response.payload)
   await closed
 })
 
@@ -1772,11 +1772,11 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
       'accept-encoding': 'gzip'
     }
   })
-  t.equal(actual.msg, expect.message)
+  t.assert.equal(actual.msg, expect.message)
 })
 
-test('It should support stream1 :', async (t) => {
-  t.test('when using `reply.compress()`', async (t) => {
+describe('It should support stream1 :', async () => {
+  test('when using `reply.compress()`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -1801,12 +1801,12 @@ test('It should support stream1 :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.same(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 
-  t.test('when using `onSend` hook', async (t) => {
+  test('when using `onSend` hook', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -1831,14 +1831,14 @@ test('It should support stream1 :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.same(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.deepEqual(JSON.parse(payload.toString()), [{ hello: 'world' }, { a: 42 }])
   })
 })
 
-test('It should remove `Content-Length` header :', async (t) => {
-  t.test('using `reply.compress()`', async (t) => {
+describe('It should remove `Content-Length` header :', async () => {
+  test('using `reply.compress()`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1866,13 +1866,13 @@ test('It should remove `Content-Length` header :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using `reply.compress()` on a Stream when `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
+  test('using `reply.compress()` on a Stream when `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1892,13 +1892,13 @@ test('It should remove `Content-Length` header :', async (t) => {
       }
     })
     const file = readFileSync('./package.json', 'utf8')
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(file, response.payload)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(file, response.payload)
   })
 
-  t.test('using `onSend` hook', async (t) => {
+  test('using `onSend` hook', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1926,13 +1926,13 @@ test('It should remove `Content-Length` header :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using `onSend` hook on a Stream When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
+  test('using `onSend` hook on a Stream When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1952,15 +1952,15 @@ test('It should remove `Content-Length` header :', async (t) => {
       }
     })
     const file = readFileSync('./package.json', 'utf8')
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-length'], 'no content length')
-    t.equal(file, response.payload)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(file, response.payload)
   })
 })
 
-test('When `removeContentLengthHeader` is `false`, it should not remove `Content-Length` header :', async (t) => {
-  t.test('using `reply.compress()`', async (t) => {
+describe('When `removeContentLengthHeader` is `false`, it should not remove `Content-Length` header :', async () => {
+  test('using `reply.compress()`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -1988,13 +1988,13 @@ test('When `removeContentLengthHeader` is `false`, it should not remove `Content
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(response.headers['content-length'], payload.length.toString())
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.equal(response.headers['content-length'], payload.length.toString())
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('using `onSend` hook', async (t) => {
+  test('using `onSend` hook', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -2022,15 +2022,15 @@ test('When `removeContentLengthHeader` is `false`, it should not remove `Content
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(response.headers['content-length'], payload.length.toString())
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.equal(response.headers['content-length'], payload.length.toString())
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
-test('It should add hooks correctly: ', async (t) => {
-  t.test('`onRequest` hooks', async (t) => {
+describe('It should add hooks correctly: ', async () => {
+  test('`onRequest` hooks', async (t) => {
     t.plan(14)
 
     const fastify = Fastify()
@@ -2074,11 +2074,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-one'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-one'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2091,11 +2091,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-two'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-two'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2108,16 +2108,16 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
   })
 
-  t.test('`onSend` hooks', async (t) => {
+  test('`onSend` hooks', async (t) => {
     t.plan(14)
 
     const fastify = Fastify()
@@ -2161,11 +2161,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-one'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-one'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2178,11 +2178,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-two'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-two'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2195,16 +2195,16 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
   })
 
-  t.test('`preParsing` hooks', async (t) => {
+  test('`preParsing` hooks', async (t) => {
     t.plan(14)
 
     const fastify = Fastify()
@@ -2255,11 +2255,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-one'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-one'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2272,11 +2272,11 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(response.headers['x-fastify-test-two'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(response.headers['x-fastify-test-two'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
@@ -2289,18 +2289,18 @@ test('It should add hooks correctly: ', async (t) => {
       }
     }).then((response) => {
       const payload = zlib.inflateSync(response.rawPayload)
-      t.equal(response.statusCode, 200)
-      t.notOk(response.headers['content-length'], 'no content length')
-      t.equal(response.headers['x-fastify-global-test'], 'ok')
-      t.equal(payload.toString('utf-8'), file)
+      t.assert.equal(response.statusCode, 200)
+      t.assert.ok(!response.headers['content-length'], 'no content length')
+      t.assert.equal(response.headers['x-fastify-global-test'], 'ok')
+      t.assert.equal(payload.toString('utf-8'), file)
     }).catch((err) => {
       t.error(err)
     })
   })
 })
 
-test('When `Accept-Encoding` request header values are not supported and `onUnsupportedEncoding` is defined :', async (t) => {
-  t.test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
+describe('When `Accept-Encoding` request header values are not supported and `onUnsupportedEncoding` is defined :', async () => {
+  test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -2325,11 +2325,11 @@ test('When `Accept-Encoding` request header values are not supported and `onUnsu
         'accept-encoding': 'hello'
       }
     })
-    t.equal(response.statusCode, 406)
-    t.same(JSON.parse(response.payload), { hello: 'hello' })
+    t.assert.equal(response.statusCode, 406)
+    t.assert.deepEqual(JSON.parse(response.payload), { hello: 'hello' })
   })
 
-  t.test('it should call the defined `onUnsupportedEncoding()` method and throw an error', async (t) => {
+  test('it should call the defined `onUnsupportedEncoding()` method and throw an error', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -2354,8 +2354,8 @@ test('When `Accept-Encoding` request header values are not supported and `onUnsu
         'accept-encoding': 'hello'
       }
     })
-    t.equal(response.statusCode, 406)
-    t.same(JSON.parse(response.payload), {
+    t.assert.equal(response.statusCode, 406)
+    t.assert.deepEqual(JSON.parse(response.payload), {
       error: 'Not Acceptable',
       message: 'testing error',
       statusCode: 406
@@ -2363,8 +2363,8 @@ test('When `Accept-Encoding` request header values are not supported and `onUnsu
   })
 })
 
-test('`Accept-Encoding` request header values :', async (t) => {
-  t.test('can contain white space', async (t) => {
+describe('`Accept-Encoding` request header values :', async () => {
+  test('can contain white space', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -2384,12 +2384,12 @@ test('`Accept-Encoding` request header values :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), JSON.stringify(json))
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 
-  t.test('can contain mixed uppercase and lowercase characters (e.g.: compressing a Stream)', async (t) => {
+  test('can contain mixed uppercase and lowercase characters (e.g.: compressing a Stream)', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -2410,12 +2410,12 @@ test('`Accept-Encoding` request header values :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('can contain mixed uppercase and lowercase characters (e.g.: compressing a Buffer)', async (t) => {
+  test('can contain mixed uppercase and lowercase characters (e.g.: compressing a Buffer)', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -2434,10 +2434,10 @@ test('`Accept-Encoding` request header values :', async (t) => {
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(payload.toString('utf-8'), buf.toString())
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
-  t.test('should support `gzip` alias value `x-gzip`', async (t) => {
+  test('should support `gzip` alias value `x-gzip`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -2460,12 +2460,12 @@ test('`Accept-Encoding` request header values :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 
-  t.test('should support quality syntax', async (t) => {
+  test('should support quality syntax', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -2488,9 +2488,9 @@ test('`Accept-Encoding` request header values :', async (t) => {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.inflateSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 })
 
@@ -2514,9 +2514,9 @@ test('It should compress data if `customTypes` is set and matches `Content-Type`
   })
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.gunzipSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'gzip')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
 test('It should compress data if `customTypes` is a function and returns true on the provided `Content-Type` reply header value', async (t) => {
@@ -2539,9 +2539,9 @@ test('It should compress data if `customTypes` is a function and returns true on
   })
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.gunzipSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'gzip')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
 test('It should not apply `customTypes` option if the passed value is not a RegExp or Function', async (t) => {
@@ -2563,9 +2563,9 @@ test('It should not apply `customTypes` option if the passed value is not a RegE
       'accept-encoding': 'gzip'
     }
   })
-  t.notOk(response.headers.vary)
-  t.notOk(response.headers['content-encoding'])
-  t.equal(response.statusCode, 200)
+  t.assert.ok(!response.headers.vary)
+  t.assert.ok(!response.headers['content-encoding'])
+  t.assert.equal(response.statusCode, 200)
 })
 
 test('When `encodings` option is set, it should only use the registered value', async (t) => {
@@ -2585,13 +2585,13 @@ test('When `encodings` option is set, it should only use the registered value', 
       'accept-encoding': 'br,gzip,deflate'
     }
   })
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'deflate')
-  t.equal(response.statusCode, 200)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'deflate')
+  t.assert.equal(response.statusCode, 200)
 })
 
-test('It should send data compressed according to `brotliOptions` :', async (t) => {
-  t.test('when using br encoding', async (t) => {
+describe('It should send data compressed according to `brotliOptions` :', async () => {
+  test('when using br encoding', async (t) => {
     t.plan(4)
     const brotliOptions = {
       params: {
@@ -2619,15 +2619,15 @@ test('It should send data compressed according to `brotliOptions` :', async (t) 
 
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.brotliDecompressSync(response.rawPayload, brotliOptions)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'br')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'br')
+    t.assert.equal(payload.toString('utf-8'), file)
 
     const compressedPayload = zlib.brotliCompressSync(file, brotliOptions)
-    t.same(response.rawPayload, compressedPayload)
+    t.assert.deepEqual(response.rawPayload, compressedPayload)
   })
 
-  t.test('default BROTLI_PARAM_QUALITY to be 4', async (t) => {
+  test('default BROTLI_PARAM_QUALITY to be 4', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -2652,12 +2652,12 @@ test('It should send data compressed according to `brotliOptions` :', async (t) 
       params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 }
     }
     const compressedPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
-    t.same(response.rawPayload, compressedPayload)
+    t.assert.deepEqual(response.rawPayload, compressedPayload)
   })
 })
 
-test('It should send data compressed according to `zlibOptions` :', async (t) => {
-  t.test('when using deflate encoding', async (t) => {
+describe('It should send data compressed according to `zlibOptions` :', async () => {
+  test('when using deflate encoding', async (t) => {
     t.plan(3)
 
     const zlibOptions = {
@@ -2685,12 +2685,12 @@ test('It should send data compressed according to `zlibOptions` :', async (t) =>
       }
     })
     const file = readFileSync('./package.json')
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'deflate')
-    t.same(response.rawPayload, zlib.deflateSync(file, zlibOptions))
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'deflate')
+    t.assert.deepEqual(response.rawPayload, zlib.deflateSync(file, zlibOptions))
   })
 
-  t.test('when using gzip encoding', async (t) => {
+  test('when using gzip encoding', async (t) => {
     t.plan(3)
 
     const zlibOptions = { level: 1 }
@@ -2715,9 +2715,9 @@ test('It should send data compressed according to `zlibOptions` :', async (t) =>
       }
     })
     const file = readFileSync('./package.json')
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.same(response.rawPayload, zlib.gzipSync(file, zlibOptions))
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.deepEqual(response.rawPayload, zlib.gzipSync(file, zlibOptions))
   })
 })
 
@@ -2748,7 +2748,7 @@ test('It should concat `accept-encoding` to `Vary` reply header if present', asy
       'accept-encoding': 'deflate'
     }
   }).then((response) => {
-    t.same(response.headers.vary, 'different-header, accept-encoding')
+    t.assert.deepEqual(response.headers.vary, 'different-header, accept-encoding')
   }).catch((err) => {
     t.error(err)
   })
@@ -2760,7 +2760,7 @@ test('It should concat `accept-encoding` to `Vary` reply header if present', asy
       'accept-encoding': 'deflate'
     }
   }).then((response) => {
-    t.same(response.headers.vary, 'different-header, my-header, accept-encoding')
+    t.assert.deepEqual(response.headers.vary, 'different-header, my-header, accept-encoding')
   }).catch((err) => {
     t.error(err)
   })
@@ -2793,7 +2793,7 @@ test('It should not add `accept-encoding` to `Vary` reply header if already pres
       'accept-encoding': 'deflate'
     }
   }).then((response) => {
-    t.same(response.headers.vary, 'accept-encoding,different-header')
+    t.assert.deepEqual(response.headers.vary, 'accept-encoding,different-header')
   }).catch((err) => {
     t.error(err)
   })
@@ -2805,7 +2805,7 @@ test('It should not add `accept-encoding` to `Vary` reply header if already pres
       'accept-encoding': 'deflate'
     }
   }).then((response) => {
-    t.same(response.headers.vary, 'accept-encoding, different-header, my-header')
+    t.assert.deepEqual(response.headers.vary, 'accept-encoding, different-header, my-header')
   }).catch((err) => {
     t.error(err)
   })
@@ -2832,9 +2832,9 @@ test('It should follow the `Accept-Encoding` request header encoding order', asy
   })
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.brotliDecompressSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'br')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'br')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
 test('It should sort and follow custom `encodings` options', async (t) => {
@@ -2861,9 +2861,9 @@ test('It should sort and follow custom `encodings` options', async (t) => {
   })
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.brotliDecompressSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'br')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'br')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
 test('It should sort and prefer the order of custom `encodings` options', async (t) => {
@@ -2891,9 +2891,9 @@ test('It should sort and prefer the order of custom `encodings` options', async 
 
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.gunzipSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'gzip')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
 test('It should sort and follow custom `requestEncodings` options', async (t) => {
@@ -2920,13 +2920,13 @@ test('It should sort and follow custom `requestEncodings` options', async (t) =>
   })
   const file = readFileSync('./package.json', 'utf8')
   const payload = zlib.brotliDecompressSync(response.rawPayload)
-  t.equal(response.headers.vary, 'accept-encoding')
-  t.equal(response.headers['content-encoding'], 'br')
-  t.equal(payload.toString('utf-8'), file)
+  t.assert.equal(response.headers.vary, 'accept-encoding')
+  t.assert.equal(response.headers['content-encoding'], 'br')
+  t.assert.equal(payload.toString('utf-8'), file)
 })
 
-test('It should uncompress data when `Accept-Encoding` request header is missing :', async (t) => {
-  t.test('using the fallback Node.js `zlib.createInflate()` method', async (t) => {
+describe('It should uncompress data when `Accept-Encoding` request header is missing :', async () => {
+  test('using the fallback Node.js `zlib.createInflate()` method', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -2946,13 +2946,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       url: '/',
       method: 'GET'
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 
-  t.test('using the fallback Node.js `zlib.createGunzip()` method', async (t) => {
+  test('using the fallback Node.js `zlib.createGunzip()` method', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -2972,13 +2972,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       url: '/',
       method: 'GET'
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 
-  t.test('when the data is a deflated Buffer', async (t) => {
+  test('when the data is a deflated Buffer', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -2997,13 +2997,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       url: '/',
       method: 'GET'
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 
-  t.test('when the data is a gzipped Buffer', async (t) => {
+  test('when the data is a gzipped Buffer', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -3022,13 +3022,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       url: '/',
       method: 'GET'
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 
-  t.test('when the data is a deflated Stream', async (t) => {
+  test('when the data is a deflated Stream', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -3050,13 +3050,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       method: 'GET'
     })
     const file = readFileSync('./package.json', 'utf8')
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.equal(response.rawPayload.toString('utf-8'), file)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.equal(response.rawPayload.toString('utf-8'), file)
   })
 
-  t.test('when the data is a gzipped Stream', async (t) => {
+  test('when the data is a gzipped Stream', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -3078,13 +3078,13 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       method: 'GET'
     })
     const file = readFileSync('./package.json', 'utf8')
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.equal(response.rawPayload.toString('utf-8'), file)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.equal(response.rawPayload.toString('utf-8'), file)
   })
 
-  t.test('when the data has been compressed multiple times', async (t) => {
+  test('when the data has been compressed multiple times', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
@@ -3107,15 +3107,15 @@ test('It should uncompress data when `Accept-Encoding` request header is missing
       url: '/',
       method: 'GET'
     })
-    t.equal(response.statusCode, 200)
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.same(JSON.parse('' + response.payload), json)
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.deepEqual(JSON.parse('' + response.payload), json)
   })
 })
 
-test('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request header value is an unsupported encoding', async (t) => {
-  t.test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
+describe('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request header value is an unsupported encoding', async () => {
+  test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
@@ -3140,12 +3140,12 @@ test('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request head
         'accept-encoding': 'hello'
       }
     })
-    t.equal(response.statusCode, 406)
-    t.notOk(response.headers.vary)
-    t.same(JSON.parse(response.payload), { hello: 'hello' })
+    t.assert.equal(response.statusCode, 406)
+    t.assert.ok(!response.headers.vary)
+    t.assert.deepEqual(JSON.parse(response.payload), { hello: 'hello' })
   })
 
-  t.test('it should call the defined `onUnsupportedEncoding()` method and throw an error', async (t) => {
+  test('it should call the defined `onUnsupportedEncoding()` method and throw an error', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -3170,8 +3170,8 @@ test('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request head
         'accept-encoding': 'hello'
       }
     })
-    t.equal(response.statusCode, 406)
-    t.same(JSON.parse(response.payload), {
+    t.assert.equal(response.statusCode, 406)
+    t.assert.deepEqual(JSON.parse(response.payload), {
       error: 'Not Acceptable',
       message: 'testing error',
       statusCode: 406
@@ -3179,19 +3179,19 @@ test('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request head
   })
 })
 
-test('It should error :', async (t) => {
-  t.test('when `encodings` array is empty', (t) => {
+describe('It should error :', async () => {
+  test('when `encodings` array is empty', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
     fastify.register(compressPlugin, { encodings: [] })
-
-    fastify.ready(err => {
-      t.ok(err instanceof Error)
+    await t.assert.rejects(async () => fastify.ready(), {
+      name: 'Error',
+      message: 'The `encodings` option array must have at least 1 item.'
     })
   })
 
-  t.test('when no entries in `encodings` are supported', (t) => {
+  test('when no entries in `encodings` are supported', (t) => {
     t.plan(1)
 
     const fastify = Fastify()
@@ -3199,8 +3199,9 @@ test('It should error :', async (t) => {
       encodings: ['(not-a-real-encoding)']
     })
 
-    fastify.ready(err => {
-      t.ok(err instanceof Error)
+    t.assert.rejects(async () => fastify.ready(), {
+      name: 'Error',
+      message: 'None of the passed `encodings` were supported — compression not possible.'
     })
   })
 })
@@ -3220,8 +3221,8 @@ test('It should return an error when using `reply.compress()` with a missing pay
     method: 'GET'
   })
   const payload = JSON.parse(response.payload)
-  t.equal(response.statusCode, 500)
-  t.same({
+  t.assert.equal(response.statusCode, 500)
+  t.assert.deepEqual({
     error: 'Internal Server Error',
     message: 'Internal server error',
     statusCode: 500
@@ -3261,9 +3262,9 @@ for (const contentType of defaultSupportedContentTypes) {
     })
     const file = readFileSync('./package.json', 'utf8')
     const payload = zlib.gunzipSync(response.rawPayload)
-    t.equal(response.headers.vary, 'accept-encoding')
-    t.equal(response.headers['content-encoding'], 'gzip')
-    t.equal(payload.toString('utf-8'), file)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(payload.toString('utf-8'), file)
   })
 }
 
@@ -3292,8 +3293,8 @@ for (const contentType of notByDefaultSupportedContentTypes) {
       }
     })
     const file = readFileSync('./package.json', 'utf8')
-    t.notOk(response.headers.vary)
-    t.notOk(response.headers['content-encoding'])
-    t.equal(response.rawPayload.toString('utf-8'), file)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.equal(response.rawPayload.toString('utf-8'), file)
   })
 }
