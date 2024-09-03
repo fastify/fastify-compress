@@ -1,6 +1,6 @@
 'use strict'
 
-const { test } = require('tap')
+const { test, describe } = require('node:test')
 const { createReadStream } = require('node:fs')
 const path = require('node:path')
 const zlib = require('node:zlib')
@@ -18,8 +18,8 @@ function createPayload (compressor) {
   return payload
 }
 
-test('It should decompress the request payload :', async (t) => {
-  t.test('using brotli algorithm when `Content-Encoding` request header value is set to `br`', async (t) => {
+describe('It should decompress the request payload :', async () => {
+  test('using brotli algorithm when `Content-Encoding` request header value is set to `br`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -38,11 +38,11 @@ test('It should decompress the request payload :', async (t) => {
       },
       payload: createPayload(zlib.createBrotliCompress)
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 
-  t.test('using deflate algorithm when `Content-Encoding` request header value is set to `deflate`', async (t) => {
+  test('using deflate algorithm when `Content-Encoding` request header value is set to `deflate`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -61,11 +61,11 @@ test('It should decompress the request payload :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 
-  t.test('using gzip algorithm when `Content-Encoding` request header value is set to `gzip`', async (t) => {
+  test('using gzip algorithm when `Content-Encoding` request header value is set to `gzip`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -84,11 +84,11 @@ test('It should decompress the request payload :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 
-  t.test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
+  test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -107,13 +107,13 @@ test('It should decompress the request payload :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 })
 
-test('It should not decompress :', async (t) => {
-  t.test('when `Content-Encoding` request header is missing', async (t) => {
+describe('It should not decompress :', async () => {
+  test('when `Content-Encoding` request header is missing', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -131,11 +131,11 @@ test('It should not decompress :', async (t) => {
       },
       payload: createPayload()
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 
-  t.test('when `Content-Encoding` request header value is set to `identity`', async (t) => {
+  test('when `Content-Encoding` request header value is set to `identity`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -154,13 +154,13 @@ test('It should not decompress :', async (t) => {
       },
       payload: createPayload()
     })
-    t.equal(response.statusCode, 200)
-    t.equal(response.body, '@fastify/compress')
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
   })
 })
 
-test('It should return an error :', async (t) => {
-  t.test('when `Content-Encoding` request header value is not supported', async (t) => {
+describe('It should return an error :', async () => {
+  test('when `Content-Encoding` request header value is not supported', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -179,8 +179,8 @@ test('It should return an error :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(response.statusCode, 415)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 415)
+    t.assert.deepEqual(response.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -188,7 +188,7 @@ test('It should return an error :', async (t) => {
     })
   })
 
-  t.test('when `Content-Encoding` request header value is disabled by the `requestEncodings` option', async (t) => {
+  test('when `Content-Encoding` request header value is disabled by the `requestEncodings` option', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -207,8 +207,8 @@ test('It should return an error :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(response.statusCode, 415)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 415)
+    t.assert.deepEqual(response.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -216,7 +216,7 @@ test('It should return an error :', async (t) => {
     })
   })
 
-  t.test('when the compressed payload is invalid according to `Content-Encoding` request header value', async (t) => {
+  test('when the compressed payload is invalid according to `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -235,8 +235,8 @@ test('It should return an error :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(response.statusCode, 400)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 400)
+    t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'FST_CP_ERR_INVALID_CONTENT',
       error: 'Bad Request',
@@ -245,8 +245,8 @@ test('It should return an error :', async (t) => {
   })
 })
 
-test('It should return the error returned by :', async (t) => {
-  t.test('`onUnsupportedRequestEncoding`', async (t) => {
+describe('It should return the error returned by :', async () => {
+  test('`onUnsupportedRequestEncoding`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -274,8 +274,8 @@ test('It should return the error returned by :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(response.statusCode, 400)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 400)
+    t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
@@ -283,7 +283,7 @@ test('It should return the error returned by :', async (t) => {
     })
   })
 
-  t.test('`onInvalidRequestPayload`', async (t) => {
+  test('`onInvalidRequestPayload`', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -311,8 +311,8 @@ test('It should return the error returned by :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(response.statusCode, 400)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 400)
+    t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
@@ -321,8 +321,8 @@ test('It should return the error returned by :', async (t) => {
   })
 })
 
-test('It should return the default error :', async (t) => {
-  t.test('when `onUnsupportedRequestEncoding` throws', async (t) => {
+describe('It should return the default error :', async () => {
+  test('when `onUnsupportedRequestEncoding` throws', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -345,8 +345,8 @@ test('It should return the default error :', async (t) => {
       },
       payload: createPayload(zlib.createDeflate)
     })
-    t.equal(response.statusCode, 415)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 415)
+    t.assert.deepEqual(response.json(), {
       statusCode: 415,
       code: 'FST_CP_ERR_INVALID_CONTENT_ENCODING',
       error: 'Unsupported Media Type',
@@ -354,7 +354,7 @@ test('It should return the default error :', async (t) => {
     })
   })
 
-  t.test('when `onInvalidRequestPayload` throws', async (t) => {
+  test('when `onInvalidRequestPayload` throws', async (t) => {
     t.plan(2)
 
     const fastify = Fastify()
@@ -377,8 +377,8 @@ test('It should return the default error :', async (t) => {
       },
       payload: createPayload(zlib.createGzip)
     })
-    t.equal(response.statusCode, 400)
-    t.strictSame(response.json(), {
+    t.assert.equal(response.statusCode, 400)
+    t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'FST_CP_ERR_INVALID_CONTENT',
       error: 'Bad Request',
@@ -387,37 +387,47 @@ test('It should return the default error :', async (t) => {
   })
 })
 
-test('It should validate `requestEncodings` option', (t) => {
+test('It should validate `requestEncodings` option', async (t) => {
   t.plan(1)
 
   const fastify = Fastify()
   fastify.register(compressPlugin, { requestEncodings: [] })
-
-  fastify.ready((err) => {
-    t.equal(err.message, 'The `requestEncodings` option array must have at least 1 item.')
-  })
+  t.assert.rejects(
+    async () => fastify.ready(),
+    {
+      name: 'Error',
+      message: 'The `requestEncodings` option array must have at least 1 item.'
+    }
+  )
 })
 
-test('It should make sure that at least one encoding value is supported :', async (t) => {
-  t.test('when setting `requestEncodings`', (t) => {
+describe('It should make sure that at least one encoding value is supported :', async () => {
+  test('when setting `requestEncodings`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
     fastify.register(compressPlugin, { requestEncodings: ['whatever'] })
 
-    fastify.ready((err) => {
-      t.equal(err.message, 'None of the passed `requestEncodings` were supported — request decompression not possible.')
-    })
+    t.assert.rejects(
+      async () => fastify.ready(),
+      {
+        name: 'Error',
+        message: 'None of the passed `requestEncodings` were supported — request decompression not possible.'
+      }
+    )
   })
 
-  t.test('when setting `forceRequestEncodings`', (t) => {
+  test('when setting `forceRequestEncodings`', async (t) => {
     t.plan(1)
 
     const fastify = Fastify()
     fastify.register(compressPlugin, { forceRequestEncoding: ['whatever'] })
-
-    fastify.ready((err) => {
-      t.equal(err.message, 'Unsupported decompression encoding whatever.')
-    })
+    t.assert.rejects(
+      async () => fastify.ready(),
+      {
+        name: 'Error',
+        message: 'Unsupported decompression encoding whatever.'
+      }
+    )
   })
 })
