@@ -271,6 +271,9 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
       }
       return next(null, payload)
     }
+    if (payload instanceof ReadableStream) {
+      payload = require('node:stream').Readable.fromWeb(payload)
+    }
 
     if (typeof payload.pipe !== 'function') {
       if (Buffer.byteLength(payload) < params.threshold) {
@@ -388,6 +391,10 @@ function compress (params) {
         pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
       }
       return this.send(payload)
+    }
+
+    if (payload instanceof ReadableStream) {
+      payload = require('node:stream').Readable.fromWeb(payload)
     }
 
     if (typeof payload.pipe !== 'function') {
