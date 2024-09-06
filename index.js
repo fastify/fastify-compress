@@ -5,12 +5,12 @@ const { inherits, format } = require('node:util')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
-const pump = require('pump')
 const mimedb = require('mime-db')
 const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
 const { Readable } = require('readable-stream')
+const { pipeline } = require('node:stream')
 
 const { isStream, isGzip, isDeflate, intoAsyncIterator } = require('./lib/utils')
 
@@ -267,15 +267,12 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
         encoding === undefined
           ? reply.removeHeader('Content-Encoding')
           : reply.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
+        pipeline(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
     }
-    if (payload instanceof ReadableStream) {
-      payload = require('node:stream').Readable.fromWeb(payload)
-    }
 
-    if (typeof payload.pipe !== 'function') {
+    if (typeof payload.pipe !== 'function' && !(payload instanceof ReadableStream)) {
       if (Buffer.byteLength(payload) < params.threshold) {
         return next()
       }
@@ -289,7 +286,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
     }
 
     stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(reply))
+    pipeline(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
 }
@@ -351,7 +348,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
     raw.on('data', trackEncodedLength.bind(decompresser))
     raw.on('end', removeEncodedLengthTracking)
 
-    next(null, pump(raw, decompresser))
+    next(null, pipeline(raw, decompresser))
   }
 }
 
@@ -388,22 +385,17 @@ function compress (params) {
         encoding === undefined
           ? this.removeHeader('Content-Encoding')
           : this.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
+        pipeline(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
       }
       return this.send(payload)
     }
 
-    if (payload instanceof ReadableStream) {
-      payload = require('node:stream').Readable.fromWeb(payload)
-    }
+    if (typeof payload.pipe !== 'function' && !(payload instanceof ReadableStream)) {
 
-    if (typeof payload.pipe !== 'function') {
       if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
         payload = this.serialize(payload)
       }
-    }
 
-    if (typeof payload.pipe !== 'function') {
       if (Buffer.byteLength(payload) < params.threshold) {
         return this.send(payload)
       }
@@ -417,7 +409,7 @@ function compress (params) {
     }
 
     stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(this))
+    pipeline(payload, stream, onEnd.bind(this))
     this.send(stream)
   }
 }
