@@ -321,7 +321,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
       if (params.onUnsupportedRequestEncoding) {
         try {
           errorPayload = params.onUnsupportedRequestEncoding(encoding, request)
-        } catch (ex) {
+        } catch {
           errorPayload = undefined
         }
       }
@@ -448,7 +448,7 @@ function onDecompressError (request, params, encoding, error) {
   if (params.onInvalidRequestPayload) {
     try {
       errorPayload = params.onInvalidRequestPayload(encoding, request, error)
-    } catch (ex) {
+    } catch {
       errorPayload = undefined
     }
   }
