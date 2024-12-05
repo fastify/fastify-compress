@@ -5,9 +5,9 @@ import {
   RouteOptions as FastifyRouteOptions,
   RawServerBase,
   RawServerDefault
-} from 'fastify';
-import { Stream } from 'stream';
-import { BrotliOptions, ZlibOptions } from 'zlib';
+} from 'fastify'
+import { Stream } from 'stream'
+import { BrotliOptions, ZlibOptions } from 'zlib'
 
 declare module 'fastify' {
   export interface FastifyContextConfig {
@@ -18,6 +18,7 @@ declare module 'fastify' {
   }
 
   export interface RouteShorthandOptions<
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     RawServer extends RawServerBase = RawServerDefault
   > {
     compress?: RouteCompressOptions | false;
@@ -56,9 +57,9 @@ type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'zlib'
 >
 
-type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity';
+type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity'
 
-type CompressibleContentTypeFunction = (contentType: string) => boolean;
+type CompressibleContentTypeFunction = (contentType: string) => boolean
 
 type Input =
   | Buffer
@@ -66,7 +67,7 @@ type Input =
   | ArrayBuffer
   | string
   | Iterable<Buffer | string>
-  | AsyncIterable<Buffer | string>;
+  | AsyncIterable<Buffer | string>
 
 declare namespace fastifyCompress {
 
@@ -105,5 +106,5 @@ declare namespace fastifyCompress {
   export { fastifyCompress as default }
 }
 
-declare function fastifyCompress(...params: Parameters<FastifyCompress>): ReturnType<FastifyCompress>
+declare function fastifyCompress (...params: Parameters<FastifyCompress>): ReturnType<FastifyCompress>
 export = fastifyCompress

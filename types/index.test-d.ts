@@ -9,7 +9,7 @@ const stream = createReadStream('./package.json')
 const withGlobalOptions: FastifyCompressOptions = {
   global: true,
   threshold: 10,
-  zlib: zlib,
+  zlib,
   brotliOptions: {
     params: {
       [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,

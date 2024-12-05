@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/fastify/fastify-compress/workflows/CI/badge.svg)
 [![NPM version](https://img.shields.io/npm/v/@fastify/compress.svg?style=flat)](https://www.npmjs.com/package/@fastify/compress)
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](https://standardjs.com/)
+[![neostandard javascript style](https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat)](https://github.com/neostandard/neostandard)
 
 Adds compression utils to [the Fastify `reply` object](https://fastify.dev/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
