@@ -6,8 +6,8 @@ import {
   RawServerBase,
   RawServerDefault
 } from 'fastify'
-import { Stream } from 'stream'
-import { BrotliOptions, ZlibOptions } from 'zlib'
+import { Stream } from 'node:stream'
+import { BrotliOptions, ZlibOptions } from 'node:zlib'
 
 declare module 'fastify' {
   export interface FastifyContextConfig {
