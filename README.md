@@ -73,7 +73,7 @@ Note that the compress method is configured with either the per route parameters
 the plugin was defined as global.
 
 ```javascript
-import fs from 'fs'
+import fs from 'node:fs'
 import fastify from 'fastify'
 
 const app = fastify()
