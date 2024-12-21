@@ -14,6 +14,21 @@ Supports `gzip`, `deflate`, and `brotli`.
 npm i @fastify/compress
 ```
 
+### Compatibility
+| Plugin version | Fastify version |
+| ---------------|-----------------|
+| `^8.x`         | `^5.x`          |
+| `^6.x`         | `^4.x`          |
+| `^3.x`         | `^3.x`          |
+| `^2.x`         | `^2.x`          |
+| `^0.x`         | `^1.x`          |
+
+
+Please note that if a Fastify version is out of support, then so are the corresponding version(s) of this plugin
+in the table above.
+See [Fastify's LTS policy](https://github.com/fastify/fastify/blob/main/docs/Reference/LTS.md) for more details.
+
+
 ## Usage - Compress replies
 
 This plugin adds two functionalities to Fastify: a compress utility and a global compression hook.
