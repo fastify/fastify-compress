@@ -6,7 +6,7 @@ const zlib = require('node:zlib')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 
-describe('When using routes `compress` settings :', async (t) => {
+describe('When using routes `compress` settings :', async () => {
   test('it should compress data using the route custom provided `createDeflate` method', async (t) => {
     t.plan(12)
     const equal = t.assert.equal
@@ -19,7 +19,7 @@ describe('When using routes `compress` settings :', async (t) => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, zlib: customZlibGlobal })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -27,7 +27,7 @@ describe('When using routes `compress` settings :', async (t) => {
 
     fastify.get('/custom', {
       compress: { zlib: customZlib }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -84,13 +84,13 @@ describe('When using routes `compress` settings :', async (t) => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.get('/custom', { compress: { zlib: customZlib } }, (request, reply) => {
+    fastify.get('/custom', { compress: { zlib: customZlib } }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -143,7 +143,7 @@ describe('When using routes `compress` settings :', async (t) => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       // compress function should still be available
       t.assert.ok(typeof reply.compress === 'function')
 
@@ -152,7 +152,7 @@ describe('When using routes `compress` settings :', async (t) => {
 
     fastify.get('/custom', {
       compress: { zlib: customZlib }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -160,7 +160,7 @@ describe('When using routes `compress` settings :', async (t) => {
 
     fastify.get('/standard', {
       compress: { threshold: 1 }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply.send({ foo: 1 })
     })
 
@@ -218,7 +218,7 @@ describe('When using routes `compress` settings :', async (t) => {
 
     fastify.get('/', {
       compress: false
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply.send(content)
     })
 
@@ -245,7 +245,7 @@ describe('When using routes `compress` settings :', async (t) => {
     try {
       fastify.get('/', {
         compress: 'bad config'
-      }, (request, reply) => {
+      }, (_request, reply) => {
         reply.send('')
       })
     } catch (err) {
@@ -264,7 +264,7 @@ describe('When `compress.removeContentLengthHeader` is `false`, it should not re
 
     fastify.get('/', {
       compress: { removeContentLengthHeader: false }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -301,7 +301,7 @@ describe('When `compress.removeContentLengthHeader` is `false`, it should not re
 
     fastify.get('/', {
       compress: { removeContentLengthHeader: false }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -343,7 +343,7 @@ describe('When using the old routes `{ config: compress }` option :', async () =
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: false, zlib: customZlibGlobal })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -353,7 +353,7 @@ describe('When using the old routes `{ config: compress }` option :', async () =
       config: {
         compress: { zlib: customZlib }
       }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -410,7 +410,7 @@ describe('When using the old routes `{ config: compress }` option :', async () =
         config: {
           compress: 'bad config'
         }
-      }, (request, reply) => {
+      }, (_request, reply) => {
         reply.send('')
       })
     } catch (err) {
@@ -426,7 +426,7 @@ test('It should avoid to trigger `onSend` hook twice', async (t) => {
   await server.register(compressPlugin, { threshold: 0 })
 
   await server.register(async function (server) {
-    server.get('/', async (request, _) => {
+    server.get('/', async () => {
       return { hi: true }
     })
   }, { prefix: '/test' })
