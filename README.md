@@ -84,7 +84,7 @@ Note: Setting `compress = false` on any route will disable compression on the ro
 
 ### `reply.compress`
 This plugin adds a `compress` method to `reply` that accepts a stream or a string, and compresses it based on the `accept-encoding` header. If a JS object is passed in, it will be stringified to JSON.
-Note that the compress method is configured with either the per route parameters if the route has a custom configuration or with the global parameters if the the route has no custom parameters but
+Note that the compress method is configured with either the per route parameters if the route has a custom configuration or with the global parameters if the route has no custom parameters but
 the plugin was defined as global.
 
 ```javascript
@@ -194,13 +194,13 @@ You can tune compression by setting the `brotliOptions` and `zlibOptions` proper
 ```
 
 ### Manage `Content-Length` header removal with removeContentLengthHeader
-By default, `@fastify/compress` removes the reply `Content-Length` header. You can change that by setting the `removeContentLengthHeader` to `false` either on a global scope or on a route specific scope.
+By default, `@fastify/compress` removes the reply `Content-Length` header. You can change this by setting the `removeContentLengthHeader` to `false` either on a global scope or on a route-specific scope.
 
 ```javascript
   // Global plugin scope
   await server.register(fastifyCompress, { global: true, removeContentLengthHeader: false });
 
-  // Route specific scope
+  // Route-specific scope
   fastify.get('/file', {
     compress: { removeContentLengthHeader: false }
   }, (req, reply) =>
@@ -210,7 +210,7 @@ By default, `@fastify/compress` removes the reply `Content-Length` header. You c
 
 ## Usage - Decompress request payloads
 
-This plugin adds a `preParsing` hook that decompress the request payload according to the `content-encoding` request header.
+This plugin adds a `preParsing` hook that decompresses the request payload according to the `content-encoding` request header.
 
 Currently, the following encoding tokens are supported:
 
@@ -321,7 +321,7 @@ await fastify.register(
 ## Note
 Please note that in large-scale scenarios, you should use a proxy like Nginx to handle response compression.
 
-## Acknowledgements
+## Acknowledgments
 
 Past sponsors:
 
