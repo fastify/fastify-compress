@@ -251,7 +251,7 @@ describe('It should return the error returned by :', async () => {
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
-      onUnsupportedRequestEncoding (encoding, request) {
+      onUnsupportedRequestEncoding (encoding) {
         return {
           statusCode: 400,
           code: 'INVALID',
@@ -288,7 +288,7 @@ describe('It should return the error returned by :', async () => {
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
-      onInvalidRequestPayload (encoding, request, error) {
+      onInvalidRequestPayload (encoding, _request, error) {
         return {
           statusCode: 400,
           code: 'INVALID',
@@ -327,7 +327,7 @@ describe('It should return the default error :', async () => {
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
-      onUnsupportedRequestEncoding (encoding, request) {
+      onUnsupportedRequestEncoding () {
         throw new Error('Kaboom!')
       }
     })
@@ -359,7 +359,7 @@ describe('It should return the default error :', async () => {
 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
-      onInvalidRequestPayload (encoding, request, error) {
+      onInvalidRequestPayload () {
         throw new Error('Kaboom!')
       }
     })

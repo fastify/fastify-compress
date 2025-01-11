@@ -204,7 +204,7 @@ function processDecompressParams (opts) {
   return params
 }
 
-function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
+function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
   // In order to provide a compress method with the same parameter set as the route itself,
   // we decorate the reply at the start of the request
   if (Array.isArray(routeOptions.onRequest)) {
@@ -216,7 +216,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
   }
 
   const compressFn = compress(params)
-  function onRequest (req, reply, next) {
+  function onRequest (_req, reply, next) {
     reply.compress = compressFn
     next()
   }
@@ -291,7 +291,7 @@ function buildRouteCompress (fastify, params, routeOptions, decorateOnly) {
   }
 }
 
-function buildRouteDecompress (fastify, params, routeOptions) {
+function buildRouteDecompress (_fastify, params, routeOptions) {
   // Add our decompress handler in the preParsing hook
   if (Array.isArray(routeOptions.preParsing)) {
     routeOptions.preParsing.unshift(preParsing)
@@ -301,7 +301,7 @@ function buildRouteDecompress (fastify, params, routeOptions) {
     routeOptions.preParsing = [preParsing]
   }
 
-  function preParsing (request, reply, raw, next) {
+  function preParsing (request, _reply, raw, next) {
     // Get the encoding from the options or from the headers
     let encoding = params.forceEncoding
 

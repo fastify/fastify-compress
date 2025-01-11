@@ -37,16 +37,16 @@ test('should not corrupt the file content', async (t) => {
   const fastify = new Fastify()
   t.after(() => fastify.close())
 
-  fastify.register(async (instance, opts) => {
+  fastify.register(async (instance) => {
     await fastify.register(fastifyCompress)
     // compression
-    instance.get('/compress', async (req, reply) => {
+    instance.get('/compress', async () => {
       return twoByteUnicodeContent
     })
   })
 
   // no compression
-  fastify.get('/no-compress', async (req, reply) => {
+  fastify.get('/no-compress', async () => {
     return twoByteUnicodeContent
   })
 

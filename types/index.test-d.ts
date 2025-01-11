@@ -32,11 +32,11 @@ app.register(fastifyCompress, {
   customTypes: value => value === 'application/json'
 })
 
-app.get('/test-one', async (request, reply) => {
+app.get('/test-one', async (_request, reply) => {
   expectType<void>(reply.compress(stream))
 })
 
-app.get('/test-two', async (request, reply) => {
+app.get('/test-two', async (_request, reply) => {
   expectError(reply.compress())
 })
 
@@ -57,7 +57,7 @@ appWithoutGlobal.get('/one', {
       createGunzip: () => zlib.createGunzip()
     }
   }
-}, (request, reply) => {
+}, (_request, reply) => {
   expectType<void>(reply.type('text/plain').compress(stream))
 })
 
@@ -75,7 +75,7 @@ appWithoutGlobal.get('/two', {
       }
     }
   }
-}, (request, reply) => {
+}, (_request, reply) => {
   expectType<void>(reply.type('text/plain').compress(stream))
 })
 
@@ -83,7 +83,7 @@ expectError(
   appWithoutGlobal.get('/throw-a-ts-arg-error-on-shorthand-route', {
     compress: 'bad compress route option value',
     decompress: 'bad decompress route option value'
-  }, (request, reply) => {
+  }, (_request, reply) => {
     expectType<void>(reply.type('text/plain').compress(stream))
   })
 )
@@ -94,7 +94,7 @@ expectError(
     path: '/throw-a-ts-arg-error',
     compress: 'bad compress route option value',
     decompress: 'bad decompress route option value',
-    handler: (request, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
+    handler: (_request, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
   })
 )
 

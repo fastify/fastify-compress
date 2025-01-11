@@ -18,7 +18,7 @@ function createPayload (compressor) {
   return payload
 }
 
-describe('When using routes `decompress` settings :', async (suite) => {
+describe('When using routes `decompress` settings :', async () => {
   test('it should decompress data using the route custom provided `createInflate` method', async (t) => {
     t.plan(8)
     const equal = t.assert.equal

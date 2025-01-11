@@ -18,7 +18,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     await fastify.register(compressPlugin, { threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(buf)
     })
 
@@ -40,7 +40,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     await fastify.register(compressPlugin, { threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(buf)
     })
 
@@ -62,7 +62,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     await fastify.register(compressPlugin, { threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(buf)
     })
 
@@ -85,7 +85,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
 
     const json = { hello: 'world' }
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(json)
     })
 
@@ -108,7 +108,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
 
     const json = { hello: 'world' }
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(json)
     })
 
@@ -130,7 +130,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     await fastify.register(compressPlugin, { threshold: 0 })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(json)
     })
 
@@ -151,7 +151,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { threshold: 0 })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .send('hello')
@@ -174,7 +174,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { threshold: 0 })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress('hello')
@@ -197,7 +197,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { threshold: 0 })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress('hello')
@@ -222,7 +222,7 @@ describe('It should send compressed Stream data when `global` is `true` :', asyn
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -248,7 +248,7 @@ describe('It should send compressed Stream data when `global` is `true` :', asyn
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -275,7 +275,7 @@ describe('It should send compressed Stream data when `global` is `true` :', asyn
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -304,7 +304,7 @@ describe('It should send compressed Buffer data when `global` is `true` :', asyn
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(buf)
     })
 
@@ -326,7 +326,7 @@ describe('It should send compressed Buffer data when `global` is `true` :', asyn
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(buf)
     })
 
@@ -348,7 +348,7 @@ describe('It should send compressed Buffer data when `global` is `true` :', asyn
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(buf)
     })
 
@@ -372,7 +372,7 @@ describe('It should send compressed JSON data when `global` is `true` :', async 
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(json)
     })
 
@@ -394,7 +394,7 @@ describe('It should send compressed JSON data when `global` is `true` :', async 
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(json)
     })
 
@@ -416,7 +416,7 @@ describe('It should send compressed JSON data when `global` is `true` :', async 
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(json)
     })
 
@@ -439,7 +439,7 @@ describe('It should fallback to the default `gzip` encoding compression :', asyn
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -465,7 +465,7 @@ describe('It should fallback to the default `gzip` encoding compression :', asyn
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -496,7 +496,7 @@ describe('When a custom `zlib` option is provided, it should compress data :`', 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, zlib: customZlib })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -528,7 +528,7 @@ describe('When a custom `zlib` option is provided, it should compress data :`', 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, zlib: customZlib })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -560,7 +560,7 @@ describe('When a custom `zlib` option is provided, it should compress data :`', 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, zlib: customZlib })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -594,7 +594,7 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
       zlib: true // will trigger a fallback on the default zlib.createBrotliCompress
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress('hello')
@@ -621,7 +621,7 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
       zlib: true // will trigger a fallback on the default zlib.createDeflate
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress('hello')
@@ -648,7 +648,7 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
       zlib: true // will trigger a fallback on the default zlib.createGzip
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress('hello')
@@ -674,7 +674,7 @@ describe('When `inflateIfDeflated` is `true` and `X-No-Compression` request head
     await fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.deflateSync(JSON.stringify(json)))
     })
 
@@ -698,7 +698,7 @@ describe('When `inflateIfDeflated` is `true` and `X-No-Compression` request head
     await fastify.register(compressPlugin, { threshold: 0, inflateIfDeflated: true })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.gzipSync(JSON.stringify(json)))
     })
 
@@ -727,7 +727,7 @@ test('it should not uncompress payloads using the zip algorithm', async (t) => {
   zip.addFile('file.zip', Buffer.from(JSON.stringify(json), 'utf-8'))
   const fileBuffer = zip.toBuffer()
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply.compress(fileBuffer)
   })
 
@@ -753,7 +753,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 128 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('text/plain')
           .compress('a message')
@@ -778,7 +778,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('application/x-other-type')
           .compress(createReadStream('./package.json'))
@@ -802,7 +802,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { customTypes: value => value === 'application/x-user-header' })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('application/x-other-type')
           .compress(createReadStream('./package.json'))
@@ -827,7 +827,7 @@ describe('It should not compress :', async () => {
       await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
       const json = { hello: 'world' }
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.compress(json)
       })
 
@@ -850,12 +850,12 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.addHook('onSend', async (request, response) => {
+      fastify.addHook('onSend', async (_request, response) => {
         response.header('Content-Type', undefined)
       })
 
       const json = { hello: 'world' }
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         // The auto-dectection will fallback as an 'application/json' type
         reply.compress(json)
       })
@@ -879,7 +879,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('image/webp')
           .compress('hello')
@@ -932,7 +932,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('something/invalid')
           .compress('a message')
@@ -957,7 +957,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('text/plain')
           .compress(createReadStream('./package.json'))
@@ -978,7 +978,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.compress({ hello: 'world' })
       })
 
@@ -1001,7 +1001,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('text/plain')
           .compress(createReadStream('./package.json'))
@@ -1026,7 +1026,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('text/plain')
           .compress(createReadStream('./package.json'))
@@ -1051,7 +1051,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true, threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.compress({ hello: 'world' })
       })
 
@@ -1076,7 +1076,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.send(undefined)
       })
 
@@ -1099,7 +1099,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 128 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'text/plain')
           .send('a message')
@@ -1124,7 +1124,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('application/x-other-type')
           .send(createReadStream('./package.json'))
@@ -1149,7 +1149,7 @@ describe('It should not compress :', async () => {
       await fastify.register(compressPlugin, { threshold: 0 })
 
       const json = { hello: 'world' }
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.send(json)
       })
 
@@ -1172,12 +1172,12 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.addHook('onSend', async (request, response) => {
+      fastify.addHook('onSend', async (_request, response) => {
         response.header('Content-Type', undefined)
       })
 
       const json = { hello: 'world' }
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         // The auto-dectection will fallback as an 'application/json' type
         reply.send(json)
       })
@@ -1201,7 +1201,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('image/webp')
           .send('hello')
@@ -1254,7 +1254,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'something/invalid')
           .send('a message')
@@ -1279,7 +1279,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'text/plain')
           .send(createReadStream('./package.json'))
@@ -1300,7 +1300,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.send({ hello: 'world' })
       })
 
@@ -1323,7 +1323,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'text/plain')
           .send('something')
@@ -1346,7 +1346,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'text/plain')
           .send(createReadStream('./package.json'))
@@ -1371,7 +1371,7 @@ describe('It should not compress :', async () => {
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true, threshold: 0 })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.send({ hello: 'world' })
       })
 
@@ -1397,7 +1397,7 @@ describe('It should not double-compress :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(
@@ -1425,7 +1425,7 @@ describe('It should not double-compress :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(
@@ -1454,7 +1454,7 @@ describe('It should not double-compress :', async () => {
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const file = readFileSync('./package.json', 'utf8')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       const payload = zlib.brotliCompressSync(file)
 
       reply
@@ -1485,7 +1485,7 @@ describe('It should not double-compress :', async () => {
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const file = readFileSync('./package.json', 'utf8')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       const payload = zlib.deflateSync(file)
 
       reply
@@ -1516,7 +1516,7 @@ describe('It should not double-compress :', async () => {
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const file = readFileSync('./package.json', 'utf8')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       const payload = zlib.gzipSync(file)
 
       reply
@@ -1549,7 +1549,7 @@ describe('It should not compress Stream data and add a `Content-Encoding` reply 
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .header('Content-Type', 'application/octet-stream')
           .send(createReadStream('./package.json'))
@@ -1579,7 +1579,7 @@ describe('It should not compress Stream data and add a `Content-Encoding` reply 
         encodings: ['deflate', 'gzip']
       })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.send(createReadStream('./package.json'))
       })
 
@@ -1606,7 +1606,7 @@ describe('It should not compress Stream data and add a `Content-Encoding` reply 
       const fastify = Fastify()
       await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply
           .type('application/octet-stream')
           .compress(createReadStream('./package.json'))
@@ -1636,7 +1636,7 @@ describe('It should not compress Stream data and add a `Content-Encoding` reply 
         encodings: ['deflate', 'gzip']
       })
 
-      fastify.get('/', (request, reply) => {
+      fastify.get('/', (_request, reply) => {
         reply.compress(createReadStream('./package.json'))
       })
 
@@ -1670,11 +1670,11 @@ test('It should return a serialized payload when `inflateIfDeflated` is `true` a
   const json = { hello: 'world' }
   const compressedBufferPayload = zlib.brotliCompressSync(Buffer.from(json.toString()))
 
-  fastify.get('/one', (request, reply) => {
+  fastify.get('/one', (_request, reply) => {
     reply.send(json)
   })
 
-  fastify.get('/two', (request, reply) => {
+  fastify.get('/two', (_request, reply) => {
     reply.send(compressedBufferPayload)
   })
 
@@ -1712,7 +1712,7 @@ test('It should close the stream', async (t) => {
   const stream = createReadStream('./package.json')
   const closed = once(stream, 'close')
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     stream.on('close', () => t.assert.ok('stream closed'))
 
     reply
@@ -1736,7 +1736,7 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
 
   let actual = null
   const logger = new Writable({
-    write (chunk, encoding, callback) {
+    write (chunk, _encoding, callback) {
       actual = JSON.parse(chunk.toString())
       callback()
     }
@@ -1753,9 +1753,9 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
 
   const expect = new Error('something wrong')
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     const stream = new Readable({
-      read (size) {
+      read () {
         this.destroy(expect)
       }
     })
@@ -1782,7 +1782,7 @@ describe('It should support stream1 :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       const stream = JSONStream.stringify()
 
       reply
@@ -1812,7 +1812,7 @@ describe('It should support stream1 :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       const stream = JSONStream.stringify()
 
       reply
@@ -1844,7 +1844,7 @@ describe('It should remove `Content-Length` header :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -1878,7 +1878,7 @@ describe('It should remove `Content-Length` header :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('application/octet-stream')
         .compress(createReadStream('./package.json'))
@@ -1904,7 +1904,7 @@ describe('It should remove `Content-Length` header :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -1938,7 +1938,7 @@ describe('It should remove `Content-Length` header :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .header('Content-Type', 'application/octet-stream')
         .send(createReadStream('./package.json'))
@@ -1966,7 +1966,7 @@ describe('When `removeContentLengthHeader` is `false`, it should not remove `Con
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, removeContentLengthHeader: false })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -2000,7 +2000,7 @@ describe('When `removeContentLengthHeader` is `false`, it should not remove `Con
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, removeContentLengthHeader: false })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
         if (err) {
           return reply.send(err)
@@ -2035,7 +2035,7 @@ describe('It should add hooks correctly: ', async () => {
 
     const fastify = Fastify()
 
-    fastify.addHook('onRequest', async (request, reply) => {
+    fastify.addHook('onRequest', async (_request, reply) => {
       reply.header('x-fastify-global-test', 'ok')
     })
 
@@ -2043,23 +2043,23 @@ describe('It should add hooks correctly: ', async () => {
 
     fastify.get('/one', {
       onRequest: [
-        async (request, reply) => { reply.header('x-fastify-test-one', 'ok') }
+        async (_request, reply) => { reply.header('x-fastify-test-one', 'ok') }
       ]
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
     fastify.get('/two', {
-      onRequest: async (request, reply) => { reply.header('x-fastify-test-two', 'ok') }
-    }, (request, reply) => {
+      onRequest: async (_request, reply) => { reply.header('x-fastify-test-two', 'ok') }
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.get('/three', { onRequest: null }, (request, reply) => {
+    fastify.get('/three', { onRequest: null }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2122,7 +2122,7 @@ describe('It should add hooks correctly: ', async () => {
 
     const fastify = Fastify()
 
-    fastify.addHook('onSend', async (request, reply) => {
+    fastify.addHook('onSend', async (_request, reply) => {
       reply.header('x-fastify-global-test', 'ok')
     })
 
@@ -2130,23 +2130,23 @@ describe('It should add hooks correctly: ', async () => {
 
     fastify.get('/one', {
       onSend: [
-        async (request, reply) => { reply.header('x-fastify-test-one', 'ok') }
+        async (_request, reply) => { reply.header('x-fastify-test-one', 'ok') }
       ]
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
     fastify.get('/two', {
-      onSend: async (request, reply) => { reply.header('x-fastify-test-two', 'ok') }
-    }, (request, reply) => {
+      onSend: async (_request, reply) => { reply.header('x-fastify-test-two', 'ok') }
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.get('/three', { onSend: null }, (request, reply) => {
+    fastify.get('/three', { onSend: null }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2209,7 +2209,7 @@ describe('It should add hooks correctly: ', async () => {
 
     const fastify = Fastify()
 
-    fastify.addHook('preParsing', async (request, reply, payload) => {
+    fastify.addHook('preParsing', async (_request, reply, payload) => {
       reply.header('x-fastify-global-test', 'ok')
       return payload
     })
@@ -2218,29 +2218,29 @@ describe('It should add hooks correctly: ', async () => {
 
     fastify.get('/one', {
       preParsing: [
-        async (request, reply, payload) => {
+        async (_request, reply, payload) => {
           reply.header('x-fastify-test-one', 'ok')
           return payload
         }
       ]
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
     fastify.get('/two', {
-      preParsing: async (request, reply, payload) => {
+      preParsing: async (_request, reply, payload) => {
         reply.header('x-fastify-test-two', 'ok')
         return payload
       }
-    }, (request, reply) => {
+    }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
     })
 
-    fastify.get('/three', { preParsing: null }, (request, reply) => {
+    fastify.get('/three', { preParsing: null }, (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2306,13 +2306,13 @@ describe('When `Accept-Encoding` request header values are not supported and `on
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
       global: true,
-      onUnsupportedEncoding: (encoding, request, reply) => {
+      onUnsupportedEncoding: (encoding, _request, reply) => {
         reply.code(406)
         return JSON.stringify({ hello: encoding })
       }
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .header('Content-Type', 'text/plain')
         .send(createReadStream('./package.json'))
@@ -2335,13 +2335,13 @@ describe('When `Accept-Encoding` request header values are not supported and `on
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
       global: true,
-      onUnsupportedEncoding: (encoding, request, reply) => {
+      onUnsupportedEncoding: (_encoding, _request, reply) => {
         reply.code(406)
         throw new Error('testing error')
       }
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .header('Content-Type', 'text/plain')
         .send(createReadStream('./package.json'))
@@ -2372,7 +2372,7 @@ describe('`Accept-Encoding` request header values :', async () => {
 
     const json = { hello: 'world' }
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(json)
     })
 
@@ -2395,7 +2395,7 @@ describe('`Accept-Encoding` request header values :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2422,7 +2422,7 @@ describe('`Accept-Encoding` request header values :', async () => {
     await fastify.register(compressPlugin, { global: true, threshold: 0 })
 
     const buf = Buffer.from('hello world')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.compress(buf)
     })
 
@@ -2443,7 +2443,7 @@ describe('`Accept-Encoding` request header values :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(
@@ -2471,7 +2471,7 @@ describe('`Accept-Encoding` request header values :', async () => {
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(
@@ -2499,7 +2499,7 @@ test('It should compress data if `customTypes` is set and matches `Content-Type`
   const fastify = Fastify()
   await fastify.register(compressPlugin, { customTypes: /x-user-header$/u })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('application/x-user-header')
       .send(createReadStream('./package.json'))
@@ -2524,7 +2524,7 @@ test('It should compress data if `customTypes` is a function and returns true on
   const fastify = Fastify()
   await fastify.register(compressPlugin, { customTypes: value => value === 'application/x-user-header' })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('application/x-user-header')
       .send(createReadStream('./package.json'))
@@ -2550,7 +2550,7 @@ test('It should not apply `customTypes` option if the passed value is not a RegE
   const fastify = Fastify()
   await fastify.register(compressPlugin, { customTypes: 'x-user-header' })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('application/x-user-header')
       .send(createReadStream('./package.json'))
@@ -2574,7 +2574,7 @@ test('When `encodings` option is set, it should only use the registered value', 
   const fastify = Fastify()
   await fastify.register(compressPlugin, { encodings: ['deflate'] })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply.send(createReadStream('./package.json'))
   })
 
@@ -2603,7 +2603,7 @@ describe('It should send data compressed according to `brotliOptions` :', async 
     const fastify = Fastify()
     await fastify.register(compressPlugin, { global: true, brotliOptions })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2634,7 +2634,7 @@ describe('It should send data compressed according to `brotliOptions` :', async 
     await fastify.register(compressPlugin, { global: true })
 
     const file = readFileSync('./package.json', 'utf8')
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(file)
@@ -2671,7 +2671,7 @@ describe('It should send data compressed according to `zlibOptions` :', async ()
       zlibOptions
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2701,7 +2701,7 @@ describe('It should send data compressed according to `zlibOptions` :', async ()
       zlibOptions
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -2727,14 +2727,14 @@ test('It should concat `accept-encoding` to `Vary` reply header if present', asy
   const fastify = Fastify()
   await fastify.register(compressPlugin, { global: true })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .header('vary', 'different-header')
       .type('text/plain')
       .compress(createReadStream('./package.json'))
   })
 
-  fastify.get('/foo', (request, reply) => {
+  fastify.get('/foo', (_request, reply) => {
     reply
       .header('vary', ['different-header', 'my-header'])
       .type('text/plain')
@@ -2772,14 +2772,14 @@ test('It should not add `accept-encoding` to `Vary` reply header if already pres
   const fastify = Fastify()
   await fastify.register(compressPlugin, { global: true })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .header('vary', 'accept-encoding,different-header')
       .type('text/plain')
       .compress(createReadStream('./package.json'))
   })
 
-  fastify.get('/foo', (request, reply) => {
+  fastify.get('/foo', (_request, reply) => {
     reply
       .header('vary', 'accept-encoding, different-header, my-header')
       .type('text/plain')
@@ -2817,7 +2817,7 @@ test('It should follow the `Accept-Encoding` request header encoding order', asy
   const fastify = Fastify()
   await fastify.register(compressPlugin, { global: true })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('text/plain')
       .compress(createReadStream('./package.json'))
@@ -2846,7 +2846,7 @@ test('It should sort and follow custom `encodings` options', async (t) => {
     encodings: ['br', 'gzip']
   })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('text/plain')
       .compress(createReadStream('./package.json'))
@@ -2875,7 +2875,7 @@ test('It should sort and prefer the order of custom `encodings` options', async 
     encodings: ['gzip', 'deflate', 'br']
   })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('text/plain')
       .compress(createReadStream('./package.json'))
@@ -2905,7 +2905,7 @@ test('It should sort and follow custom `requestEncodings` options', async (t) =>
     requestEncodings: ['gzip', 'br']
   })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply
       .type('text/plain')
       .compress(createReadStream('./package.json'))
@@ -2938,7 +2938,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
     })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.deflateSync(JSON.stringify(json)))
     })
 
@@ -2964,7 +2964,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
     })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.gzipSync(JSON.stringify(json)))
     })
 
@@ -2989,7 +2989,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
     })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.deflateSync(JSON.stringify(json)))
     })
 
@@ -3014,7 +3014,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
     })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(zlib.gzipSync(JSON.stringify(json)))
     })
 
@@ -3038,7 +3038,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
       threshold: 0
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(
         createReadStream('./package.json')
           .pipe(zlib.createDeflate())
@@ -3066,7 +3066,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
       threshold: 0
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(
         createReadStream('./package.json')
           .pipe(zlib.createGzip())
@@ -3095,7 +3095,7 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
     })
 
     const json = { hello: 'world' }
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply.send(
         [0, 1, 2, 3, 4, 5, 6].reduce(
           (x) => zlib.gzipSync(x), JSON.stringify(json)
@@ -3121,13 +3121,13 @@ describe('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
       global: true,
-      onUnsupportedEncoding: (encoding, request, reply) => {
+      onUnsupportedEncoding: (encoding, _request, reply) => {
         reply.code(406)
         return JSON.stringify({ hello: encoding })
       }
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -3151,13 +3151,13 @@ describe('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request 
     const fastify = Fastify()
     await fastify.register(compressPlugin, {
       global: true,
-      onUnsupportedEncoding: (encoding, request, reply) => {
+      onUnsupportedEncoding: (_encoding, _request, reply) => {
         reply.code(406)
         throw new Error('testing error')
       }
     })
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type('text/plain')
         .compress(createReadStream('./package.json'))
@@ -3212,7 +3212,7 @@ test('It should return an error when using `reply.compress()` with a missing pay
   const fastify = Fastify()
   await fastify.register(compressPlugin, { global: true })
 
-  fastify.get('/', (request, reply) => {
+  fastify.get('/', (_request, reply) => {
     reply.compress()
   })
 
@@ -3247,7 +3247,7 @@ for (const contentType of defaultSupportedContentTypes) {
     const fastify = Fastify()
     await fastify.register(compressPlugin)
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type(contentType)
         .send(createReadStream('./package.json'))
@@ -3279,7 +3279,7 @@ for (const contentType of notByDefaultSupportedContentTypes) {
     const fastify = Fastify()
     await fastify.register(compressPlugin)
 
-    fastify.get('/', (request, reply) => {
+    fastify.get('/', (_request, reply) => {
       reply
         .type(contentType)
         .send(createReadStream('./package.json'))
