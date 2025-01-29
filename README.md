@@ -64,7 +64,6 @@ Fastify encapsulation can be used to set global decompression but run it only in
 
 Different compression options can be specified per route using the `compress` options in the route's configuration.
 Setting `compress: false` on any route will disable compression on the route even if global compression is enabled.
-
 ```js
 await fastify.register(
   import('@fastify/compress'),
