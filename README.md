@@ -58,7 +58,7 @@ await fastify.register(
 ```
 Fastify encapsulation can be used to set global compression but run it only in a subset of routes by wrapping them inside a plugin.
 
-> 🛈 Note: If you are using `@fastify/compress` plugin together with `@fastify/static` plugin, `@fastify/compress` must be registered (with *global hook*) **before** registering `@fastify/static`.
+> 🛈 Note: If using `@fastify/compress` plugin together with `@fastify/static` plugin, `@fastify/compress` must be registered (with *global hook*) **before** registering `@fastify/static`.
 
 ### Per Route options
 Different compression options can be specified per route using the `compress` options in the route's configuration.
