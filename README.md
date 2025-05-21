@@ -7,7 +7,7 @@
 Adds compression utils to [the Fastify `reply` object](https://fastify.dev/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
 Supports `gzip`, `deflate`, and `brotli`.
 
-> 🛈 Note: In large-scale scenarios, use a proxy like Nginx to handle response compression.
+> ℹ️ Note: In large-scale scenarios, use a proxy like Nginx to handle response compression.
 
 > ⚠ Warning: Since `@fastify/compress` version 4.x, payloads compressed with the `zip` algorithm are not automatically uncompressed. This plugin focuses on response compression, and `zip` is not in the [IANA Table of Content Encodings](https://www.iana.org/assignments/http-parameters/http-parameters.xml#content-coding).
 
@@ -58,7 +58,7 @@ await fastify.register(
 ```
 Fastify encapsulation can be used to set global compression but run it only in a subset of routes by wrapping them inside a plugin.
 
-> 🛈 Note: If using `@fastify/compress` plugin together with `@fastify/static` plugin, `@fastify/compress` must be registered (with *global hook*) **before** registering `@fastify/static`.
+> ℹ️ Note: If using `@fastify/compress` plugin together with `@fastify/static` plugin, `@fastify/compress` must be registered (with *global hook*) **before** registering `@fastify/static`.
 
 ### Per Route options
 Different compression options can be specified per route using the `compress` options in the route's configuration.
