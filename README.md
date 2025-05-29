@@ -339,6 +339,54 @@ app.get('/', async (req, reply): Promise<void> => {
 ```
 
 
+## Usage Highlights
+### Inflate Pre-compressed Bodies
+Use inflateIfDeflated to allow serving .gz files to clients that do not support compression.
+
+```ts
+await fastify.register(import('@fastify/compress'), {
+  inflateIfDeflated: true
+})
+
+fastify.get('/file', (req, reply) => {
+  reply.send(fs.createReadStream('./file.gz'))
+})
+```
+
+### Manage Content-Length Header
+By default, this plugin removes the Content-Length header. To retain it:
+```js
+await fastify.register(import('@fastify/compress'), {
+  removeContentLengthHeader: false
+})
+
+fastify.get('/retain', {
+  compress: {
+    removeContentLengthHeader: false
+  }
+}, (req, reply) => {
+  reply.compress('This response will retain Content-Length')
+})
+```
+
+### Extend Compressible Content Types
+Use regex or function to compress additional content-types:
+
+Using Regex
+```js
+await fastify.register(import('@fastify/compress'), {
+  customTypes: /x-custom$/
+})
+```
+
+Using Function
+```js
+await fastify.register(import('@fastify/compress'), {
+  customTypes: (type) => type.includes('x-custom')
+})
+```
+
+
 ## Acknowledgments
 
 Past sponsors:
