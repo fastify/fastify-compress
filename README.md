@@ -286,7 +286,7 @@ The response error can be customized for unsupported request payload encoding by
 await fastify.register(
   import('@fastify/compress'),
   {
-     onUnsupportedRequestEncoding: (request, encoding) => {
+    onUnsupportedRequestEncoding: (request, encoding) => {
       return {
         statusCode: 415,
         code: 'UNSUPPORTED',
@@ -317,6 +317,27 @@ await fastify.register(
   }
 )
 ```
+
+## TypeScript Usage
+
+This plugin is fully compatible with TypeScript. Here's a minimal example of how to use it with type-safe compression:
+
+```ts
+import fastify from 'fastify'
+import compress from '@fastify/compress'
+
+const app = fastify()
+
+await app.register(compress, {
+  global: true
+})
+
+app.get('/', async (req, reply): Promise<void> => {
+  const payload: string = JSON.stringify({ hello: 'world' })
+  reply.type('application/json').compress(payload)
+})
+```
+
 
 ## Acknowledgments
 
