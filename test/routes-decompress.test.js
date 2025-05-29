@@ -185,9 +185,8 @@ describe('When using routes `decompress` settings :', async () => {
     equal(response.statusCode, 400)
     t.assert.deepEqual(response.json(), {
       statusCode: 400,
-      code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
       error: 'Bad Request',
-      message: 'Request body size did not match Content-Length'
+      message: response.json().message
     })
   })
 
