@@ -183,6 +183,31 @@ describe('When using routes `decompress` settings :', async () => {
     equal(usedCustomGlobal, false)
 
     equal(response.statusCode, 400)
+    t.assert.match(response.json().message, /is not valid JSON/)
+  })
+
+  test('it should return FST_ERR_CTP_INVALID_CONTENT_LENGTH when Content-Length mismatches payload', async (t) => {
+    t.plan(2)
+    const equal = t.assert.equal
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.post('/length', (request, reply) => {
+      reply.send({ ok: true })
+    })
+
+    const response = await fastify.inject({
+      url: '/length',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-length': '100',
+      },
+      payload: JSON.stringify({ hello: 'world' })
+    })
+
+    equal(response.statusCode, 400)
     t.assert.deepEqual(response.json(), {
       statusCode: 400,
       code: 'FST_ERR_CTP_INVALID_CONTENT_LENGTH',
