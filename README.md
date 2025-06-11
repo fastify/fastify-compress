@@ -286,7 +286,7 @@ The response error can be customized for unsupported request payload encoding by
 await fastify.register(
   import('@fastify/compress'),
   {
-     onUnsupportedRequestEncoding: (request, encoding) => {
+    onUnsupportedRequestEncoding: (request, encoding) => {
       return {
         statusCode: 415,
         code: 'UNSUPPORTED',
@@ -317,6 +317,75 @@ await fastify.register(
   }
 )
 ```
+
+## TypeScript Usage
+
+This plugin is fully compatible with TypeScript. Here's a minimal example of how to use it with type-safe compression:
+
+```ts
+import fastify from 'fastify'
+import compress from '@fastify/compress'
+
+const app = fastify()
+
+await app.register(compress, {
+  global: true
+})
+
+app.get('/', async (req, reply): Promise<void> => {
+  const payload: string = JSON.stringify({ hello: 'world' })
+  reply.type('application/json').compress(payload)
+})
+```
+
+
+## Usage Highlights
+### Inflate Pre-compressed Bodies
+Use inflateIfDeflated to allow serving .gz files to clients that do not support compression.
+
+```ts
+await fastify.register(import('@fastify/compress'), {
+  inflateIfDeflated: true
+})
+
+fastify.get('/file', (req, reply) => {
+  reply.send(fs.createReadStream('./file.gz'))
+})
+```
+
+### Manage Content-Length Header
+By default, this plugin removes the Content-Length header. To retain it:
+```js
+await fastify.register(import('@fastify/compress'), {
+  removeContentLengthHeader: false
+})
+
+fastify.get('/retain', {
+  compress: {
+    removeContentLengthHeader: false
+  }
+}, (req, reply) => {
+  reply.compress('This response will retain Content-Length')
+})
+```
+
+### Extend Compressible Content Types
+Use regex or function to compress additional content-types:
+
+Using Regex
+```js
+await fastify.register(import('@fastify/compress'), {
+  customTypes: /x-custom$/
+})
+```
+
+Using Function
+```js
+await fastify.register(import('@fastify/compress'), {
+  customTypes: (type) => type.includes('x-custom')
+})
+```
+
 
 ## Acknowledgments
 
