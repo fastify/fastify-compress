@@ -3548,3 +3548,102 @@ test('It should demonstrate globalDecompression controls decompression independe
   t.assert.equal(response.statusCode, 400)
   t.assert.ok(response.body.includes('Content-Length') || response.body.includes('Bad Request'))
 })
+
+test('It should skip compression when isCompressiblePayload returns false', async (t) => {
+  t.plan(3)
+
+  let isCompressibleCalled = false
+  const testIsCompressiblePayload = (payload) => {
+    isCompressibleCalled = true
+    // Reject all payloads regardless of type
+    return false
+  }
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    isCompressiblePayload: testIsCompressiblePayload,
+    threshold: 0
+  })
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    reply.send('{"message": "test"}')
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip, deflate, br'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-encoding'], undefined)
+  t.assert.equal(isCompressibleCalled, true)
+})
+
+test('It should serialize and compress objects when reply.compress() receives non-compressible objects', async (t) => {
+  t.plan(2)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0 // Ensure even small payloads get compressed
+  })
+
+  // Create a larger object to ensure it exceeds any default threshold
+  const objectPayload = {
+    message: 'test data'.repeat(100),
+    value: 42,
+    description: 'A test object that should be large enough to trigger compression after serialization'.repeat(10)
+  }
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    // The compress function should now serialize the object and then compress it
+    reply.compress(objectPayload)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip, deflate, br'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  // The response should be compressed since the object gets serialized to a string
+  t.assert.ok(['gzip', 'deflate', 'br'].includes(response.headers['content-encoding']))
+})
+
+test('It should stream Response body when using reply.compress() with a fetch Response', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0
+  })
+
+  const testContent = 'test content for compression'
+  const responseObject = new Response(testContent)
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'text/plain')
+    reply.compress(responseObject)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+
+  const decompressed = zlib.gunzipSync(Buffer.from(response.rawPayload)).toString('utf8')
+  t.assert.equal(decompressed, testContent)
+})

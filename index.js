@@ -173,6 +173,10 @@ function processCompressParams (opts) {
       .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
     : supportedEncodings
 
+  params.isCompressiblePayload = typeof opts.isCompressiblePayload === 'function'
+    ? opts.isCompressiblePayload
+    : isCompressiblePayload
+
   return params
 }
 
@@ -301,6 +305,9 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       if (isWebReadableStream(payload)) {
         payload = webStreamToNodeReadable(payload)
       } else {
+        if (!params.isCompressiblePayload(payload)) {
+          return next(null, payload)
+        }
         if (Buffer.byteLength(payload) < params.threshold) {
           return next()
         }
@@ -429,7 +436,7 @@ function compress (params) {
 
       if (isWebReadableStream(payload)) {
         payload = webStreamToNodeReadable(payload)
-      } else if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
+      } else if (!params.isCompressiblePayload(payload)) {
         payload = this.serialize(payload)
       }
     }
@@ -519,6 +526,13 @@ function getEncodingHeader (encodings, request) {
   } else {
     return undefined
   }
+}
+
+function isCompressiblePayload (payload) {
+  // By the time payloads reach this point, Fastify has already serialized
+  // objects/arrays/etc to strings, so we only need to check for the actual
+  // types that make it through: Buffer and string
+  return Buffer.isBuffer(payload) || typeof payload === 'string'
 }
 
 function shouldCompress (type, compressibleTypes) {
