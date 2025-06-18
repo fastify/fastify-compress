@@ -57,7 +57,7 @@ await fastify.register(
 )
 ```
 
-If only compression, or only decompression is desired, you can use the `globalCompression` or `globalDecompression` config flags to turn either off specifically (because the global hook is enabled by default).
+If only compression or decompression is required, set the `globalCompression` or `globalDecompression` config flags to `false` respectively (both are `true` by default).
 
 ```js
 await fastify.register(
