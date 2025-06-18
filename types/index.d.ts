@@ -77,6 +77,8 @@ declare namespace fastifyCompress {
     encodings?: EncodingToken[];
     forceRequestEncoding?: EncodingToken;
     global?: boolean;
+    globalDecompression?: boolean;
+    globalCompression?: boolean;
     inflateIfDeflated?: boolean;
     onInvalidRequestPayload?: (encoding: string, request: FastifyRequest, error: Error) => Error | undefined | null;
     onUnsupportedEncoding?: (encoding: string, request: FastifyRequest, reply: FastifyReply) => string | Buffer | Stream;
