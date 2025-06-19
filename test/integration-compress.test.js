@@ -3,13 +3,10 @@
 const { test } = require('node:test')
 const assert = require('node:assert')
 const Fastify = require('fastify')
-const zlib = require('node:zlib')
-const { promisify } = require('node:util')
 const { Readable: NodeReadable } = require('node:stream')
 const axios = require('axios')
+const got = require('got')
 const fastifyCompress = require('..')
-
-const gunzip = promisify(zlib.gunzip)
 
 // Define all test cases that should work with any HTTP client
 const testCases = [
@@ -41,7 +38,7 @@ const testCases = [
     name: 'Node.js Readable Stream',
     handler: async (request, reply) => {
       const stream = new NodeReadable({
-        read() {
+        read () {
           this.push('Stream chunk 1. ')
           this.push('Stream chunk 2. ')
           this.push('Stream chunk 3.')
@@ -75,7 +72,7 @@ const testCases = [
     handler: async (request, reply) => {
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(encoder.encode('Response '))
           controller.enqueue(encoder.encode('with '))
           controller.enqueue(encoder.encode('ReadableStream'))
@@ -99,7 +96,7 @@ const testCases = [
     handler: async (request, reply) => {
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(encoder.encode('Raw '))
           controller.enqueue(encoder.encode('ReadableStream '))
           controller.enqueue(encoder.encode('content'))
@@ -159,7 +156,7 @@ const edgeCaseTests = [
         chunks.push(`This is chunk ${i} with some repeated content to ensure good compression. `)
       }
       const stream = new NodeReadable({
-        read() {
+        read () {
           if (chunks.length > 0) {
             this.push(chunks.shift())
           } else {
@@ -177,7 +174,7 @@ const edgeCaseTests = [
 ]
 
 // Test implementation for fetch
-async function testWithFetch(testCase, port) {
+async function testWithFetch (testCase, port) {
   const response = await fetch(`http://localhost:${port}/`, {
     headers: {
       'Accept-Encoding': 'gzip'
@@ -229,12 +226,11 @@ async function testWithFetch(testCase, port) {
 }
 
 // Test implementation for axios
-async function testWithAxios(testCase, port) {
+async function testWithAxios (testCase, port) {
   const response = await axios.get(`http://localhost:${port}/`, {
     headers: {
       'Accept-Encoding': 'gzip'
     }
-    // Let axios decompress automatically (default behavior)
   })
 
   // Check for expected status first
@@ -302,7 +298,66 @@ async function testWithAxios(testCase, port) {
   }
 }
 
-// Run all test cases with both fetch and axios
+// Test implementation for got
+async function testWithGot(testCase, port) {
+  const response = await got(`http://localhost:${port}/`, {
+    headers: {
+      'Accept-Encoding': 'gzip'
+    },
+    // Let got handle decompression automatically (default behavior)
+    decompress: true
+  })
+
+  // Check for expected status first
+  if (testCase.expectedStatus) {
+    assert.strictEqual(response.statusCode, testCase.expectedStatus, `${testCase.name}: should have expected status`)
+  }
+  
+  if (testCase.checkStatus) {
+    assert.strictEqual(response.statusCode, testCase.checkStatus, `${testCase.name}: should have correct status`)
+  }
+
+  // Handle empty body case (204 No Content doesn't have compression headers)
+  if (testCase.expectNoBody) {
+    assert.strictEqual(response.body, '', `${testCase.name}: should have empty body`)
+    return
+  }
+
+  // Verify compression headers
+  // Got preserves the content-encoding header even after decompression
+  assert.strictEqual(response.headers['content-encoding'], 'gzip', `${testCase.name}: should have gzip encoding`)
+  assert.strictEqual(response.headers.vary, 'accept-encoding', `${testCase.name}: should have vary header`)
+
+  if (testCase.contentType !== undefined) {
+    const actualContentType = response.headers['content-type']
+    if (testCase.contentType === null) {
+      assert.ok(actualContentType === null || actualContentType === undefined, `${testCase.name}: should not have content-type`)
+    } else {
+      assert.strictEqual(actualContentType, testCase.contentType, `${testCase.name}: should have correct content-type`)
+    }
+  }
+
+  // Get the response body (already decompressed by got)
+  const bodyText = response.body
+
+  // Verify content
+  if (typeof testCase.expectedBody === 'function') {
+    try {
+      const bodyJson = JSON.parse(bodyText)
+      assert.ok(testCase.expectedBody(bodyJson), `${testCase.name}: body validation should pass`)
+    } catch (e) {
+      // Not JSON, pass raw text
+      assert.ok(testCase.expectedBody(bodyText), `${testCase.name}: body validation should pass`)
+    }
+  } else if (typeof testCase.expectedBody === 'object') {
+    const bodyJson = JSON.parse(bodyText)
+    assert.deepStrictEqual(bodyJson, testCase.expectedBody, `${testCase.name}: JSON body should match`)
+  } else if (testCase.expectedBody !== undefined) {
+    assert.strictEqual(bodyText, testCase.expectedBody, `${testCase.name}: body should match`)
+  }
+}
+
+// Run all test cases with fetch, axios, and got
 test('Integration tests with real HTTP requests', async (t) => {
   for (const testCase of testCases) {
     await t.test(`fetch: ${testCase.name}`, async () => {
@@ -334,6 +389,23 @@ test('Integration tests with real HTTP requests', async (t) => {
 
       try {
         await testWithAxios(testCase, port)
+      } finally {
+        await fastify.close()
+      }
+    })
+
+    await t.test(`got: ${testCase.name}`, async () => {
+      const fastify = Fastify()
+      // Set threshold to 0 to ensure all responses are compressed
+      await fastify.register(fastifyCompress, { global: true, threshold: 0 })
+
+      fastify.get('/', testCase.handler)
+
+      await fastify.listen({ port: 0 })
+      const port = fastify.server.address().port
+
+      try {
+        await testWithGot(testCase, port)
       } finally {
         await fastify.close()
       }
@@ -375,6 +447,22 @@ test('Edge case tests with real HTTP requests', async (t) => {
         await fastify.close()
       }
     })
+
+    await t.test(`got: ${testCase.name}`, async () => {
+      const fastify = Fastify()
+      await fastify.register(fastifyCompress, { global: true, threshold: 0 })
+
+      fastify.get('/', testCase.handler)
+
+      await fastify.listen({ port: 0 })
+      const port = fastify.server.address().port
+
+      try {
+        await testWithGot(testCase, port)
+      } finally {
+        await fastify.close()
+      }
+    })
   }
 })
 
@@ -401,6 +489,12 @@ test('Uncompressed responses when Accept-Encoding is not set', async () => {
     const axiosResponse = await axios.get(`http://localhost:${port}/`)
     assert.strictEqual(axiosResponse.headers['content-encoding'], undefined, 'axios: should not have content-encoding')
     assert.deepStrictEqual(axiosResponse.data, { hello: 'world' }, 'axios: body should match')
+
+    // Test with got
+    const gotResponse = await got(`http://localhost:${port}/`)
+    assert.strictEqual(gotResponse.headers['content-encoding'], undefined, 'got: should not have content-encoding')
+    const gotBody = JSON.parse(gotResponse.body)
+    assert.deepStrictEqual(gotBody, { hello: 'world' }, 'got: body should match')
   } finally {
     await fastify.close()
   }
