@@ -95,7 +95,7 @@ fastify.get('/custom-route', {
 ### `reply.compress`
 This plugin adds a `compress` method to `reply` that compresses a stream or string based on the `accept-encoding` header. If a JS object is passed, it will be stringified to JSON.
 
-> ℹ️ Note: When compressing a Response object, the compress middleware only extracts and compresses the body stream. It will handle compression-related headers (like `Content-Encoding` and `Vary`) but does not copy other headers or status from the Response object - these remain the responsibility of your application or Fastify's built-in handling.
+> ℹ️ Note: When compressing a Response object, the compress middleware will copy headers and status from the Response object, unless they have already been explicitly set on the reply. The middleware will then compress the body stream and handle compression-related headers (like `Content-Encoding` and `Vary`).
 
 The `compress` method uses per-route parameters if configured, otherwise it uses global parameters.
 

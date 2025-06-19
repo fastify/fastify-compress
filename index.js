@@ -285,6 +285,18 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
 
       // Handle Response objects
       if (payload instanceof Response) {
+        // Copy headers from Response object unless already set
+        for (const [key, value] of payload.headers.entries()) {
+          if (!reply.hasHeader(key)) {
+            reply.header(key, value)
+          }
+        }
+        
+        // Set status code if it's still the default 200 and Response has a different status
+        if (reply.statusCode === 200 && payload.status && payload.status !== 200) {
+          reply.code(payload.status)
+        }
+        
         const responseStream = convertResponseToStream(payload)
         if (responseStream) {
           payload = responseStream
@@ -423,6 +435,18 @@ function compress (params) {
     if (typeof payload.pipe !== 'function') {
       // Handle Response objects
       if (payload instanceof Response) {
+        // Copy headers from Response object unless already set
+        for (const [key, value] of payload.headers.entries()) {
+          if (!this.hasHeader(key)) {
+            this.header(key, value)
+          }
+        }
+        
+        // Set status code if it's still the default 200 and Response has a different status
+        if (this.statusCode === 200 && payload.status && payload.status !== 200) {
+          this.code(payload.status)
+        }
+        
         const responseStream = convertResponseToStream(payload)
         if (responseStream) {
           payload = responseStream

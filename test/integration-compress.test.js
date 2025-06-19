@@ -62,9 +62,8 @@ const testCases = [
       return response
     },
     expectedBody: { response: 'object', compressed: true },
-    // Response headers are not automatically copied by fastify-compress
-    contentType: null,
-    // Fastify uses default status 200 when Response is converted to stream
+    // Response headers are now copied by fastify-compress
+    contentType: 'application/json',
     checkStatus: 200
   },
   {
@@ -86,10 +85,10 @@ const testCases = [
       return response
     },
     expectedBody: 'Response with ReadableStream',
-    // Response headers are not automatically copied by fastify-compress
-    contentType: null,
-    // Fastify uses default status 200 when Response is converted to stream
-    checkStatus: 200
+    // Response headers are now copied by fastify-compress
+    contentType: 'text/plain',
+    // Status code is now preserved from Response object
+    checkStatus: 201
   },
   {
     name: 'Raw ReadableStream',
@@ -149,6 +148,29 @@ const edgeCaseTests = [
     checkStatus: 200
   },
   {
+    name: 'Response object with overridden headers',
+    handler: async (request, reply) => {
+      // Set headers on reply first
+      reply.header('content-type', 'text/html')
+      reply.code(202)
+      
+      // Return Response with different headers
+      const response = new Response('Hello World', {
+        status: 200,
+        headers: { 'content-type': 'text/plain', 'x-custom-header': 'test' }
+      })
+      return response
+    },
+    expectedBody: 'Hello World',
+    // Reply headers should take precedence
+    contentType: 'text/html',
+    checkStatus: 202,
+    // Custom header from Response should be preserved
+    checkHeaders: {
+      'x-custom-header': 'test'
+    }
+  },
+  {
     name: 'Large stream to verify compression',
     handler: async (request, reply) => {
       const chunks = []
@@ -203,6 +225,13 @@ async function testWithFetch (testCase, port) {
 
   if (testCase.contentType !== undefined) {
     assert.strictEqual(response.headers.get('content-type'), testCase.contentType, `${testCase.name}: should have correct content-type`)
+  }
+
+  // Check custom headers if specified
+  if (testCase.checkHeaders) {
+    for (const [key, value] of Object.entries(testCase.checkHeaders)) {
+      assert.strictEqual(response.headers.get(key), value, `${testCase.name}: should have header ${key}=${value}`)
+    }
   }
 
   // Native fetch automatically decompresses gzip responses, so we can read directly
@@ -265,6 +294,13 @@ async function testWithAxios (testCase, port) {
     }
   }
 
+  // Check custom headers if specified
+  if (testCase.checkHeaders) {
+    for (const [key, value] of Object.entries(testCase.checkHeaders)) {
+      assert.strictEqual(response.headers[key], value, `${testCase.name}: should have header ${key}=${value}`)
+    }
+  }
+
   // Get the response data (already decompressed by axios)
   let bodyText
   if (typeof response.data === 'string') {
@@ -299,7 +335,7 @@ async function testWithAxios (testCase, port) {
 }
 
 // Test implementation for got
-async function testWithGot(testCase, port) {
+async function testWithGot (testCase, port) {
   const response = await got(`http://localhost:${port}/`, {
     headers: {
       'Accept-Encoding': 'gzip'
@@ -312,7 +348,7 @@ async function testWithGot(testCase, port) {
   if (testCase.expectedStatus) {
     assert.strictEqual(response.statusCode, testCase.expectedStatus, `${testCase.name}: should have expected status`)
   }
-  
+
   if (testCase.checkStatus) {
     assert.strictEqual(response.statusCode, testCase.checkStatus, `${testCase.name}: should have correct status`)
   }
@@ -334,6 +370,13 @@ async function testWithGot(testCase, port) {
       assert.ok(actualContentType === null || actualContentType === undefined, `${testCase.name}: should not have content-type`)
     } else {
       assert.strictEqual(actualContentType, testCase.contentType, `${testCase.name}: should have correct content-type`)
+    }
+  }
+
+  // Check custom headers if specified
+  if (testCase.checkHeaders) {
+    for (const [key, value] of Object.entries(testCase.checkHeaders)) {
+      assert.strictEqual(response.headers[key], value, `${testCase.name}: should have header ${key}=${value}`)
     }
   }
 
