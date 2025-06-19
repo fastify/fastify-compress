@@ -26,7 +26,7 @@ declare module 'fastify' {
   }
 
   interface FastifyReply {
-    compress(input: Stream | Input): void;
+    compress(input: Stream | Input | Response | ReadableStream): void;
   }
 
   export interface RouteOptions {

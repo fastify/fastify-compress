@@ -48,6 +48,14 @@ To return an error for unsupported encoding, use the `onUnsupportedEncoding` opt
 
 The plugin compresses payloads based on `content-type`. If absent, it assumes `application/json`.
 
+### Supported payload types
+
+The plugin supports compressing the following payload types:
+- Strings and Buffers
+- Node.js streams
+- Response objects (from the Fetch API)
+- ReadableStream objects (from the Web Streams API)
+
 ### Global hook
 The global compression hook is enabled by default. To disable it, pass `{ global: false }`:
 ```js
@@ -87,6 +95,8 @@ fastify.get('/custom-route', {
 ### `reply.compress`
 This plugin adds a `compress` method to `reply` that compresses a stream or string based on the `accept-encoding` header. If a JS object is passed, it will be stringified to JSON.
 
+> ℹ️ Note: When compressing a Response object, the compress middleware only extracts and compresses the body stream. It will handle compression-related headers (like `Content-Encoding` and `Vary`) but does not copy other headers or status from the Response object - these remain the responsibility of your application or Fastify's built-in handling.
+
 The `compress` method uses per-route parameters if configured, otherwise it uses global parameters.
 
 ```js
@@ -96,10 +106,27 @@ import fastify from 'fastify'
 const app = fastify()
 await app.register(import('@fastify/compress'), { global: false })
 
-app.get('/', (req, reply) => {
+// Compress a file stream
+app.get('/file', (req, reply) => {
   reply
     .type('text/plain')
     .compress(fs.createReadStream('./package.json'))
+})
+
+// Compress a Response object from fetch
+app.get('/fetch', async (req, reply) => {
+  const response = await fetch('https://api.example.com/data')
+  reply
+    .type('application/json')
+    .compress(response)
+})
+
+// Compress a ReadableStream
+app.get('/stream', (req, reply) => {
+  const response = new Response('Hello World')
+  reply
+    .type('text/plain')
+    .compress(response.body)
 })
 
 await app.listen({ port: 3000 })
@@ -109,6 +136,9 @@ await app.listen({ port: 3000 })
 
 ### threshold
 The minimum byte size for response compression. Defaults to `1024`.
+
+> ℹ️ Note: The threshold setting only applies to string and Buffer payloads. Streams (including Node.js streams, Response objects, and ReadableStream objects) are always compressed regardless of the threshold, as their size cannot be determined in advance.
+
 ```js
 await fastify.register(
   import('@fastify/compress'),
@@ -320,9 +350,13 @@ await fastify.register(
 
 ## Gotchas
 
-When you, or another plugin modify the request body, it's possible that `@fastify/compress` will recieve a response body that it doesn't know what to do with. If this happens when you call the `compress` function directly, it'll make a best effort at compressing the payload anyway, by using the fastify `serialize` function on whatever is passed.
+### Handling Unsupported Payload Types
 
-If the response is being compressed by the global hook, and it inadvertedly receives something it doesn't know what to do with, it'll ignore it completely and respond with the uncompressed payload. This to prevent inadvertedly breaking whole servers with hard to find bugs.
+When `@fastify/compress` receives a payload type that it doesn't natively support for compression (excluding the types listed in [Supported payload types](#supported-payload-types)), the behavior depends on the compression method:
+
+- **Using `reply.compress()`**: The plugin will attempt to serialize the payload using Fastify's `serialize` function and then compress the result. This provides a best-effort approach to handle custom objects.
+
+- **Using global compression hook**: To prevent breaking applications, the plugin will pass through unsupported payload types without compression. This fail-safe approach ensures that servers continue to function even when encountering unexpected payload types.
 
 ## Acknowledgments
 

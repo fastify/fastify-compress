@@ -151,3 +151,6 @@ yarn.lock
 
 #tap files
 .tap/
+
+# Claude AI
+.claude/

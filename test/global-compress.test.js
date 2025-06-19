@@ -3384,22 +3384,21 @@ test('It should serialize and compress objects when reply.compress() receives no
   t.assert.ok(['gzip', 'deflate', 'br'].includes(response.headers['content-encoding']))
 })
 
-test('It should handle Response objects by serializing them to JSON when using reply.compress()', async (t) => {
-  t.plan(4)
+test('It should handle Response objects properly when using reply.compress()', async (t) => {
+  t.plan(3)
 
   const fastify = Fastify()
   await fastify.register(compressPlugin, {
     threshold: 0 // Ensure even small payloads get compressed
   })
 
-  // Response objects serialize to "{}" in JSON
+  // Response objects now get their body properly extracted
   const testContent = 'test content for compression'
   const responseObject = new Response(testContent)
-  const directSerialized = JSON.stringify(responseObject)
 
   fastify.get('/', (_request, reply) => {
     reply.header('content-type', 'application/json')
-    // Response objects get serialized to "{}" by JSON.stringify
+    // Response objects now get their body extracted and compressed
     reply.compress(responseObject)
   })
 
@@ -3412,13 +3411,182 @@ test('It should handle Response objects by serializing them to JSON when using r
   })
 
   t.assert.equal(response.statusCode, 200)
-  // The response gets compressed because "{}" is valid JSON content
+  // The response gets compressed
   t.assert.equal(response.headers['content-encoding'], 'gzip')
-  // Confirm that JSON.stringify(Response) returns "{}" - the empty object
-  t.assert.equal(directSerialized, '{}')
 
-  // Decompress the response to verify the content is the serialized Response
+  // Decompress the response to verify the content is the Response body
   const compressedBuffer = Buffer.from(response.rawPayload)
   const decompressed = zlib.gunzipSync(compressedBuffer).toString('utf8')
-  t.assert.equal(decompressed, '{}')
+  t.assert.equal(decompressed, testContent)
+})
+
+test('It should compress Response objects with body streams', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0 // Ensure even small payloads get compressed
+  })
+
+  const responseBody = '{"message": "This is a test response"}'
+  const responseObject = new Response(responseBody, {
+    status: 200,
+    headers: { 'content-type': 'application/json' }
+  })
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    reply.send(responseObject)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  // The response should be compressed
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+
+  // Decompress the response to verify the content
+  const compressedBuffer = Buffer.from(response.rawPayload)
+  const decompressed = zlib.gunzipSync(compressedBuffer).toString('utf8')
+  t.assert.equal(decompressed, responseBody)
+})
+
+test('It should compress Response objects using reply.compress()', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0 // Ensure even small payloads get compressed
+  })
+
+  const responseBody = '{"message": "Compressed with reply.compress()"}'
+  const responseObject = new Response(responseBody, {
+    status: 200,
+    headers: { 'content-type': 'application/json' }
+  })
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    reply.compress(responseObject)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+
+  // Decompress the response to verify the content
+  const compressedBuffer = Buffer.from(response.rawPayload)
+  const decompressed = zlib.gunzipSync(compressedBuffer).toString('utf8')
+  t.assert.equal(decompressed, responseBody)
+})
+
+test('It should handle Response objects without body', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin)
+
+  // Create a Response object with null body
+  const responseObject = new Response(null, {
+    status: 204
+  })
+
+  fastify.get('/', (_request, reply) => {
+    // When sending a Response object with no body, Fastify will handle it natively
+    reply.send(responseObject)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 204) // Fastify preserves Response status when no body
+  // No compression since there's no body
+  t.assert.equal(response.headers['content-encoding'], undefined)
+  // No content with 204 status
+  t.assert.equal(response.payload, '')
+})
+
+test('It should compress raw ReadableStream objects', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0 // Ensure even small payloads get compressed
+  })
+
+  const responseBody = '{"message": "This is a ReadableStream test"}'
+  const readableStream = new Response(responseBody).body
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    reply.send(readableStream)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  // The response should be compressed
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+
+  // Decompress the response to verify the content
+  const compressedBuffer = Buffer.from(response.rawPayload)
+  const decompressed = zlib.gunzipSync(compressedBuffer).toString('utf8')
+  t.assert.equal(decompressed, responseBody)
+})
+
+test('It should compress ReadableStream objects using reply.compress()', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    threshold: 0 // Ensure even small payloads get compressed
+  })
+
+  const responseBody = '{"message": "Compressed ReadableStream with reply.compress()"}'
+  const readableStream = new Response(responseBody).body
+
+  fastify.get('/', (_request, reply) => {
+    reply.header('content-type', 'application/json')
+    reply.compress(readableStream)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-encoding'], 'gzip')
+
+  // Decompress the response to verify the content
+  const compressedBuffer = Buffer.from(response.rawPayload)
+  const decompressed = zlib.gunzipSync(compressedBuffer).toString('utf8')
+  t.assert.equal(decompressed, responseBody)
 })
