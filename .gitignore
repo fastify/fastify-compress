@@ -147,6 +147,10 @@ yarn.lock
 # editor files
 .vscode
 .idea
+.zed
 
 #tap files
 .tap/
+
+# Claude AI
+.claude/

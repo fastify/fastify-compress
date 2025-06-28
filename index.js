@@ -2,6 +2,7 @@
 
 const zlib = require('node:zlib')
 const { inherits, format } = require('node:util')
+const { Readable: NodeReadable } = require('node:stream')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
@@ -161,6 +162,10 @@ function processCompressParams (opts) {
       .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
     : supportedEncodings
 
+  params.isCompressiblePayload = typeof opts.isCompressiblePayload === 'function'
+    ? opts.isCompressiblePayload
+    : isCompressiblePayload
+
   return params
 }
 
@@ -273,10 +278,41 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < params.threshold) {
-        return next()
+      // Payload is not a stream, ensure we don't try to compress something we cannot get the length of.
+      if (!params.isCompressiblePayload(payload)) {
+        return next(null, payload)
       }
-      payload = Readable.from(intoAsyncIterator(payload))
+
+      // Handle Response objects
+      if (payload instanceof Response) {
+        // Copy headers from Response object unless already set
+        for (const [key, value] of payload.headers.entries()) {
+          if (!reply.hasHeader(key)) {
+            reply.header(key, value)
+          }
+        }
+        
+        // Set status code if it's still the default 200 and Response has a different status
+        if (reply.statusCode === 200 && payload.status && payload.status !== 200) {
+          reply.code(payload.status)
+        }
+        
+        const responseStream = convertResponseToStream(payload)
+        if (responseStream) {
+          payload = responseStream
+        } else {
+          // Response has no body or body is null
+          return next()
+        }
+      } else if (payload instanceof ReadableStream) {
+        // Handle raw ReadableStream objects
+        payload = NodeReadable.fromWeb(payload)
+      } else {
+        if (Buffer.byteLength(payload) < params.threshold) {
+          return next()
+        }
+        payload = Readable.from(intoAsyncIterator(payload))
+      }
     }
 
     setVaryHeader(reply)
@@ -391,16 +427,42 @@ function compress (params) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
+      if (!params.isCompressiblePayload(payload)) {
         payload = this.serialize(payload)
       }
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < params.threshold) {
-        return this.send(payload)
+      // Handle Response objects
+      if (payload instanceof Response) {
+        // Copy headers from Response object unless already set
+        for (const [key, value] of payload.headers.entries()) {
+          if (!this.hasHeader(key)) {
+            this.header(key, value)
+          }
+        }
+        
+        // Set status code if it's still the default 200 and Response has a different status
+        if (this.statusCode === 200 && payload.status && payload.status !== 200) {
+          this.code(payload.status)
+        }
+        
+        const responseStream = convertResponseToStream(payload)
+        if (responseStream) {
+          payload = responseStream
+        } else {
+          // Response has no body or body is null
+          return this.send(payload)
+        }
+      } else if (payload instanceof ReadableStream) {
+        // Handle raw ReadableStream objects
+        payload = NodeReadable.fromWeb(payload)
+      } else {
+        if (Buffer.byteLength(payload) < params.threshold) {
+          return this.send(payload)
+        }
+        payload = Readable.from(intoAsyncIterator(payload))
       }
-      payload = Readable.from(intoAsyncIterator(payload))
     }
 
     setVaryHeader(this)
@@ -477,6 +539,14 @@ function getEncodingHeader (encodings, request) {
   }
 }
 
+function isCompressiblePayload (payload) {
+  // By the time payloads reach this point, Fastify has already serialized
+  // objects/arrays/etc to strings, so we only need to check for the actual
+  // types that make it through: Buffer and string
+  // Also support Response objects from fetch API and ReadableStream
+  return Buffer.isBuffer(payload) || typeof payload === 'string' || payload instanceof Response || payload instanceof ReadableStream
+}
+
 function shouldCompress (type, compressibleTypes) {
   if (compressibleTypes(type)) return true
   const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
@@ -510,6 +580,15 @@ function maybeUnzip (payload, serialize) {
   if (!Buffer.isBuffer(buf)) return result
   if (isCompressed(buf) === 0) return result
   return Readable.from(intoAsyncIterator(result))
+}
+
+function convertResponseToStream (payload) {
+  // Handle Response objects from fetch API
+  if (payload instanceof Response && payload.body) {
+    // Convert Web ReadableStream to Node.js stream
+    return NodeReadable.fromWeb(payload.body)
+  }
+  return null
 }
 
 function zipStream (deflate, encoding) {
