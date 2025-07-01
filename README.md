@@ -5,7 +5,7 @@
 [![neostandard javascript style](https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat)](https://github.com/neostandard/neostandard)
 
 Adds compression utils to [the Fastify `reply` object](https://fastify.dev/docs/latest/Reference/Reply/#reply) and a hook to decompress requests payloads.
-Supports `gzip`, `deflate`, and `brotli`.
+Supports `gzip`, `deflate`, `brotli`, and `zstd` (Node.js 22.15+/23.8+).
 
 > ℹ️ Note: In large-scale scenarios, use a proxy like Nginx to handle response compression.
 
@@ -37,11 +37,12 @@ This plugin adds two functionalities to Fastify: a compress utility and a global
 
 Currently, the following encoding tokens are supported, using the first acceptable token in this order:
 
-1. `br`
-2. `gzip`
-3. `deflate`
-4. `*` (no preference — `@fastify/compress` will use `gzip`)
-5. `identity` (no compression)
+1. `zstd` (Node.js 22.15+/23.8+)
+2. `br`
+3. `gzip`
+4. `deflate`
+5. `*` (no preference — `@fastify/compress` will use `gzip`)
+6. `identity` (no compression)
 
 If an unsupported encoding is received or the `'accept-encoding'` header is missing, the payload will not be compressed.
 To return an error for unsupported encoding, use the `onUnsupportedEncoding` option.
@@ -175,6 +176,13 @@ await fastify.register(
   // Only support gzip and deflate, and prefer deflate to gzip
   { encodings: ['deflate', 'gzip'] }
 )
+
+// Example with zstd support (Node.js 22.15+/23.8+)
+await fastify.register(
+  import('@fastify/compress'),
+  // Prefer zstd, fallback to brotli, then gzip
+  { encodings: ['zstd', 'br', 'gzip'] }
+)
 ```
 
 ### brotliOptions and zlibOptions
@@ -214,9 +222,10 @@ This plugin adds a `preParsing` hook to decompress the request payload based on 
 
 Currently, the following encoding tokens are supported:
 
-1. `br`
-2. `gzip`
-3. `deflate`
+1. `zstd` (Node.js 22.15+/23.8+)
+2. `br`
+3. `gzip`
+4. `deflate`
 
 If an unsupported encoding or invalid payload is received, the plugin throws an error.
 
@@ -267,6 +276,13 @@ await fastify.register(
   import('@fastify/compress'),
   // Only support gzip
   { requestEncodings: ['gzip'] }
+)
+
+// Example with zstd support for request decompression (Node.js 22.15+/23.8+)
+await fastify.register(
+  import('@fastify/compress'),
+  // Support zstd, brotli and gzip for request decompression
+  { requestEncodings: ['zstd', 'br', 'gzip'] }
 )
 ```
 

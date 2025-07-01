@@ -41,7 +41,8 @@
     "compression",
     "deflate",
     "gzip",
-    "brotli"
+    "brotli",
+    "zstd"
   ],
   "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
   "contributors": [

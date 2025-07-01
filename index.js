@@ -145,6 +145,9 @@ function processCompressParams (opts) {
     gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
     deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
   }
+  if (typeof ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress) === 'function') {
+    params.compressStream.zstd = () => ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
+  }
   params.uncompressStream = {
     // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
     // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
@@ -152,8 +155,16 @@ function processCompressParams (opts) {
     gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
     deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
   }
+  if (typeof ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress) === 'function') {
+    // Currently params.uncompressStream.zstd() is never called as we do not have any way to autodetect zstd compression in `fastify-compress`
+    // Zstd documentation reference: [RFC 8878](https://www.rfc-editor.org/rfc/rfc8878)
+    params.uncompressStream.zstd = /* c8 ignore next */ () => ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress)(params.zlibOptions)
+  }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
+  if (typeof zlib.createZstdCompress === 'function') {
+    supportedEncodings.unshift('zstd')
+  }
 
   params.encodings = Array.isArray(opts.encodings)
     ? supportedEncodings
@@ -184,8 +195,14 @@ function processDecompressParams (opts) {
     encodings: [],
     forceEncoding: null
   }
+  if (typeof (customZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') {
+    params.decompressStream.zstd = customZlib.createZstdDecompress || zlib.createZstdDecompress
+  }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
+  if (typeof zlib.createZstdCompress === 'function') {
+    supportedEncodings.unshift('zstd')
+  }
 
   params.encodings = Array.isArray(opts.requestEncodings)
     ? supportedEncodings
