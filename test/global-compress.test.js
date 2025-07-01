@@ -33,6 +33,32 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
+  test('it should compress Buffer data using zstd when `Accept-Encoding` request header is `zstd`', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const buf = Buffer.from('hello world')
+    fastify.get('/', (_request, reply) => {
+      reply.send(buf)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), buf.toString())
+  })
+
   test('it should compress Buffer data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 
@@ -97,6 +123,32 @@ describe('When `global` is not set, it is `true` by default :', async () => {
       }
     })
     const payload = zlib.brotliDecompressSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
+  })
+
+  test('it should compress JSON data using zstd when `Accept-Encoding` request header is `zstd`', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const json = { hello: 'world' }
+    fastify.get('/', (_request, reply) => {
+      reply.send(json)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), JSON.stringify(json))
   })
 

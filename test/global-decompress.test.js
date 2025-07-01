@@ -42,6 +42,33 @@ describe('It should decompress the request payload :', async () => {
     t.assert.equal(response.body, '@fastify/compress')
   })
 
+  test('using zstd algorithm when `Content-Encoding` request header value is set to `zstd`', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.post('/', (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'zstd'
+      },
+      payload: createPayload(zlib.createZstdCompress)
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
+  })
+
   test('using deflate algorithm when `Content-Encoding` request header value is set to `deflate`', async (t) => {
     t.plan(2)
 

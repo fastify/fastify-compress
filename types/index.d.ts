@@ -57,7 +57,7 @@ type RouteDecompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'zlib'
 >
 
-type EncodingToken = 'br' | 'deflate' | 'gzip' | 'identity'
+type EncodingToken = 'zstd' | 'br' | 'deflate' | 'gzip' | 'identity'
 
 type CompressibleContentTypeFunction = (contentType: string) => boolean
 

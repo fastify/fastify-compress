@@ -4,7 +4,7 @@ const { createReadStream } = require('node:fs')
 const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
 const { test } = require('node:test')
-const { isStream, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
+const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)
@@ -46,6 +46,23 @@ test('isDeflate() utility should be able to detect deflate compressed Buffer', a
   equal(isDeflate(null), false)
   equal(isDeflate(undefined), false)
   equal(isDeflate(''), false)
+})
+
+test('isZstd() utility should be able to detect zstd compressed Buffer', async (t) => {
+  t.plan(10)
+  const equal = t.assert.equal
+
+  equal(isZstd(Buffer.alloc(0)), false)
+  equal(isZstd(Buffer.alloc(1)), false)
+  equal(isZstd(Buffer.alloc(2)), false)
+  equal(isZstd(Buffer.alloc(3)), false)
+  equal(isZstd(Buffer.from([0x28, 0xb5, 0x2f])), false)
+  equal(isZstd(Buffer.from([0x28, 0xb5, 0x2f, 0xfd])), true)
+
+  equal(isZstd({}), false)
+  equal(isZstd(null), false)
+  equal(isZstd(undefined), false)
+  equal(isZstd(''), false)
 })
 
 test('isGzip() utility should be able to detect gzip compressed Buffer', async (t) => {

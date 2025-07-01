@@ -25,8 +25,14 @@ const withGlobalOptions: FastifyCompressOptions = {
   removeContentLengthHeader: true
 }
 
+const withZstdOptions: FastifyCompressOptions = {
+  encodings: ['zstd', 'br', 'gzip', 'deflate', 'identity'],
+  requestEncodings: ['zstd', 'br', 'gzip', 'deflate', 'identity']
+}
+
 const app: FastifyInstance = fastify()
 app.register(fastifyCompress, withGlobalOptions)
+app.register(fastifyCompress, withZstdOptions)
 
 app.register(fastifyCompress, {
   customTypes: value => value === 'application/json'
@@ -110,6 +116,15 @@ appWithoutGlobal.inject(
     expectType<Error | undefined>(err)
   }
 )
+
+// Test that invalid encoding values trigger TypeScript errors
+expectError(fastify().register(fastifyCompress, {
+  encodings: ['invalid-encoding']
+}))
+
+expectError(fastify().register(fastifyCompress, {
+  requestEncodings: ['another-invalid-encoding']
+}))
 
 // Instantiation of an app that should trigger a typescript error
 const appThatTriggerAnError = fastify()
