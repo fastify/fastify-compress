@@ -334,6 +334,12 @@ await fastify.register(
 )
 ```
 
+## Gotchas
+
+When you, or another plugin modify the request body, it's possible that `@fastify/compress` will recieve a response body that it doesn't know what to do with. If this happens when you call the `compress` function directly, it'll make a best effort at compressing the payload anyway, by using the fastify `serialize` function on whatever is passed.
+
+If the response is being compressed by the global hook, and it inadvertedly receives something it doesn't know what to do with, it'll ignore it completely and respond with the uncompressed payload. This to prevent inadvertedly breaking whole servers with hard to find bugs.
+
 ## Acknowledgments
 
 Past sponsors:
