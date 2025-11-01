@@ -255,14 +255,6 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       return next()
     }
 
-    if (isFetchResponse(payload)) {
-      payload = payload.body
-    }
-
-    if (isWebReadableStream(payload)) {
-      payload = webStreamToNodeReadable(payload)
-    }
-
     const responseEncoding = reply.getHeader('Content-Encoding')
     if (responseEncoding && responseEncoding !== 'identity') {
       // response is already compressed
@@ -299,10 +291,18 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < params.threshold) {
-        return next()
+      if (isFetchResponse(payload)) {
+        payload = payload.body
       }
-      payload = Readable.from(intoAsyncIterator(payload))
+
+      if (isWebReadableStream(payload)) {
+        payload = webStreamToNodeReadable(payload)
+      } else {
+        if (Buffer.byteLength(payload) < params.threshold) {
+          return next()
+        }
+        payload = Readable.from(intoAsyncIterator(payload))
+      }
     }
 
     setVaryHeader(reply)
@@ -385,14 +385,6 @@ function compress (params) {
       return
     }
 
-    if (isFetchResponse(payload)) {
-      payload = payload.body
-    }
-
-    if (isWebReadableStream(payload)) {
-      payload = webStreamToNodeReadable(payload)
-    }
-
     let stream, encoding
     const noCompress =
       // don't compress on x-no-compression header
@@ -425,7 +417,13 @@ function compress (params) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
+      if (isFetchResponse(payload)) {
+        payload = payload.body
+      }
+
+      if (isWebReadableStream(payload)) {
+        payload = webStreamToNodeReadable(payload)
+      } else if (!Buffer.isBuffer(payload) && typeof payload !== 'string') {
         payload = this.serialize(payload)
       }
     }
