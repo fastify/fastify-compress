@@ -83,7 +83,7 @@
     "url": "git+https://github.com/fastify/fastify-compress.git"
   },
   "tsd": {
-    "directory": "test/types"
+    "directory": "types"
   },
   "publishConfig": {
     "access": "public"

@@ -9,6 +9,7 @@ const JSONStream = require('jsonstream')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 const { once } = require('node:events')
+const { ReadableStream: WebReadableStream, Response } = globalThis
 
 describe('When `global` is not set, it is `true` by default :', async () => {
   test('it should compress Buffer data using brotli when `Accept-Encoding` request header is `br`', async (t) => {
@@ -264,6 +265,54 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     })
     const payload = zlib.gunzipSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), 'hello')
+  })
+
+  test('it should compress a Fetch API Response body', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'hello from fetch response'
+    fastify.get('/fetch-resp', (_request, reply) => {
+      const resp = new Response(body, { headers: { 'content-type': 'text/plain' } })
+      reply.send(resp)
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), body)
+  })
+
+  test('it should compress a Web ReadableStream body', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'hello from web stream'
+    fastify.get('/web-stream', (_request, reply) => {
+      const stream = new WebReadableStream({
+        start (controller) {
+          controller.enqueue(Buffer.from(body))
+          controller.close()
+        }
+      })
+      reply.header('content-type', 'text/plain')
+      reply.send(stream)
+    })
+
+    const response = await fastify.inject({
+      url: '/web-stream',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), body)
   })
 })
 

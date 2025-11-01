@@ -106,6 +106,40 @@ app.get('/', (req, reply) => {
 await app.listen({ port: 3000 })
 ```
 
+It's also possible to pass a Fetch API `Response` object or a Web `ReadableStream`. The plugin will automatically extract the body stream from the `Response` or convert the Web stream to a Node.js `Readable` behind the scenes.
+
+```js
+import fastify from 'fastify'
+
+const app = fastify()
+await app.register(import('@fastify/compress'), { global: true })
+
+app.get('/', async (req, reply) => {
+  const resp = new Response('Hello from Fetch Response')
+  reply.compress(resp)
+})
+```
+
+```js
+app.get('/', async (req, reply) => {
+  return new Response('Hello from Fetch Response')
+})
+```
+
+```js
+app.get('/', (req, reply) => {
+  const stream = new ReadableStream({
+    start (controller) {
+      controller.enqueue(new TextEncoder().encode('Hello from Web ReadableStream'))
+      controller.close()
+    }
+  })
+
+  reply.header('content-type', 'text/plain')
+  reply.compress(stream)
+})
+```
+
 ## Compress Options
 
 ### threshold
@@ -222,14 +256,23 @@ This plugin adds a `preParsing` hook to decompress the request payload based on 
 
 Currently, the following encoding tokens are supported:
 
-1. `zstd` (Node.js 22.15+/23.8+)
-2. `br`
-3. `gzip`
-4. `deflate`
+- `zstd` (Node.js 22.15+/23.8+)
+- `br`
+- `gzip`
+- `deflate`
 
 If an unsupported encoding or invalid payload is received, the plugin throws an error.
 
 If the request header is missing, the plugin yields to the next hook.
+
+### Supported payload types
+
+The plugin supports compressing the following payload types:
+
+- Strings and Buffers
+- Node.js streams
+- Response objects (from the Fetch API)
+- ReadableStream objects (from the Web Streams API)
 
 ### Global hook
 

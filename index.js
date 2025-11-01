@@ -12,7 +12,7 @@ const { Minipass } = require('minipass')
 const pumpify = require('pumpify')
 const { Readable } = require('readable-stream')
 
-const { isStream, isGzip, isDeflate, intoAsyncIterator } = require('./lib/utils')
+const { isStream, isGzip, isDeflate, intoAsyncIterator, isWebReadableStream, isFetchResponse, webStreamToNodeReadable } = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
@@ -254,6 +254,15 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     if (payload == null) {
       return next()
     }
+
+    if (isFetchResponse(payload)) {
+      payload = payload.body
+    }
+
+    if (isWebReadableStream(payload)) {
+      payload = webStreamToNodeReadable(payload)
+    }
+
     const responseEncoding = reply.getHeader('Content-Encoding')
     if (responseEncoding && responseEncoding !== 'identity') {
       // response is already compressed
@@ -374,6 +383,14 @@ function compress (params) {
     if (payload == null) {
       this.send(new Error('Internal server error'))
       return
+    }
+
+    if (isFetchResponse(payload)) {
+      payload = payload.body
+    }
+
+    if (isWebReadableStream(payload)) {
+      payload = webStreamToNodeReadable(payload)
     }
 
     let stream, encoding
