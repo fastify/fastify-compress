@@ -440,3 +440,33 @@ test('It should avoid to trigger `onSend` hook twice', async (t) => {
   })
   t.assert.deepEqual(JSON.parse(zlib.brotliDecompressSync(response.rawPayload)), { hi: true })
 })
+
+test('reply.compress should handle Fetch Response', async (t) => {
+  t.plan(1)
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { global: true, threshold: 0 })
+  fastify.get('/', (_req, reply) => {
+    const r = new Response('from reply.compress', { headers: { 'content-type': 'text/plain' } })
+    reply.compress(r)
+  })
+  const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
+  t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from reply.compress')
+})
+
+test('reply.compress should handle Web ReadableStream', async (t) => {
+  t.plan(1)
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { global: true, threshold: 0 })
+  fastify.get('/', (_req, reply) => {
+    const stream = new ReadableStream({
+      start (controller) {
+        controller.enqueue(Buffer.from('from webstream'))
+        controller.close()
+      }
+    })
+    reply.header('content-type', 'text/plain')
+    reply.compress(stream)
+  })
+  const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
+  t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
+})

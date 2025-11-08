@@ -132,3 +132,18 @@ expectError(appThatTriggerAnError.register(fastifyCompress, {
   global: true,
   thisOptionDoesNotExist: 'trigger a typescript error'
 }))
+
+app.get('/ts-fetch-response', async (_request, reply) => {
+  const resp = new Response('ok', { headers: { 'content-type': 'text/plain' } })
+  expectType<void>(reply.compress(resp))
+})
+
+app.get('/ts-web-readable-stream', async (_request, reply) => {
+  const stream = new ReadableStream({
+    start (controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3]))
+      controller.close()
+    }
+  })
+  expectType<void>(reply.compress(stream))
+})
