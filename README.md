@@ -62,8 +62,14 @@ If only compression or decompression is required, set the `globalCompression` or
 ```js
 await fastify.register(
   import('@fastify/compress'),
-  // only decompress compressed incoming requests
+  // Disable compression but keep decompression enabled (default behavior for globalDecompression is true)
   { globalCompression: false }
+)
+
+// Disable decompression but keep compression enabled
+await fastify.register(
+  import('@fastify/compress'),
+  { globalDecompression: false }
 )
 ```
 
