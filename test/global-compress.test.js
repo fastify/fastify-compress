@@ -3399,3 +3399,152 @@ for (const contentType of notByDefaultSupportedContentTypes) {
     t.assert.equal(response.rawPayload.toString('utf-8'), file)
   })
 }
+
+test('It should support separate globalCompression and globalDecompression settings', async (t) => {
+  t.plan(3)
+
+  // Test case: disable compression but enable decompression globally
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    globalCompression: false,
+    globalDecompression: true
+  })
+
+  const testData = { message: 'test data for decompression only' }
+
+  fastify.get('/', (request, reply) => {
+    reply.send(testData)
+  })
+
+  // Test that compression is disabled
+  const getResponse = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip, deflate, br'
+    }
+  })
+
+  t.assert.equal(getResponse.statusCode, 200)
+  // No compression should happen since globalCompression is false
+  t.assert.equal(getResponse.headers['content-encoding'], undefined)
+  t.assert.deepEqual(getResponse.json(), testData)
+})
+
+test('It should enable decompression when globalDecompression is true', async (t) => {
+  t.plan(2)
+
+  // Test case: enable decompression globally
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    globalCompression: false,
+    globalDecompression: true
+  })
+
+  // Create a compressed request payload to test decompression
+  const compressedPayload = zlib.gzipSync(JSON.stringify({ input: 'compressed data' }))
+
+  fastify.post('/', (request, reply) => {
+    // This should be decompressed automatically
+    reply.send({ received: request.body })
+  })
+
+  // Test that decompression is enabled
+  const postResponse = await fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-encoding': 'gzip',
+      'content-type': 'application/json'
+    },
+    payload: compressedPayload
+  })
+
+  t.assert.equal(postResponse.statusCode, 200)
+  // Decompression should work since globalDecompression is true
+  t.assert.deepEqual(postResponse.json(), { received: { input: 'compressed data' } })
+})
+
+test('It should fall back to global option when specific options are not provided', async (t) => {
+  t.plan(2)
+
+  // Test that global: false affects both compression and decompression
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: false
+  })
+
+  const testData = { message: 'test data' }
+
+  fastify.get('/', (request, reply) => {
+    reply.send(testData)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip, deflate, br'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  // No compression should happen since global is false
+  t.assert.equal(response.headers['content-encoding'], undefined)
+})
+
+test('It should demonstrate globalCompression overrides global setting', async (t) => {
+  t.plan(2)
+
+  // Test that globalCompression: true overrides global: false
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: false,
+    globalCompression: true,
+    threshold: 0
+  })
+
+  fastify.get('/', (request, reply) => {
+    reply.send({ message: 'globalCompression overrides global' })
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'GET',
+    headers: { 'accept-encoding': 'gzip' }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-encoding'], 'gzip') // Compression enabled despite global: false
+})
+
+test('It should demonstrate globalDecompression controls decompression independently', async (t) => {
+  t.plan(2)
+
+  // Test globalDecompression: false disables decompression even with global: true
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: true,
+    globalDecompression: false
+  })
+
+  const compressedPayload = zlib.gzipSync(JSON.stringify({ test: 'decompression' }))
+
+  fastify.post('/', (request, reply) => {
+    reply.send({ received: request.body })
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-encoding': 'gzip',
+      'content-type': 'application/json'
+    },
+    payload: compressedPayload
+  })
+
+  // Should get 400 error since decompression is disabled and compressed data can't be parsed
+  t.assert.equal(response.statusCode, 400)
+  t.assert.ok(response.body.includes('Content-Length') || response.body.includes('Bad Request'))
+})

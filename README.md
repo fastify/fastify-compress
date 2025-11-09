@@ -57,6 +57,23 @@ await fastify.register(
   { global: false }
 )
 ```
+
+If only compression or decompression is required, set the `globalCompression` or `globalDecompression` config flags to `false` respectively (both are `true` by default).
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  // Disable compression but keep decompression enabled (default behavior for globalDecompression is true)
+  { globalCompression: false }
+)
+
+// Disable decompression but keep compression enabled
+await fastify.register(
+  import('@fastify/compress'),
+  { globalDecompression: false }
+)
+```
+
 Fastify encapsulation can be used to set global compression but run it only in a subset of routes by wrapping them inside a plugin.
 
 > ℹ️ Note: If using `@fastify/compress` plugin together with `@fastify/static` plugin, `@fastify/compress` must be registered (with *global hook*) **before** registering `@fastify/static`.

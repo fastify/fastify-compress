@@ -124,7 +124,9 @@ function processCompressParams (opts) {
   }
 
   const params = {
-    global: (typeof opts.global === 'boolean') ? opts.global : true
+    global: (typeof opts.globalCompression === 'boolean')
+      ? opts.globalCompression
+      : (typeof opts.global === 'boolean') ? opts.global : true
   }
 
   params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
@@ -184,7 +186,9 @@ function processDecompressParams (opts) {
   const customZlib = opts.zlib || zlib
 
   const params = {
-    global: (typeof opts.global === 'boolean') ? opts.global : true,
+    global: (typeof opts.globalDecompression === 'boolean')
+      ? opts.globalDecompression
+      : (typeof opts.global === 'boolean') ? opts.global : true,
     onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
     onInvalidRequestPayload: opts.onInvalidRequestPayload,
     decompressStream: {
