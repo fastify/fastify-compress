@@ -447,7 +447,7 @@ function compress (params) {
 
     stream = zipStream(params.compressStream, encoding)
     pump(payload, stream, onEnd.bind(this))
-    this.send(stream)
+    return this.send(stream)
   }
 }
 
