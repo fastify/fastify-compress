@@ -765,6 +765,38 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
     const payload = zlib.gunzipSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), 'hello')
   })
+
+  test('using the fallback default Node.js core `zlib.createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      threshold: 0,
+      zlib: true, // will trigger a fallback on the default zlib.createZstdCompress
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd',
+      },
+    })
+
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), 'hello')
+  })
 })
 
 describe('When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true` :', async () => {

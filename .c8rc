@@ -3,7 +3,8 @@
   "exclude": [
     "test/",
     "coverage/",
-    "types/"
+    "types/",
+    "eslint.config.js"
   ],
   "clean": true,
   "check-coverage": true,
