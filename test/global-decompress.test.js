@@ -2,9 +2,9 @@
 
 const { test, describe } = require('node:test')
 const { createReadStream } = require('node:fs')
+const { pipeline } = require('node:stream')
 const path = require('node:path')
 const zlib = require('node:zlib')
-const pump = require('pump')
 const Fastify = require('fastify')
 const compressPlugin = require('../index')
 
@@ -12,7 +12,9 @@ function createPayload (compressor) {
   let payload = createReadStream(path.resolve(__dirname, '../package.json'))
 
   if (compressor) {
-    payload = pump(payload, compressor())
+    const compressed = compressor()
+    pipeline(payload, compressed, () => {})
+    payload = compressed
   }
 
   return payload
