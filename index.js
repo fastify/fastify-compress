@@ -2,14 +2,13 @@
 
 const zlib = require('node:zlib')
 const { inherits, format } = require('node:util')
+const { pipeline, compose } = require('node:stream')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
-const pump = require('pump')
 const mimedb = require('mime-db')
 const peek = require('peek-stream')
 const { Minipass } = require('minipass')
-const pumpify = require('pumpify')
 const { Readable } = require('readable-stream')
 
 const { isStream, isGzip, isDeflate, intoAsyncIterator, isWebReadableStream, isFetchResponse, webStreamToNodeReadable } = require('./lib/utils')
@@ -289,7 +288,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
         encoding === undefined
           ? reply.removeHeader('Content-Encoding')
           : reply.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
+        pipeline(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(reply))
       }
       return next(null, payload)
     }
@@ -316,7 +315,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     }
 
     stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(reply))
+    pipeline(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
 }
@@ -378,7 +377,10 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
     raw.on('data', trackEncodedLength.bind(decompresser))
     raw.on('end', removeEncodedLengthTracking)
 
-    next(null, pump(raw, decompresser))
+    pipeline(raw, decompresser, () => {
+      // Cleanup callback - decompression errors are handled by decompresser's error handler
+    })
+    next(null, decompresser)
   }
 }
 
@@ -415,7 +417,7 @@ function compress (params) {
         encoding === undefined
           ? this.removeHeader('Content-Encoding')
           : this.header('Content-Encoding', 'identity')
-        pump(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
+        pipeline(stream, payload = unzipStream(params.uncompressStream), onEnd.bind(this))
       }
       return this.send(payload)
     }
@@ -446,7 +448,7 @@ function compress (params) {
     }
 
     stream = zipStream(params.compressStream, encoding)
-    pump(payload, stream, onEnd.bind(this))
+    pipeline(payload, stream, onEnd.bind(this))
     return this.send(stream)
   }
 }
@@ -464,7 +466,13 @@ function setVaryHeader (reply) {
 }
 
 function onEnd (err) {
-  if (err) this.log.error(err)
+  // Client disconnection during streaming is expected and handled by Fastify.
+  // Do not log "premature close" errors at error level since they are not
+  // actual errors - they occur when clients disconnect mid-response.
+  // See: https://github.com/fastify/fastify-compress/issues/382
+  if (err && err.message !== 'premature close') {
+    this.log.error(err)
+  }
 }
 
 function trackEncodedLength (chunk) {
@@ -565,8 +573,8 @@ function unzipStream (inflate, maxRecursion) {
     /* c8 ignore next */
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
     switch (isCompressed(data)) {
-      case 1: return swap(null, pumpify(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
-      case 2: return swap(null, pumpify(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
+      case 1: return swap(null, compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
+      case 2: return swap(null, compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
     }
     return swap(null, new Minipass())
   })
