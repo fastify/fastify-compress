@@ -369,13 +369,13 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
 
     // Prepare decompression - If there is a decompress error, prepare the error for fastify handing
     const decompresser = params.decompressStream[encoding]()
-    decompresser.receivedEncodedLength = 0
     decompresser.on('error', onDecompressError.bind(this, request, params, encoding))
     decompresser.pause()
 
-    // Track length of encoded length to handle receivedEncodedLength
-    raw.on('data', trackEncodedLength.bind(decompresser))
-    raw.on('end', removeEncodedLengthTracking)
+    // Content-Length reflects the compressed wire size. After decompression it
+    // no longer matches the body size that Fastify validates against, causing
+    // FST_ERR_CTP_INVALID_CONTENT_LENGTH. Remove it so Fastify skips the check.
+    delete request.raw.headers['content-length']
 
     pipeline(raw, decompresser, () => {
       // Cleanup callback - decompression errors are handled by decompresser's error handler
@@ -473,15 +473,6 @@ function onEnd (err) {
   if (err && err.message !== 'premature close') {
     this.log.error(err)
   }
-}
-
-function trackEncodedLength (chunk) {
-  this.receivedEncodedLength += chunk.length
-}
-
-function removeEncodedLengthTracking () {
-  this.removeListener('data', trackEncodedLength)
-  this.removeListener('end', removeEncodedLengthTracking)
 }
 
 function onDecompressError (request, params, encoding, error) {
