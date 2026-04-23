@@ -470,3 +470,61 @@ test('reply.compress should handle Web ReadableStream', async (t) => {
   const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
 })
+
+// Regression: async route handlers that produce a compressed body must follow one of the
+// patterns documented in the Fastify Routes reference — otherwise `wrap-thenable` fires a second
+// `reply.send(undefined)` while the gzip stream is still piping, silently emptying the response
+// to `Content-Length: 0`. See:
+//   https://fastify.dev/docs/latest/Reference/Routes/#promise-resolution
+//
+// These tests exercise both documented-correct patterns against the compress onSend stream path
+// so future regressions in the interaction surface here rather than as empty 200s in production.
+describe('When an async handler produces a compressed response :', async () => {
+  const bigPayload = JSON.stringify(
+    Array.from({ length: 500 }, (_, i) => ({
+      id: `id-${i}`, name: `item ${i}`, createdAt: new Date().toISOString()
+    }))
+  )
+
+  test('it should deliver the full compressed body when the handler returns the payload', async (t) => {
+    t.plan(3)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, threshold: 5000 })
+
+    fastify.get('/', async (_req, reply) => {
+      reply.header('content-type', 'application/json')
+      return bigPayload
+    })
+
+    const res = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(res.statusCode, 200)
+    t.assert.equal(res.headers['content-encoding'], 'gzip')
+    t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), bigPayload)
+  })
+
+  test('it should deliver the full compressed body when the handler does `return reply.send(...)`', async (t) => {
+    t.plan(3)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, threshold: 5000 })
+
+    fastify.get('/', async (_req, reply) => {
+      reply.header('content-type', 'application/json')
+      return reply.send(bigPayload)
+    })
+
+    const res = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(res.statusCode, 200)
+    t.assert.equal(res.headers['content-encoding'], 'gzip')
+    t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), bigPayload)
+  })
+})
