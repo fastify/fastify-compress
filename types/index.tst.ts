@@ -1,6 +1,6 @@
 import fastify, { FastifyInstance } from 'fastify'
 import { createReadStream } from 'node:fs'
-import { expectError, expectType } from 'tsd'
+import { expect } from 'tstyche'
 import * as zlib from 'node:zlib'
 import fastifyCompress, { FastifyCompressOptions } from '..'
 
@@ -39,11 +39,11 @@ app.register(fastifyCompress, {
 })
 
 app.get('/test-one', async (_request, reply) => {
-  expectType<void>(reply.compress(stream))
+  expect(reply.compress(stream)).type.toBe<void>()
 })
 
 app.get('/test-two', async (_request, reply) => {
-  expectError(reply.compress())
+  expect(reply.compress).type.not.toBeCallableWith()
 })
 
 // Instantiation of an app without global
@@ -64,7 +64,7 @@ appWithoutGlobal.get('/one', {
     }
   }
 }, (_request, reply) => {
-  expectType<void>(reply.type('text/plain').compress(stream))
+  expect(reply.type('text/plain').compress(stream)).type.toBe<void>()
 })
 
 appWithoutGlobal.get('/two', {
@@ -82,27 +82,23 @@ appWithoutGlobal.get('/two', {
     }
   }
 }, (_request, reply) => {
-  expectType<void>(reply.type('text/plain').compress(stream))
+  expect(reply.type('text/plain').compress(stream)).type.toBe<void>()
 })
 
-expectError(
-  appWithoutGlobal.get('/throw-a-ts-arg-error-on-shorthand-route', {
-    compress: 'bad compress route option value',
-    decompress: 'bad decompress route option value'
-  }, (_request, reply) => {
-    expectType<void>(reply.type('text/plain').compress(stream))
-  })
-)
+expect(appWithoutGlobal.get).type.not.toBeCallableWith('/throw-a-ts-arg-error-on-shorthand-route', {
+  compress: 'bad compress route option value',
+  decompress: 'bad decompress route option value'
+}, (_request: any, reply: any) => {
+  reply.type('text/plain').compress(stream)
+})
 
-expectError(
-  appWithoutGlobal.route({
-    method: 'GET',
-    path: '/throw-a-ts-arg-error',
-    compress: 'bad compress route option value',
-    decompress: 'bad decompress route option value',
-    handler: (_request, reply) => { expectType<void>(reply.type('text/plain').compress(stream)) }
-  })
-)
+expect(appWithoutGlobal.route).type.not.toBeCallableWith({
+  method: 'GET',
+  path: '/throw-a-ts-arg-error',
+  compress: 'bad compress route option value',
+  decompress: 'bad decompress route option value',
+  handler: (_request: any, reply: any) => { reply.type('text/plain').compress(stream) }
+})
 
 appWithoutGlobal.inject(
   {
@@ -113,29 +109,29 @@ appWithoutGlobal.inject(
     }
   },
   (err) => {
-    expectType<Error | undefined>(err)
+    expect(err).type.toBe<Error | undefined>()
   }
 )
 
 // Test that invalid encoding values trigger TypeScript errors
-expectError(fastify().register(fastifyCompress, {
+expect(fastify().register).type.not.toBeCallableWith(fastifyCompress, {
   encodings: ['invalid-encoding']
-}))
+})
 
-expectError(fastify().register(fastifyCompress, {
+expect(fastify().register).type.not.toBeCallableWith(fastifyCompress, {
   requestEncodings: ['another-invalid-encoding']
-}))
+})
 
 // Instantiation of an app that should trigger a typescript error
 const appThatTriggerAnError = fastify()
-expectError(appThatTriggerAnError.register(fastifyCompress, {
+expect(appThatTriggerAnError.register).type.not.toBeCallableWith(fastifyCompress, {
   global: true,
   thisOptionDoesNotExist: 'trigger a typescript error'
-}))
+})
 
 app.get('/ts-fetch-response', async (_request, reply) => {
   const resp = new Response('ok', { headers: { 'content-type': 'text/plain' } })
-  expectType<void>(reply.compress(resp))
+  expect(reply.compress(resp)).type.toBe<void>()
 })
 
 app.get('/ts-web-readable-stream', async (_request, reply) => {
@@ -145,5 +141,5 @@ app.get('/ts-web-readable-stream', async (_request, reply) => {
       controller.close()
     }
   })
-  expectType<void>(reply.compress(stream))
+  expect(reply.compress(stream)).type.toBe<void>()
 })
