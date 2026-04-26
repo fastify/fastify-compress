@@ -21,14 +21,14 @@
     "fastify": "^5.0.0",
     "jsonstream": "^1.0.3",
     "neostandard": "^0.13.0",
-    "tsd": "^0.33.0",
+    "tstyche": "^7.1.0",
     "typescript": "~6.0.2"
   },
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "test": "npm run test:unit && npm run test:typescript",
-    "test:typescript": "tsd",
+    "test:typescript": "tstyche",
     "test:unit": "node --test",
     "test:coverage": "c8 node --test && c8 report --reporter=html",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
@@ -79,9 +79,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fastify/fastify-compress.git"
-  },
-  "tsd": {
-    "directory": "types"
   },
   "publishConfig": {
     "access": "public"
