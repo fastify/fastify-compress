@@ -92,12 +92,14 @@ expect(appWithoutGlobal.get).type.not.toBeCallableWith('/throw-a-ts-arg-error-on
   reply.type('text/plain').compress(stream)
 })
 
-expect(appWithoutGlobal.route).type.not.toBeCallableWith({
+appWithoutGlobal.route({
   method: 'GET',
   path: '/throw-a-ts-arg-error',
+  // @ts-expect-error Type 'string' is not assignable
   compress: 'bad compress route option value',
+  // @ts-expect-error Type 'string' is not assignable
   decompress: 'bad decompress route option value',
-  handler: (_request: any, reply: any) => { reply.type('text/plain').compress(stream) }
+  handler: (_request, reply) => { reply.type('text/plain').compress(stream) }
 })
 
 appWithoutGlobal.inject(
