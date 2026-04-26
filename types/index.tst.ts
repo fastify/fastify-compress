@@ -85,10 +85,12 @@ appWithoutGlobal.get('/two', {
   expect(reply.type('text/plain').compress(stream)).type.toBe<void>()
 })
 
-expect(appWithoutGlobal.get).type.not.toBeCallableWith('/throw-a-ts-arg-error-on-shorthand-route', {
+appWithoutGlobal.get('/throw-a-ts-arg-error-on-shorthand-route', {
+  // @ts-expect-error Type 'string' is not assignable
   compress: 'bad compress route option value',
+  // @ts-expect-error Type 'string' is not assignable
   decompress: 'bad decompress route option value'
-}, (_request: any, reply: any) => {
+}, (_request, reply) => {
   reply.type('text/plain').compress(stream)
 })
 
