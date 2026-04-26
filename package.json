@@ -80,11 +80,6 @@
     "type": "git",
     "url": "git+https://github.com/fastify/fastify-compress.git"
   },
-  "tstyche": {
-    "testFileMatch": [
-      "types/*.tst.ts"
-    ]
-  },
   "publishConfig": {
     "access": "public"
   }
