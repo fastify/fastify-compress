@@ -2,12 +2,11 @@
 
 const zlib = require('node:zlib')
 const { inherits, format } = require('node:util')
-const { pipeline, compose } = require('node:stream')
+const { pipeline, compose, Duplex } = require('node:stream')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const mimedb = require('mime-db')
-const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const { Readable } = require('readable-stream')
 
@@ -556,8 +555,56 @@ function maybeUnzip (payload, serialize) {
   return Readable.from(intoAsyncIterator(result))
 }
 
+function createPeekStream (maxBuffer, onpeek) {
+  let buf = Buffer.alloc(0)
+  let dest = null
+
+  return new Duplex({
+    write (chunk, encoding, cb) {
+      if (dest) {
+        return dest.write(chunk, encoding, cb)
+      }
+
+      buf = Buffer.concat([buf, chunk])
+
+      if (buf.length < maxBuffer) return cb()
+
+      onpeek(buf, (err, stream) => {
+        if (err) return cb(err)
+        dest = stream
+        dest.on('data', (d) => this.push(d))
+        dest.on('end', () => this.push(null))
+        dest.write(buf, cb)
+        buf = null
+      })
+    },
+
+    final (cb) {
+      if (dest) {
+        dest.end(cb)
+        return
+      }
+
+      onpeek(buf, (err, stream) => {
+        if (err) return cb(err)
+        dest = stream
+        dest.on('data', (d) => this.push(d))
+        dest.on('end', () => { this.push(null); cb() })
+        if (buf && buf.length > 0) {
+          dest.end(buf)
+        } else {
+          dest.end()
+        }
+        buf = null
+      })
+    },
+
+    read () {}
+  })
+}
+
 function zipStream (deflate, encoding) {
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+  return createPeekStream(10, function (data, swap) {
     switch (isCompressed(data)) {
       case 1: return swap(null, new Minipass())
       case 2: return swap(null, new Minipass())
@@ -568,7 +615,7 @@ function zipStream (deflate, encoding) {
 
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+  return createPeekStream(10, function (data, swap) {
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
     /* c8 ignore next */
     if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
