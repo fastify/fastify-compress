@@ -3,8 +3,9 @@
 const { createReadStream } = require('node:fs')
 const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
+const { pipeline } = require('node:stream/promises')
 const { test } = require('node:test')
-const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
+const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createPeekStream } = require('../lib/utils')
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)
@@ -123,4 +124,125 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   for await (const chunk of intoAsyncIterator(obj)) {
     equal(chunk, obj)
   }
+})
+
+test('createPeekStream() should peek at first N bytes and pipe through selected stream', async (t) => {
+  const input = Buffer.from('hello world')
+  const chunks = []
+
+  const peekStream = createPeekStream(5, (data, swap) => {
+    t.assert.equal(data.length, 5)
+    t.assert.equal(data.toString(), 'hello')
+    const pt = new PassThrough()
+    swap(null, pt)
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(input)
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'hello world')
+})
+
+test('createPeekStream() should work when data arrives in small chunks', async (t) => {
+  const chunks = []
+
+  const peekStream = createPeekStream(4, (data, swap) => {
+    t.assert.equal(data.length, 4)
+    t.assert.equal(data.toString(), 'abcd')
+    swap(null, new PassThrough())
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('ab'))
+    peekStream.write(Buffer.from('cd'))
+    peekStream.write(Buffer.from('ef'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'abcdef')
+})
+
+test('createPeekStream() should handle stream ending before maxBuffer is reached', async (t) => {
+  const chunks = []
+
+  const peekStream = createPeekStream(10, (data, swap) => {
+    t.assert.equal(data.toString(), 'hi')
+    swap(null, new PassThrough())
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('hi'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'hi')
+})
+
+test('createPeekStream() should propagate errors from callback', async (t) => {
+  const peekStream = createPeekStream(2, (data, swap) => {
+    swap(new Error('test error'))
+  })
+
+  await t.assert.rejects(
+    pipeline(Readable.from(Buffer.from('hello')), peekStream, new PassThrough()),
+    { message: 'test error' }
+  )
+})
+
+test('createPeekStream() should handle empty stream', async (t) => {
+  const chunks = []
+
+  const peekStream = createPeekStream(10, (data, swap) => {
+    t.assert.equal(data.length, 0)
+    swap(null, new PassThrough())
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).length, 0)
+})
+
+test('createPeekStream() should work with a transform stream as destination', async (t) => {
+  const chunks = []
+
+  const upper = new Transform({
+    transform (chunk, enc, cb) {
+      cb(null, chunk.toString().toUpperCase())
+    }
+  })
+
+  const peekStream = createPeekStream(3, (data, swap) => {
+    swap(null, upper)
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('hello'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'HELLO')
 })
