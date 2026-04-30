@@ -268,6 +268,19 @@ By default, `@fastify/compress` removes the reply `Content-Length` header. Chang
   )
 ```
 
+### isCompressiblePayload
+A function to determine whether a non-stream payload can be compressed. By default, only `Buffer` and `string` payloads are considered compressible. If the payload is not compressible, it is passed through without compression.
+
+This can be useful when other plugins replace the payload in an `onSend` hook with a type that `Buffer.byteLength` cannot handle.
+
+```js
+  await server.register(fastifyCompress, {
+    isCompressiblePayload: (payload) => {
+      return Buffer.isBuffer(payload) || typeof payload === 'string'
+    }
+  })
+```
+
 ## Usage - Decompress request payloads
 This plugin adds a `preParsing` hook to decompress the request payload based on the `content-encoding` request header.
 
@@ -393,6 +406,12 @@ await fastify.register(
   }
 )
 ```
+
+## Gotchas
+
+When you, or another plugin modify the request body, it's possible that `@fastify/compress` will recieve a response body that it doesn't know what to do with. If this happens when you call the `compress` function directly, it'll make a best effort at compressing the payload anyway, by using the fastify `serialize` function on whatever is passed.
+
+If the response is being compressed by the global hook, and it inadvertedly receives something it doesn't know what to do with, it'll ignore it completely and respond with the uncompressed payload. This to prevent inadvertedly breaking whole servers with hard to find bugs.
 
 ## Acknowledgments
 
