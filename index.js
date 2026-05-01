@@ -2,14 +2,11 @@
 
 const zlib = require('node:zlib')
 const { inherits, format } = require('node:util')
-const { pipeline, compose } = require('node:stream')
+const { pipeline, compose, Readable, Transform } = require('node:stream')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const mimedb = require('mime-db')
-const peek = require('peek-stream')
-const { Minipass } = require('minipass')
-const { Readable } = require('readable-stream')
 
 const { isStream, isGzip, isDeflate, intoAsyncIterator, isWebReadableStream, isFetchResponse, webStreamToNodeReadable } = require('./lib/utils')
 
@@ -557,26 +554,90 @@ function maybeUnzip (payload, serialize) {
 }
 
 function zipStream (deflate, encoding) {
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
-    switch (isCompressed(data)) {
-      case 1: return swap(null, new Minipass())
-      case 2: return swap(null, new Minipass())
+  let compressor = null
+  let isPassthrough = false
+
+  return new Transform({
+    transform (chunk, _enc, callback) {
+      if (isPassthrough) {
+        callback(null, chunk)
+        return
+      }
+
+      if (compressor !== null) {
+        compressor.write(chunk, callback)
+        return
+      }
+
+      switch (isCompressed(chunk)) {
+        case 1:
+        case 2:
+          isPassthrough = true
+          callback(null, chunk)
+          return
+      }
+
+      compressor = deflate[encoding]()
+      compressor.on('data', (c) => this.push(c))
+      compressor.on('error', (err) => this.destroy(err))
+      compressor.write(chunk, callback)
+    },
+    flush (callback) {
+      if (compressor !== null) {
+        compressor.once('end', callback)
+        compressor.end()
+      } else {
+        callback()
+      }
     }
-    return swap(null, deflate[encoding]())
   })
 }
 
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
-    // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
-    /* c8 ignore next */
-    if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
-    switch (isCompressed(data)) {
-      case 1: return swap(null, compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
-      case 2: return swap(null, compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
+  let decompressor = null
+  let isPassthrough = false
+
+  return new Transform({
+    transform (chunk, _enc, callback) {
+      if (isPassthrough) {
+        callback(null, chunk)
+        return
+      }
+
+      if (decompressor !== null) {
+        decompressor.write(chunk, callback)
+        return
+      }
+
+      switch (isCompressed(chunk)) {
+        case 1: {
+          decompressor = compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1))
+          decompressor.on('data', (c) => this.push(c))
+          decompressor.on('error', (err) => this.destroy(err))
+          decompressor.write(chunk, callback)
+          return
+        }
+        case 2: {
+          decompressor = compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1))
+          decompressor.on('data', (c) => this.push(c))
+          decompressor.on('error', (err) => this.destroy(err))
+          decompressor.write(chunk, callback)
+          return
+        }
+      }
+
+      isPassthrough = true
+      callback(null, chunk)
+    },
+    flush (callback) {
+      if (decompressor !== null) {
+        decompressor.once('end', callback)
+        decompressor.end()
+      } else {
+        callback()
+      }
     }
-    return swap(null, new Minipass())
   })
 }
 

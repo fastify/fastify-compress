@@ -765,6 +765,37 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
     const payload = zlib.gunzipSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), 'hello')
   })
+
+  test('using the fallback default Node.js core `zlib.createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      threshold: 0,
+      zlib: true // will trigger a fallback on the default zlib.createZstdCompress
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), 'hello')
+  })
 })
 
 describe('When `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true` :', async () => {
@@ -2057,6 +2088,33 @@ describe('It should remove `Content-Length` header :', async () => {
     t.assert.ok(!response.headers.vary)
     t.assert.ok(!response.headers['content-length'], 'no content length')
     t.assert.equal(file, response.payload)
+  })
+
+  test('using `onSend` hook on a multi-chunk uncompressed Stream when `inflateIfDeflated` is `true` and `X-No-Compression` request header is `true`', async (t) => {
+    t.plan(4)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, inflateIfDeflated: true })
+
+    fastify.get('/', (_request, reply) => {
+      const stream = new Readable({ read () {} })
+      reply.header('Content-Type', 'text/plain').send(stream)
+      stream.push('hello ')
+      stream.push('world')
+      stream.push(null)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'x-no-compression': true
+      }
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.ok(!response.headers.vary)
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(response.payload, 'hello world')
   })
 })
 
