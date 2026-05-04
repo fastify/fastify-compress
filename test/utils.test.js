@@ -3,8 +3,9 @@
 const { createReadStream } = require('node:fs')
 const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
+const { pipeline } = require('node:stream/promises')
 const { test } = require('node:test')
-const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
+const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createLazyTransform } = require('../lib/utils')
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)
@@ -123,4 +124,124 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   for await (const chunk of intoAsyncIterator(obj)) {
     equal(chunk, obj)
   }
+})
+
+test('createLazyTransform() should peek at first N bytes and pipe through selected stream', async (t) => {
+  const input = Buffer.from('hello world')
+  const chunks = []
+
+  const peekStream = createLazyTransform((data) => {
+    t.assert.equal(data.length, 5)
+    t.assert.equal(data.toString(), 'hello')
+    return new PassThrough()
+  }, 5)
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(input)
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'hello world')
+})
+
+test('createLazyTransform() should work when data arrives in small chunks', async (t) => {
+  const chunks = []
+
+  const peekStream = createLazyTransform((data) => {
+    t.assert.equal(data.length, 4)
+    t.assert.equal(data.toString(), 'abcd')
+    return new PassThrough()
+  }, 4)
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('ab'))
+    peekStream.write(Buffer.from('cd'))
+    peekStream.write(Buffer.from('ef'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'abcdef')
+})
+
+test('createLazyTransform() should handle stream ending before maxBuffer is reached', async (t) => {
+  const chunks = []
+
+  const peekStream = createLazyTransform((data) => {
+    t.assert.equal(data.toString(), 'hi')
+    return new PassThrough()
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('hi'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'hi')
+})
+
+test('createLazyTransform() should propagate errors from choose function', async (t) => {
+  const peekStream = createLazyTransform(() => {
+    throw new Error('test error')
+  }, 2)
+
+  await t.assert.rejects(
+    pipeline(Readable.from(Buffer.from('hello')), peekStream, new PassThrough()),
+    { message: 'test error' }
+  )
+})
+
+test('createLazyTransform() should handle empty stream', async (t) => {
+  const chunks = []
+
+  const peekStream = createLazyTransform((data) => {
+    t.assert.equal(data.length, 0)
+    return new PassThrough()
+  })
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).length, 0)
+})
+
+test('createLazyTransform() should work with a transform stream as destination', async (t) => {
+  const chunks = []
+
+  const upper = new Transform({
+    transform (chunk, enc, cb) {
+      cb(null, chunk.toString().toUpperCase())
+    }
+  })
+
+  const peekStream = createLazyTransform(() => {
+    return upper
+  }, 3)
+
+  peekStream.on('data', (chunk) => chunks.push(chunk))
+
+  await new Promise((resolve, reject) => {
+    peekStream.on('end', resolve)
+    peekStream.on('error', reject)
+    peekStream.write(Buffer.from('hello'))
+    peekStream.end()
+  })
+
+  t.assert.equal(Buffer.concat(chunks).toString(), 'HELLO')
 })
