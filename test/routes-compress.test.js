@@ -328,6 +328,43 @@ describe('When `compress.removeContentLengthHeader` is `false`, it should not re
     equal(response.headers['content-length'], payload.length.toString())
     equal(payload.toString('utf-8'), file)
   })
+
+  test('using global setting with partial route options', async (t) => {
+    t.plan(4)
+    const equal = t.assert.equal
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, removeContentLengthHeader: false })
+
+    fastify.get('/', {
+      compress: { threshold: 1 }
+    }, (_request, reply) => {
+      readFile('./package.json', 'utf8', (err, data) => {
+        if (err) {
+          return reply.send(err)
+        }
+
+        reply
+          .type('text/plain')
+          .header('content-length', '' + data.length)
+          .send(data)
+      })
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    })
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.inflateSync(response.rawPayload)
+    equal(response.headers.vary, 'accept-encoding')
+    equal(response.headers['content-encoding'], 'deflate')
+    equal(response.headers['content-length'], payload.length.toString())
+    equal(payload.toString('utf-8'), file)
+  })
 })
 
 describe('When using the old routes `{ config: compress }` option :', async () => {
