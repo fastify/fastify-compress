@@ -57,9 +57,10 @@ function fastifyCompress (fastify, opts, next) {
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
-        const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.compress)
-        )
+        // Merge raw user options first so that route options that are *partial*
+        // do not silently overwrite globally-defined fields with `undefined`.
+        // See https://github.com/fastify/fastify-compress/issues/340
+        const mergedCompressParams = processCompressParams({ ...opts, ...routeOptions.compress })
 
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
@@ -86,10 +87,10 @@ function fastifyCompress (fastify, opts, next) {
     // Manage decompression options
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
-        // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        // Merge raw user options first so that route options that are *partial*
+        // do not silently overwrite globally-defined fields with `undefined`.
+        // See https://github.com/fastify/fastify-compress/issues/340
+        const mergedDecompressParams = processDecompressParams({ ...opts, ...routeOptions.decompress })
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {

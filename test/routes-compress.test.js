@@ -470,3 +470,41 @@ test('reply.compress should handle Web ReadableStream', async (t) => {
   const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
 })
+
+describe('When routes `compress` options are partial — issue #340 :', async () => {
+  test('it should fall back to global `onUnsupportedEncoding` when the route only sets `threshold`', async (t) => {
+    t.plan(2)
+
+    let globalUnsupportedCalled = false
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      threshold: 0,
+      onUnsupportedEncoding (encoding, _req, reply) {
+        globalUnsupportedCalled = true
+        reply.code(406)
+        return `global handler saw ${encoding}`
+      }
+    })
+
+    // Route only sets `threshold` — global `onUnsupportedEncoding` must still apply.
+    fastify.get('/', {
+      compress: {
+        threshold: 0
+      }
+    }, (_req, reply) => {
+      reply.header('content-type', 'text/plain')
+      reply.send('hello world')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'whatever' }
+    })
+
+    t.assert.equal(globalUnsupportedCalled, true)
+    t.assert.equal(response.payload, 'global handler saw whatever')
+  })
+})

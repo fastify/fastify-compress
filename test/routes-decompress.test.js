@@ -318,3 +318,121 @@ describe('When using the old routes `{ config: decompress }` option :', async ()
     }
   })
 })
+
+describe('When routes `decompress` options are partial — issue #340 :', async () => {
+  test('it should fall back to global `onInvalidRequestPayload` when the route only sets `onUnsupportedRequestEncoding`', async (t) => {
+    t.plan(2)
+
+    let globalInvalidCalled = false
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onInvalidRequestPayload (encoding, _request, error) {
+        globalInvalidCalled = true
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_INVALID',
+          error: 'Bad Request',
+          message: `global handler saw ${encoding} ${error.message}`
+        }
+      },
+      onUnsupportedRequestEncoding (encoding) {
+        return {
+          statusCode: 415,
+          code: 'GLOBAL_UNSUPPORTED',
+          error: 'Unsupported Media Type',
+          message: `global unsupported ${encoding}`
+        }
+      }
+    })
+
+    // Route only sets `onUnsupportedRequestEncoding`. The global
+    // `onInvalidRequestPayload` should still apply for this route — instead
+    // the bug overwrites the global hook with `undefined`.
+    fastify.post('/', {
+      decompress: {
+        onUnsupportedRequestEncoding (encoding) {
+          return {
+            statusCode: 415,
+            code: 'ROUTE_UNSUPPORTED',
+            error: 'Unsupported Media Type',
+            message: `route unsupported ${encoding}`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    // Send a gzip body but advertise deflate -> triggers onInvalidRequestPayload
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+
+    t.assert.equal(globalInvalidCalled, true)
+    t.assert.equal(response.json().code, 'GLOBAL_INVALID')
+  })
+
+  test('it should fall back to global `onUnsupportedRequestEncoding` when the route only sets `onInvalidRequestPayload`', async (t) => {
+    t.plan(2)
+
+    let globalUnsupportedCalled = false
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedRequestEncoding (encoding) {
+        globalUnsupportedCalled = true
+        return {
+          statusCode: 415,
+          code: 'GLOBAL_UNSUPPORTED',
+          error: 'Unsupported Media Type',
+          message: `global unsupported ${encoding}`
+        }
+      },
+      onInvalidRequestPayload (encoding, _req, error) {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_INVALID',
+          error: 'Bad Request',
+          message: `global invalid ${encoding} ${error.message}`
+        }
+      }
+    })
+
+    fastify.post('/', {
+      decompress: {
+        onInvalidRequestPayload (encoding, _req, error) {
+          return {
+            statusCode: 400,
+            code: 'ROUTE_INVALID',
+            error: 'Bad Request',
+            message: `route invalid ${encoding} ${error.message}`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'whatever'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+
+    t.assert.equal(globalUnsupportedCalled, true)
+    t.assert.equal(response.json().code, 'GLOBAL_UNSUPPORTED')
+  })
+})
