@@ -10,13 +10,6 @@ import { Stream } from 'node:stream'
 import { BrotliOptions, ZlibOptions } from 'node:zlib'
 
 declare module 'fastify' {
-  export interface FastifyContextConfig {
-    /** @deprecated `config.compress` is deprecated, use `compress` shorthand option instead */
-    compress?: RouteCompressOptions | false;
-    /** @deprecated `config.decompress` is deprecated, use `decompress` shorthand option instead */
-    decompress?: RouteDecompressOptions | false;
-  }
-
   export interface RouteShorthandOptions<
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     RawServer extends RawServerBase = RawServerDefault
@@ -96,13 +89,6 @@ declare namespace fastifyCompress {
   }
 
   export interface RouteOptions extends FastifyRouteOptions, FastifyCompressRouteOptions { }
-
-  export interface RoutesConfigCompressOptions {
-    /** @deprecated `config.compress` is deprecated, use `compress` shorthand option instead */
-    compress?: RouteCompressOptions | false;
-    /** @deprecated `config.decompress` is deprecated, use `decompress` shorthand option instead */
-    decompress?: RouteDecompressOptions | false;
-  }
 
   export const fastifyCompress: FastifyCompress
   export { fastifyCompress as default }
