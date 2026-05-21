@@ -365,6 +365,38 @@ describe('When `compress.removeContentLengthHeader` is `false`, it should not re
     equal(response.headers['content-length'], payload.length.toString())
     equal(payload.toString('utf-8'), file)
   })
+
+  test('using global onUnsupportedEncoding with partial route options', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding: (encoding, _request, reply) => {
+        reply.code(406)
+        return JSON.stringify({ hello: encoding })
+      }
+    })
+
+    fastify.get('/', {
+      compress: { threshold: 1 }
+    }, (_request, reply) => {
+      reply
+        .type('text/plain')
+        .send('hello world')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'hello'
+      }
+    })
+    t.assert.equal(response.statusCode, 406)
+    t.assert.ok(!response.headers.vary)
+    t.assert.deepEqual(JSON.parse(response.payload), { hello: 'hello' })
+  })
 })
 
 describe('When using the old routes `{ config: compress }` option :', async () => {
