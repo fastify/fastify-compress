@@ -3548,3 +3548,56 @@ test('It should demonstrate globalDecompression controls decompression independe
   t.assert.equal(response.statusCode, 400)
   t.assert.ok(response.body.includes('Content-Length') || response.body.includes('Bad Request'))
 })
+
+describe('Range Responses', () => {
+  test('it should not compress 206 Partial Content responses', async (t) => {
+    t.plan(4)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/partial', (request, reply) => {
+      reply
+        .status(206)
+        .header('Content-Type', 'text/plain')
+        .header('Content-Range', 'bytes 0-4/12')
+        .header('Content-Length', '5')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/partial',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(response.statusCode, 206)
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['content-range'], 'bytes 0-4/12')
+    t.assert.equal(response.body, 'hello')
+  })
+
+  test('it should not compress responses carrying a Content-Range header', async (t) => {
+    t.plan(4)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/content-range', (request, reply) => {
+      reply
+        .header('Content-Type', 'text/plain')
+        .header('Content-Range', 'bytes 0-4/12')
+        .header('Content-Length', '5')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/content-range',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['content-range'], 'bytes 0-4/12')
+    t.assert.equal(response.body, 'hello')
+  })
+})
