@@ -2401,6 +2401,41 @@ describe('It should add hooks correctly: ', async () => {
 })
 
 describe('When `Accept-Encoding` request header values are not supported and `onUnsupportedEncoding` is defined :', async () => {
+  test('it should not call `onUnsupportedEncoding()` when supported encoding is skipped by x-no-compression', async (t) => {
+    t.plan(4)
+
+    let unsupportedCalls = 0
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding: (encoding, _request, reply) => {
+        unsupportedCalls++
+        reply.code(406)
+        return JSON.stringify({ hello: encoding })
+      }
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .header('Content-Type', 'text/plain')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip',
+        'x-no-compression': true
+      }
+    })
+
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.payload, 'hello')
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.equal(unsupportedCalls, 0)
+  })
+
   test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
     t.plan(2)
 
@@ -3216,6 +3251,40 @@ describe('It should uncompress data when `Accept-Encoding` request header is mis
 })
 
 describe('When `onUnsupportedEncoding` is set and the `Accept-Encoding` request header value is an unsupported encoding', async () => {
+  test('it should not call `onUnsupportedEncoding()` when supported encoding is skipped by content type', async (t) => {
+    t.plan(4)
+
+    let unsupportedCalls = 0
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding: (encoding, _request, reply) => {
+        unsupportedCalls++
+        reply.code(406)
+        return JSON.stringify({ hello: encoding })
+      }
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('image/png')
+        .compress(Buffer.from('hello'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.rawPayload.toString(), 'hello')
+    t.assert.ok(!response.headers['content-encoding'])
+    t.assert.equal(unsupportedCalls, 0)
+  })
+
   test('it should call the defined `onUnsupportedEncoding()` method', async (t) => {
     t.plan(3)
 
