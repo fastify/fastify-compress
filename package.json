@@ -7,7 +7,7 @@
   "types": "types/index.d.ts",
   "dependencies": {
     "@fastify/accept-negotiator": "^2.0.0",
-    "fastify-plugin": "^5.0.0",
+    "fastify-plugin": "^6.0.0",
     "mime-db": "^1.52.0",
     "minipass": "^7.0.4",
     "peek-stream": "^1.1.3",
