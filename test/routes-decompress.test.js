@@ -138,6 +138,71 @@ describe('When using routes `decompress` settings :', async () => {
     equal(response.body, '@fastify/compress')
   })
 
+  test('it should merge partial route options with global decompression options', async (t) => {
+    t.plan(4)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload (encoding, _request, error) {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_INVALID',
+          error: 'Bad Request',
+          message: `Global invalid payload handler for ${encoding}: ${error.message}.`
+        }
+      },
+      onUnsupportedRequestEncoding (encoding) {
+        return {
+          statusCode: 415,
+          code: 'GLOBAL_UNSUPPORTED',
+          error: 'Unsupported Media Type',
+          message: `Global unsupported encoding handler for ${encoding}.`
+        }
+      }
+    })
+
+    fastify.post('/custom', {
+      decompress: {
+        onUnsupportedRequestEncoding (encoding) {
+          return {
+            statusCode: 415,
+            code: 'ROUTE_UNSUPPORTED',
+            error: 'Unsupported Media Type',
+            message: `Route unsupported encoding handler for ${encoding}.`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const invalidPayloadResponse = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+
+    t.assert.equal(invalidPayloadResponse.statusCode, 400)
+    t.assert.equal(invalidPayloadResponse.json().code, 'GLOBAL_INVALID')
+
+    const unsupportedEncodingResponse = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'whatever'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+
+    t.assert.equal(unsupportedEncodingResponse.statusCode, 415)
+    t.assert.equal(unsupportedEncodingResponse.json().code, 'ROUTE_UNSUPPORTED')
+  })
+
   test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
     t.plan(6)
     const equal = t.assert.equal

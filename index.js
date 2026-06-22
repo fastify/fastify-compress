@@ -77,9 +77,7 @@ function fastifyCompress (fastify, opts, next) {
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        const mergedDecompressParams = processDecompressParams(routeOptions.decompress, globalDecompressParams)
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {
@@ -166,30 +164,37 @@ function processCompressParams (opts) {
   return params
 }
 
-function processDecompressParams (opts) {
+function processDecompressParams (opts, defaults) {
   /* c8 ignore next 3 */
   if (!opts) {
     return
   }
 
-  const customZlib = opts.zlib || zlib
+  const customZlib = opts.zlib || {}
+  const defaultDecompressStream = defaults?.decompressStream || {}
 
   const params = {
-    global: (typeof opts.globalDecompression === 'boolean')
+    global: typeof opts.globalDecompression === 'boolean'
       ? opts.globalDecompression
-      : (typeof opts.global === 'boolean') ? opts.global : true,
-    onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
-    onInvalidRequestPayload: opts.onInvalidRequestPayload,
+      : typeof opts.global === 'boolean'
+        ? opts.global
+        : defaults?.global ?? true,
+    onUnsupportedRequestEncoding: Object.hasOwn(opts, 'onUnsupportedRequestEncoding')
+      ? opts.onUnsupportedRequestEncoding
+      : defaults?.onUnsupportedRequestEncoding,
+    onInvalidRequestPayload: Object.hasOwn(opts, 'onInvalidRequestPayload')
+      ? opts.onInvalidRequestPayload
+      : defaults?.onInvalidRequestPayload,
     decompressStream: {
-      br: customZlib.createBrotliDecompress || zlib.createBrotliDecompress,
-      gzip: customZlib.createGunzip || zlib.createGunzip,
-      deflate: customZlib.createInflate || zlib.createInflate
+      br: customZlib.createBrotliDecompress || defaultDecompressStream.br || zlib.createBrotliDecompress,
+      gzip: customZlib.createGunzip || defaultDecompressStream.gzip || zlib.createGunzip,
+      deflate: customZlib.createInflate || defaultDecompressStream.deflate || zlib.createInflate
     },
     encodings: [],
-    forceEncoding: null
+    forceEncoding: defaults?.forceEncoding ?? null
   }
-  if (typeof (customZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') {
-    params.decompressStream.zstd = customZlib.createZstdDecompress || zlib.createZstdDecompress
+  if (typeof (customZlib.createZstdDecompress || defaultDecompressStream.zstd || zlib.createZstdDecompress) === 'function') {
+    params.decompressStream.zstd = customZlib.createZstdDecompress || defaultDecompressStream.zstd || zlib.createZstdDecompress
   }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
@@ -201,9 +206,9 @@ function processDecompressParams (opts) {
     ? supportedEncodings
       .filter(encoding => opts.requestEncodings.includes(encoding))
       .sort((a, b) => opts.requestEncodings.indexOf(a) - opts.requestEncodings.indexOf(b))
-    : supportedEncodings
+    : defaults?.encodings || supportedEncodings
 
-  if (opts.forceRequestEncoding) {
+  if (Object.hasOwn(opts, 'forceRequestEncoding') && opts.forceRequestEncoding) {
     params.forceEncoding = opts.forceRequestEncoding
 
     if (params.encodings.includes(opts.forceRequestEncoding)) {
