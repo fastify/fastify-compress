@@ -396,9 +396,8 @@ await fastify.register(
 
 ## Acknowledgments
 
-Past sponsors:
-
-- [LetzDoIt](http://www.letzdoitapp.com/)
+Past sp
+- LetzDoIt
 
 ## License
 
