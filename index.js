@@ -462,8 +462,12 @@ function onEnd (err) {
   // Client disconnection during streaming is expected and handled by Fastify.
   // Do not log "premature close" errors at error level since they are not
   // actual errors - they occur when clients disconnect mid-response.
+  // Node's native stream.pipeline emits ERR_STREAM_PREMATURE_CLOSE with the
+  // message 'Premature close', while the legacy pump/end-of-stream packages
+  // emit 'premature close' without a code, so both variants are checked.
   // See: https://github.com/fastify/fastify-compress/issues/382
-  if (err && err.message !== 'premature close') {
+  // See: https://github.com/fastify/fastify-compress/issues/410
+  if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE' && err.message !== 'premature close') {
     this.log.error(err)
   }
 }
