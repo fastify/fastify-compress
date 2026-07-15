@@ -10,7 +10,16 @@ const mimedb = require('mime-db')
 const { Minipass } = require('minipass')
 const { Readable } = require('readable-stream')
 
-const { isStream, isGzip, isDeflate, intoAsyncIterator, isWebReadableStream, isFetchResponse, webStreamToNodeReadable, createLazyTransform } = require('./lib/utils')
+const {
+  isStream,
+  isGzip,
+  isDeflate,
+  intoAsyncIterator,
+  isWebReadableStream,
+  isFetchResponse,
+  webStreamToNodeReadable,
+  createPeekTransform
+} = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
@@ -553,7 +562,7 @@ function maybeUnzip (payload, serialize) {
 }
 
 function zipStream (deflate, encoding) {
-  return createLazyTransform(function (data) {
+  return createPeekTransform(function (data) {
     switch (isCompressed(data)) {
       case 1: return new Minipass()
       case 2: return new Minipass()
@@ -564,7 +573,7 @@ function zipStream (deflate, encoding) {
 
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
-  return createLazyTransform(function (data) {
+  return createPeekTransform(function (data) {
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
     /* c8 ignore next */
     if (maxRecursion < 0) throw new Error('Maximum recursion reached')
