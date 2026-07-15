@@ -224,4 +224,20 @@ test('createPeekTransform', async (t) => {
 
     t.assert.strictEqual(data, 'HELLOWORLD')
   })
+
+  await t.test('error when data size < peekSize', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      throw new Error('boom')
+    }, 100)
+
+    transform.on('data', (chunk) => { t.assert.fail('should not reach') })
+    transform.on('error', (error) => { t.assert.ok(error) })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await t.assert.rejects(finished(transform), new Error('boom'))
+  })
 })
