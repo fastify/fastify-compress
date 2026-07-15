@@ -297,7 +297,7 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     const body = 'hello from web stream'
     fastify.get('/web-stream', (_request, reply) => {
       const stream = new WebReadableStream({
-        start(controller) {
+        start (controller) {
           controller.enqueue(Buffer.from(body))
           controller.close()
         }
@@ -1903,7 +1903,7 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
 
   let actual = null
   const logger = new Writable({
-    write(chunk, _encoding, callback) {
+    write (chunk, _encoding, callback) {
       actual = JSON.parse(chunk.toString())
       callback()
     }
@@ -1922,7 +1922,7 @@ test('It should log an existing error with stream onEnd handler', async (t) => {
 
   fastify.get('/', (_request, reply) => {
     const stream = new Readable({
-      read() {
+      read () {
         this.destroy(expect)
       }
     })

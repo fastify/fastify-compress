@@ -28,7 +28,7 @@
     "lint:fix": "eslint --fix",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tstyche",
-    "test:unit": "c8 node --test",
+    "test:unit": "node --test",
     "test:coverage": "c8 node --test && c8 report --reporter=html",
     "test:unit:verbose": "npm run test:unit -- -Rspec"
   },
