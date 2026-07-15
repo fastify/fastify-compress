@@ -15,7 +15,7 @@ test('should not log "premature close" errors on client disconnect (global compr
       level: 'error',
       stream: new Writable({
         write (chunk, encoding, callback) {
-          if (chunk.toString().includes('premature close')) {
+          if (/premature close/i.test(chunk.toString())) {
             prematureCloseCount++
           }
           callback()
@@ -86,7 +86,7 @@ test('should not log "premature close" errors on client disconnect (reply.compre
       level: 'error',
       stream: new Writable({
         write (chunk, encoding, callback) {
-          if (chunk.toString().includes('premature close')) {
+          if (/premature close/i.test(chunk.toString())) {
             prematureCloseCount++
           }
           callback()
@@ -157,7 +157,7 @@ test('should still log actual errors (not premature close)', async (t) => {
       stream: new Writable({
         write (chunk, encoding, callback) {
           const msg = chunk.toString()
-          if (msg.includes('premature close')) {
+          if (/premature close/i.test(msg)) {
             // Ignore premature close errors
           } else {
             errors.push(msg)
