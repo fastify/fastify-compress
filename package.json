@@ -21,7 +21,7 @@
     "jsonstream": "^1.0.3",
     "neostandard": "^0.13.0",
     "tstyche": "^7.1.0",
-    "typescript": "~6.0.2"
+    "typescript": "~7.0.2"
   },
   "scripts": {
     "lint": "eslint",
