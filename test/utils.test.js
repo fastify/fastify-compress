@@ -240,4 +240,24 @@ test('createPeekTransform', async (t) => {
 
     await t.assert.rejects(finished(transform), new Error('boom'))
   })
+
+  await t.test('error inside downstream', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      return new Transform({
+        transform (chunk, encoding, callback) {
+          callback(new Error('boom'))
+        }
+      })
+    })
+
+    transform.on('data', (chunk) => { t.assert.fail('should not reach') })
+    transform.on('error', (error) => { t.assert.ok(error) })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await t.assert.rejects(finished(transform), new Error('boom'))
+  })
 })
