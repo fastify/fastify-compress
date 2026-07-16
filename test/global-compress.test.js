@@ -682,6 +682,41 @@ describe('When a custom `zlib` option is provided, it should compress data :`', 
     t.assert.equal(response.headers['content-encoding'], 'gzip')
     t.assert.equal(payload.toString('utf-8'), file)
   })
+
+  test('using the custom `createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(4)
+
+    let usedCustom = false
+    const customZlib = { createZstdCompress: () => (usedCustom = true) && zlib.createZstdCompress() }
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, zlib: customZlib })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(createReadStream('./package.json'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    t.assert.equal(usedCustom, true)
+
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'zstd')
+    t.assert.equal(payload.toString('utf-8'), file)
+  })
 })
 
 describe('When a malformed custom `zlib` option is provided, it should compress data :', async () => {
@@ -763,6 +798,37 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), 'hello')
+  })
+
+  test('using the fallback default Node.js core `zlib.createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      threshold: 0,
+      zlib: true // will trigger a fallback on the default zlib.createZstdCompress
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 })
