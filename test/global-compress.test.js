@@ -60,6 +60,27 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     t.assert.equal(payload.toString('utf-8'), buf.toString())
   })
 
+  test('it should not change the default encoding to zstd just because the runtime supports it', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const buf = Buffer.from('hello world')
+    fastify.get('/', (_request, reply) => {
+      reply.send(buf)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip, deflate, br, zstd'
+      }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'br')
+  })
+
   test('it should compress Buffer data using deflate when `Accept-Encoding` request header is `deflate`', async (t) => {
     t.plan(1)
 

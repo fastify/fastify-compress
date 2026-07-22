@@ -162,7 +162,10 @@ function processCompressParams (opts) {
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
   if (typeof zlib.createZstdCompress === 'function') {
-    supportedEncodings.unshift('zstd')
+    // Support zstd when the runtime provides it, but keep it below the
+    // historical encodings so the negotiated default does not change with the
+    // Node.js version (see #369). `identity` must stay last.
+    supportedEncodings.splice(supportedEncodings.indexOf('identity'), 0, 'zstd')
   }
 
   params.encodings = Array.isArray(opts.encodings)
@@ -202,7 +205,10 @@ function processDecompressParams (opts) {
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
   if (typeof zlib.createZstdCompress === 'function') {
-    supportedEncodings.unshift('zstd')
+    // Support zstd when the runtime provides it, but keep it below the
+    // historical encodings so the negotiated default does not change with the
+    // Node.js version (see #369). `identity` must stay last.
+    supportedEncodings.splice(supportedEncodings.indexOf('identity'), 0, 'zstd')
   }
 
   params.encodings = Array.isArray(opts.requestEncodings)
