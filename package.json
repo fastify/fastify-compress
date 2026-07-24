@@ -1,22 +1,21 @@
 {
   "name": "@fastify/compress",
-  "version": "8.3.1",
+  "version": "9.1.0",
   "description": "Fastify compression utils",
   "main": "index.js",
   "type": "commonjs",
   "types": "types/index.d.ts",
   "dependencies": {
     "@fastify/accept-negotiator": "^2.0.0",
-    "fastify-plugin": "^5.0.0",
+    "fastify-plugin": "^6.0.0",
     "mime-db": "^1.52.0",
     "minipass": "^7.0.4",
-    "peek-stream": "^1.1.3",
     "readable-stream": "^4.5.2"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
-    "adm-zip": "^0.5.12",
-    "c8": "^11.0.0",
+    "@types/node": "^26.0.1",
+    "adm-zip": "^0.6.0",
+    "c8": "^12.0.0",
     "eslint": "^9.17.0",
     "fastify": "^5.0.0",
     "jsonstream": "^1.0.3",
@@ -41,7 +40,7 @@
     "brotli",
     "zstd"
   ],
-  "author": "Tomas Della Vedova - @delvedor (http://delved.org)",
+  "author": "Tomas Della Vedova - @delvedor (https://delvedor.dev)",
   "contributors": [
     {
       "name": "Matteo Collina",

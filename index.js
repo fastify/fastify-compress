@@ -7,11 +7,19 @@ const { pipeline, compose } = require('node:stream')
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const mimedb = require('mime-db')
-const peek = require('peek-stream')
 const { Minipass } = require('minipass')
 const { Readable } = require('readable-stream')
 
-const { isStream, isGzip, isDeflate, intoAsyncIterator, isWebReadableStream, isFetchResponse, webStreamToNodeReadable } = require('./lib/utils')
+const {
+  isStream,
+  isGzip,
+  isDeflate,
+  intoAsyncIterator,
+  isWebReadableStream,
+  isFetchResponse,
+  webStreamToNodeReadable,
+  createPeekTransform
+} = require('./lib/utils')
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
@@ -49,11 +57,6 @@ function fastifyCompress (fastify, opts, next) {
 
   // add onSend hook onto each route as needed
   fastify.addHook('onRoute', (routeOptions) => {
-    // If route config.compress has been set it takes precedence over compress
-    if (routeOptions.config?.compress !== undefined) {
-      routeOptions.compress = routeOptions.config.compress
-    }
-
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
@@ -74,11 +77,6 @@ function fastifyCompress (fastify, opts, next) {
       // if no options are specified and the plugin is not global, then we still want to decorate
       // the reply in this case
       buildRouteCompress(fastify, globalCompressParams, routeOptions, true)
-    }
-
-    // If route config.decompress has been set it takes precedence over compress
-    if (routeOptions.config?.decompress !== undefined) {
-      routeOptions.decompress = routeOptions.config.decompress
     }
 
     // Manage decompression options
@@ -311,6 +309,9 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     const noCompress =
       // don't compress on x-no-compression header
       (req.headers['x-no-compression'] !== undefined) ||
+      // don't compress partial content: Content-Range describes unencoded byte offsets
+      (reply.statusCode === 206) ||
+      (reply.getHeader('Content-Range') !== undefined) ||
       // don't compress if not one of the indicated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
@@ -512,8 +513,12 @@ function onEnd (err) {
   // Client disconnection during streaming is expected and handled by Fastify.
   // Do not log "premature close" errors at error level since they are not
   // actual errors - they occur when clients disconnect mid-response.
+  // Node's native stream.pipeline emits ERR_STREAM_PREMATURE_CLOSE with the
+  // message 'Premature close', while the legacy pump/end-of-stream packages
+  // emit 'premature close' without a code, so both variants are checked.
   // See: https://github.com/fastify/fastify-compress/issues/382
-  if (err && err.message !== 'premature close') {
+  // See: https://github.com/fastify/fastify-compress/issues/410
+  if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE' && err.message !== 'premature close') {
     this.log.error(err)
   }
 }
@@ -600,26 +605,26 @@ function maybeUnzip (payload, serialize) {
 }
 
 function zipStream (deflate, encoding) {
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+  return createPeekTransform(function (data) {
     switch (isCompressed(data)) {
-      case 1: return swap(null, new Minipass())
-      case 2: return swap(null, new Minipass())
+      case 1: return new Minipass()
+      case 2: return new Minipass()
     }
-    return swap(null, deflate[encoding]())
+    return deflate[encoding]()
   })
 }
 
 function unzipStream (inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
-  return peek({ newline: false, maxBuffer: 10 }, function (data, swap) {
+  return createPeekTransform(function (data) {
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
     /* c8 ignore next */
-    if (maxRecursion < 0) return swap(new Error('Maximum recursion reached'))
+    if (maxRecursion < 0) throw new Error('Maximum recursion reached')
     switch (isCompressed(data)) {
-      case 1: return swap(null, compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1)))
-      case 2: return swap(null, compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1)))
+      case 1: return compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1))
+      case 2: return compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1))
     }
-    return swap(null, new Minipass())
+    return new Minipass()
   })
 }
 

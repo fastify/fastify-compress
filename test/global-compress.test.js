@@ -682,6 +682,41 @@ describe('When a custom `zlib` option is provided, it should compress data :`', 
     t.assert.equal(response.headers['content-encoding'], 'gzip')
     t.assert.equal(payload.toString('utf-8'), file)
   })
+
+  test('using the custom `createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(4)
+
+    let usedCustom = false
+    const customZlib = { createZstdCompress: () => (usedCustom = true) && zlib.createZstdCompress() }
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, zlib: customZlib })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(createReadStream('./package.json'))
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    t.assert.equal(usedCustom, true)
+
+    const file = readFileSync('./package.json', 'utf8')
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
+    t.assert.equal(response.headers.vary, 'accept-encoding')
+    t.assert.equal(response.headers['content-encoding'], 'zstd')
+    t.assert.equal(payload.toString('utf-8'), file)
+  })
 })
 
 describe('When a malformed custom `zlib` option is provided, it should compress data :', async () => {
@@ -763,6 +798,37 @@ describe('When a malformed custom `zlib` option is provided, it should compress 
       }
     })
     const payload = zlib.gunzipSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), 'hello')
+  })
+
+  test('using the fallback default Node.js core `zlib.createZstdCompress()` method', async (t) => {
+    if (typeof zlib.createZstdCompress !== 'function') {
+      t.skip('zstd not supported in this Node.js version')
+      return
+    }
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      threshold: 0,
+      zlib: true // will trigger a fallback on the default zlib.createZstdCompress
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'zstd'
+      }
+    })
+    const payload = zlib.zstdDecompressSync(response.rawPayload)
     t.assert.equal(payload.toString('utf-8'), 'hello')
   })
 })
@@ -3547,4 +3613,57 @@ test('It should demonstrate globalDecompression controls decompression independe
   // Should get 400 error since decompression is disabled and compressed data can't be parsed
   t.assert.equal(response.statusCode, 400)
   t.assert.ok(response.body.includes('Content-Length') || response.body.includes('Bad Request'))
+})
+
+describe('Range Responses', () => {
+  test('it should not compress 206 Partial Content responses', async (t) => {
+    t.plan(4)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/partial', (request, reply) => {
+      reply
+        .status(206)
+        .header('Content-Type', 'text/plain')
+        .header('Content-Range', 'bytes 0-4/12')
+        .header('Content-Length', '5')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/partial',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(response.statusCode, 206)
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['content-range'], 'bytes 0-4/12')
+    t.assert.equal(response.body, 'hello')
+  })
+
+  test('it should not compress responses carrying a Content-Range header', async (t) => {
+    t.plan(4)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/content-range', (request, reply) => {
+      reply
+        .header('Content-Type', 'text/plain')
+        .header('Content-Range', 'bytes 0-4/12')
+        .header('Content-Length', '5')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/content-range',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['content-range'], 'bytes 0-4/12')
+    t.assert.equal(response.body, 'hello')
+  })
 })

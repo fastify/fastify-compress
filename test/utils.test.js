@@ -3,8 +3,9 @@
 const { createReadStream } = require('node:fs')
 const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
+const { finished } = require('node:stream/promises')
 const { test } = require('node:test')
-const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator } = require('../lib/utils')
+const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createPeekTransform } = require('../lib/utils')
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)
@@ -123,4 +124,140 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   for await (const chunk of intoAsyncIterator(obj)) {
     equal(chunk, obj)
   }
+})
+
+test('createPeekTransform', async (t) => {
+  class UpperCaseTransform extends Transform {
+    _transform (chunk, encoding, callback) {
+      callback(null, chunk.toString().toUpperCase())
+    }
+  }
+
+  await t.test('uppercase', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      t.assert.strictEqual(data.toString(), 'hello\nworl')
+      return new UpperCaseTransform()
+    })
+
+    let data = ''
+    transform.on('data', (chunk) => { data += chunk.toString() })
+    transform.write('hello\n')
+    transform.write('world\n')
+    transform.end()
+
+    await finished(transform)
+
+    t.assert.strictEqual(data, 'HELLO\nWORLD\n')
+  })
+
+  await t.test('uppercase no newline', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      t.assert.strictEqual(data.toString(), 'helloworld')
+      return new UpperCaseTransform()
+    })
+
+    let data = ''
+    transform.on('data', (chunk) => { data += chunk.toString() })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await finished(transform)
+
+    t.assert.strictEqual(data, 'HELLOWORLD')
+  })
+
+  await t.test('error', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      throw new Error('boom')
+    })
+
+    transform.on('data', (chunk) => { t.assert.fail('should not reach') })
+    transform.on('error', (error) => { t.assert.ok(error) })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await t.assert.rejects(finished(transform), new Error('boom'))
+  })
+
+  await t.test('peekSize = 5', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      t.assert.strictEqual(data.toString(), 'hello')
+      return new UpperCaseTransform()
+    }, 5)
+
+    let data = ''
+    transform.on('data', (chunk) => { data += chunk.toString() })
+    transform.write('hello\n')
+    transform.write('world\n')
+    transform.end()
+
+    await finished(transform)
+
+    t.assert.strictEqual(data, 'HELLO\nWORLD\n')
+  })
+
+  await t.test('data size < peekSize', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      t.assert.strictEqual(data.toString(), 'helloworld')
+      return new UpperCaseTransform()
+    }, 100)
+
+    let data = ''
+    transform.on('data', (chunk) => { data += chunk.toString() })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await finished(transform)
+
+    t.assert.strictEqual(data, 'HELLOWORLD')
+  })
+
+  await t.test('error when data size < peekSize', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      throw new Error('boom')
+    }, 100)
+
+    transform.on('data', (chunk) => { t.assert.fail('should not reach') })
+    transform.on('error', (error) => { t.assert.ok(error) })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await t.assert.rejects(finished(transform), new Error('boom'))
+  })
+
+  await t.test('error inside downstream', async (t) => {
+    t.plan(2)
+
+    const transform = createPeekTransform(function (data) {
+      return new Transform({
+        transform (chunk, encoding, callback) {
+          callback(new Error('boom'))
+        }
+      })
+    })
+
+    transform.on('data', (chunk) => { t.assert.fail('should not reach') })
+    transform.on('error', (error) => { t.assert.ok(error) })
+    transform.write('hello')
+    transform.write('world')
+    transform.end()
+
+    await t.assert.rejects(finished(transform), new Error('boom'))
+  })
 })
