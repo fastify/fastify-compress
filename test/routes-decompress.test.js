@@ -138,6 +138,54 @@ describe('When using routes `decompress` settings :', async () => {
     equal(response.body, '@fastify/compress')
   })
 
+  test('it should keep global `onInvalidRequestPayload` when route options are partial', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload (encoding, _request, error) {
+        return {
+          statusCode: 422,
+          code: 'INVALID_PAYLOAD',
+          error: 'Unprocessable Entity',
+          message: `Global handler used for ${encoding}: ${error.message}.`
+        }
+      }
+    })
+
+    fastify.post('/', {
+      decompress: {
+        onUnsupportedRequestEncoding (encoding) {
+          return {
+            statusCode: 415,
+            code: 'UNSUPPORTED_ENCODING',
+            error: 'Unsupported Media Type',
+            message: `${encoding} is not supported.`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 422)
+    t.assert.deepEqual(response.json(), {
+      statusCode: 422,
+      code: 'INVALID_PAYLOAD',
+      error: 'Unprocessable Entity',
+      message: 'Global handler used for deflate: incorrect header check.'
+    })
+  })
+
   test('it should not decompress data when route `decompress` option is set to `false`', async (t) => {
     t.plan(6)
     const equal = t.assert.equal

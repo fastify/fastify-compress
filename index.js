@@ -60,9 +60,7 @@ function fastifyCompress (fastify, opts, next) {
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
-        const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.compress)
-        )
+        const mergedCompressParams = processCompressParams(routeOptions.compress, globalCompressParams)
 
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
@@ -85,9 +83,7 @@ function fastifyCompress (fastify, opts, next) {
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        const mergedDecompressParams = processDecompressParams(routeOptions.decompress, globalDecompressParams)
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {
@@ -114,109 +110,156 @@ const recommendedDefaultBrotliOptions = {
   }
 }
 
-function processCompressParams (opts) {
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
+const baseOrDefault = (baseParams, key, defaultValue) => baseParams !== undefined ? baseParams[key] : defaultValue
+const optionOrBase = (opts, key, baseParams, defaultValue) => hasOwn(opts, key) ? opts[key] : baseOrDefault(baseParams, key, defaultValue)
+const booleanOptionOrBase = (opts, key, baseParams, defaultValue) => typeof opts[key] === 'boolean' ? opts[key] : baseOrDefault(baseParams, key, defaultValue)
+const numberOptionOrBase = (opts, key, baseParams, defaultValue) => typeof opts[key] === 'number' ? opts[key] : baseOrDefault(baseParams, key, defaultValue)
+const zlibOrBase = (opts, baseParams) => opts.zlib || baseOrDefault(baseParams, 'zlib', zlib)
+
+function globalOptionOrBase (opts, key, baseParams) {
+  if (typeof opts[key] === 'boolean') return opts[key]
+
+  if (typeof opts.global === 'boolean') return opts.global
+
+  return baseOrDefault(baseParams, 'global', true)
+}
+
+function getBrotliOptions (opts, isGlobal, baseParams) {
+  // Route-level compress objects are active compression configs, even when global compression is disabled.
+  const useDefaults = isGlobal || baseParams !== undefined
+
+  if (hasOwn(opts, 'brotliOptions')) {
+    return useDefaults
+      ? { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
+      : opts.brotliOptions
+  }
+
+  if (baseParams !== undefined && baseParams.brotliOptions !== undefined) return baseParams.brotliOptions
+
+  return useDefaults ? { ...recommendedDefaultBrotliOptions } : undefined
+}
+
+function getCompressibleTypes (opts, baseParams) {
+  if (opts.customTypes instanceof RegExp) return opts.customTypes.test.bind(opts.customTypes)
+
+  if (typeof opts.customTypes === 'function') return opts.customTypes
+
+  if (!hasOwn(opts, 'customTypes') && baseParams !== undefined) return baseParams.compressibleTypes
+
+  return defaultCompressibleTypes.test.bind(defaultCompressibleTypes)
+}
+
+function getSupportedEncodings () {
+  const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
+  if (typeof zlib.createZstdCompress === 'function') supportedEncodings.unshift('zstd')
+  return supportedEncodings
+}
+
+function encodingsOrBase (opts, key, baseParams) {
+  const supportedEncodings = getSupportedEncodings()
+
+  if (Array.isArray(opts[key])) {
+    return supportedEncodings
+      .filter(encoding => opts[key].includes(encoding))
+      .sort((a, b) => opts[key].indexOf(a) - opts[key].indexOf(b))
+  }
+
+  return hasOwn(opts, key) || baseParams === undefined ? supportedEncodings : baseParams.encodings
+}
+
+function getCompressStream (customZlib, params) {
+  const compressStream = {
+    br: () => (customZlib.createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
+    gzip: () => (customZlib.createGzip || zlib.createGzip)(params.zlibOptions),
+    deflate: () => (customZlib.createDeflate || zlib.createDeflate)(params.zlibOptions)
+  }
+
+  if (typeof (customZlib.createZstdCompress || zlib.createZstdCompress) === 'function') compressStream.zstd = () => (customZlib.createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
+
+  return compressStream
+}
+
+function getUncompressStream (customZlib, params) {
+  const uncompressStream = {
+    // Currently uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
+    // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
+    br: /* c8 ignore next */ () => (customZlib.createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
+    gzip: () => (customZlib.createGunzip || zlib.createGunzip)(params.zlibOptions),
+    deflate: () => (customZlib.createInflate || zlib.createInflate)(params.zlibOptions)
+  }
+
+  if (typeof (customZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') {
+    // Currently uncompressStream.zstd() is never called as we do not have any way to autodetect zstd compression in `fastify-compress`
+    // Zstd documentation reference: [RFC 8878](https://www.rfc-editor.org/rfc/rfc8878)
+    uncompressStream.zstd = /* c8 ignore next */ () => (customZlib.createZstdDecompress || zlib.createZstdDecompress)(params.zlibOptions)
+  }
+
+  return uncompressStream
+}
+
+function getDecompressStream (customZlib) {
+  const decompressStream = {
+    br: customZlib.createBrotliDecompress || zlib.createBrotliDecompress,
+    gzip: customZlib.createGunzip || zlib.createGunzip,
+    deflate: customZlib.createInflate || zlib.createInflate
+  }
+
+  if (typeof (customZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') decompressStream.zstd = customZlib.createZstdDecompress || zlib.createZstdDecompress
+
+  return decompressStream
+}
+
+const forceEncodingOrBase = (opts, baseParams) => hasOwn(opts, 'forceRequestEncoding')
+  ? opts.forceRequestEncoding || null
+  : baseOrDefault(baseParams, 'forceEncoding', null)
+
+function processCompressParams (opts, baseParams) {
   /* c8 ignore next 3 */
   if (!opts) {
-    return
+    return baseParams
   }
 
+  const customZlib = zlibOrBase(opts, baseParams)
   const params = {
-    global: (typeof opts.globalCompression === 'boolean')
-      ? opts.globalCompression
-      : (typeof opts.global === 'boolean') ? opts.global : true
+    zlib: customZlib,
+    global: globalOptionOrBase(opts, 'globalCompression', baseParams),
+    removeContentLengthHeader: booleanOptionOrBase(opts, 'removeContentLengthHeader', baseParams, true),
+    zlibOptions: optionOrBase(opts, 'zlibOptions', baseParams),
+    onUnsupportedEncoding: optionOrBase(opts, 'onUnsupportedEncoding', baseParams),
+    inflateIfDeflated: booleanOptionOrBase(opts, 'inflateIfDeflated', baseParams, false),
+    threshold: numberOptionOrBase(opts, 'threshold', baseParams, 1024),
+    compressibleTypes: getCompressibleTypes(opts, baseParams)
   }
 
-  params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
-  params.brotliOptions = params.global
-    ? { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
-    : opts.brotliOptions
-  params.zlibOptions = opts.zlibOptions
-  params.onUnsupportedEncoding = opts.onUnsupportedEncoding
-  params.inflateIfDeflated = opts.inflateIfDeflated === true
-  params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  params.compressibleTypes = opts.customTypes instanceof RegExp
-    ? opts.customTypes.test.bind(opts.customTypes)
-    : typeof opts.customTypes === 'function'
-      ? opts.customTypes
-      : defaultCompressibleTypes.test.bind(defaultCompressibleTypes)
-  params.compressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
-  }
-  if (typeof ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress) === 'function') {
-    params.compressStream.zstd = () => ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
-  }
-  params.uncompressStream = {
-    // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
-    // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
-    br: /* c8 ignore next */ () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
-  }
-  if (typeof ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress) === 'function') {
-    // Currently params.uncompressStream.zstd() is never called as we do not have any way to autodetect zstd compression in `fastify-compress`
-    // Zstd documentation reference: [RFC 8878](https://www.rfc-editor.org/rfc/rfc8878)
-    params.uncompressStream.zstd = /* c8 ignore next */ () => ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress)(params.zlibOptions)
-  }
-
-  const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
-  if (typeof zlib.createZstdCompress === 'function') {
-    supportedEncodings.unshift('zstd')
-  }
-
-  params.encodings = Array.isArray(opts.encodings)
-    ? supportedEncodings
-      .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
-    : supportedEncodings
+  params.brotliOptions = getBrotliOptions(opts, params.global, baseParams)
+  params.compressStream = getCompressStream(customZlib, params)
+  params.uncompressStream = getUncompressStream(customZlib, params)
+  params.encodings = encodingsOrBase(opts, 'encodings', baseParams)
 
   return params
 }
 
-function processDecompressParams (opts) {
+function processDecompressParams (opts, baseParams) {
   /* c8 ignore next 3 */
   if (!opts) {
-    return
+    return baseParams
   }
 
-  const customZlib = opts.zlib || zlib
+  const customZlib = zlibOrBase(opts, baseParams)
 
   const params = {
-    global: (typeof opts.globalDecompression === 'boolean')
-      ? opts.globalDecompression
-      : (typeof opts.global === 'boolean') ? opts.global : true,
-    onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
-    onInvalidRequestPayload: opts.onInvalidRequestPayload,
-    decompressStream: {
-      br: customZlib.createBrotliDecompress || zlib.createBrotliDecompress,
-      gzip: customZlib.createGunzip || zlib.createGunzip,
-      deflate: customZlib.createInflate || zlib.createInflate
-    },
-    encodings: [],
-    forceEncoding: null
-  }
-  if (typeof (customZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') {
-    params.decompressStream.zstd = customZlib.createZstdDecompress || zlib.createZstdDecompress
+    zlib: customZlib,
+    global: globalOptionOrBase(opts, 'globalDecompression', baseParams),
+    onUnsupportedRequestEncoding: optionOrBase(opts, 'onUnsupportedRequestEncoding', baseParams),
+    onInvalidRequestPayload: optionOrBase(opts, 'onInvalidRequestPayload', baseParams),
+    decompressStream: getDecompressStream(customZlib),
+    encodings: encodingsOrBase(opts, 'requestEncodings', baseParams),
+    forceEncoding: forceEncodingOrBase(opts, baseParams)
   }
 
-  const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
-  if (typeof zlib.createZstdCompress === 'function') {
-    supportedEncodings.unshift('zstd')
-  }
-
-  params.encodings = Array.isArray(opts.requestEncodings)
-    ? supportedEncodings
-      .filter(encoding => opts.requestEncodings.includes(encoding))
-      .sort((a, b) => opts.requestEncodings.indexOf(a) - opts.requestEncodings.indexOf(b))
-    : supportedEncodings
-
-  if (opts.forceRequestEncoding) {
-    params.forceEncoding = opts.forceRequestEncoding
-
-    if (params.encodings.includes(opts.forceRequestEncoding)) {
-      params.encodings = [opts.forceRequestEncoding]
-    }
+  if (params.forceEncoding && params.encodings.includes(params.forceEncoding)) {
+    params.encodings = [params.forceEncoding]
   }
 
   return params
