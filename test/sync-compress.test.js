@@ -13,10 +13,14 @@ function buildPayload (size) {
   return 'the quick brown fox jumps over the lazy dog '.repeat(Math.ceil(size / 44)).slice(0, size)
 }
 
+// The default `syncThreshold` is derived from the host parallelism, so every test that
+// cares about which path a payload takes pins it explicitly to stay deterministic
+const syncThreshold = 32768
+
 const smallPayload = buildPayload(4096)
 const largePayload = buildPayload(200 * 1024)
 // incompressible, so that the already compressed payloads built from it stay
-// comfortably above the default `threshold` and below the default `syncThreshold`
+// comfortably above `threshold` and below the pinned `syncThreshold`
 const incompressiblePayload = randomBytes(4096)
 
 describe('When a buffered payload fits within `syncThreshold`, it should be compressed synchronously :', async () => {
@@ -24,7 +28,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -45,7 +49,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -66,7 +70,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -91,7 +95,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -112,7 +116,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     const buf = Buffer.from(smallPayload)
     fastify.get('/', (_request, reply) => {
@@ -133,7 +137,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false })
+    await fastify.register(compressPlugin, { global: false, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').compress(smallPayload)
@@ -154,7 +158,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false })
+    await fastify.register(compressPlugin, { global: false, syncThreshold })
 
     fastify.get('/', {
       compress: { syncThreshold: 8192 }
@@ -176,7 +180,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     t.plan(2)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, zlibOptions: { level: 9 } })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, zlibOptions: { level: 9 } })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -197,7 +201,7 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
     const brotliOptions = { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, brotliOptions })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, brotliOptions })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -213,12 +217,104 @@ describe('When a buffered payload fits within `syncThreshold`, it should be comp
   })
 })
 
+describe('An explicit `syncThreshold` should always win over the computed default :', async () => {
+  // the computed default is clamped to [4096, 65536], so these two values sit on either
+  // side of every default the formula can produce, whatever the host reports
+  test('a value below the computed default should push a payload onto the stream pipeline', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, syncThreshold: 2048 })
+
+    fastify.get('/', (_request, reply) => {
+      reply.type('text/plain').send(smallPayload)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), smallPayload)
+  })
+
+  test('a value above the computed default should keep a payload on the synchronous path', async (t) => {
+    t.plan(3)
+
+    const hugePayload = buildPayload(128 * 1024)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, syncThreshold: 256 * 1024 })
+
+    fastify.get('/', (_request, reply) => {
+      reply.type('text/plain').send(hugePayload)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(response.headers['content-length'], response.rawPayload.length.toString())
+    t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), hugePayload)
+  })
+
+  test('the computed default should compress a payload it covers on every host', async (t) => {
+    t.plan(3)
+
+    // 2 KiB is above `threshold` and below the lowest default the formula can produce
+    const payload = buildPayload(2048)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    fastify.get('/', (_request, reply) => {
+      reply.type('text/plain').send(payload)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.equal(response.headers['content-length'], response.rawPayload.length.toString())
+    t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), payload)
+  })
+
+  test('the computed default should stream a payload above the highest value it can produce', async (t) => {
+    t.plan(3)
+
+    // 256 KiB is above the upper clamp of the formula, so it streams on every host
+    const payload = buildPayload(256 * 1024)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true })
+
+    fastify.get('/', (_request, reply) => {
+      reply.type('text/plain').send(payload)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    t.assert.ok(!response.headers['content-length'], 'no content length')
+    t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), payload)
+  })
+})
+
 describe('It should fall back to the stream pipeline when the payload is not eligible :', async () => {
   test('when the payload is smaller than `threshold`', async (t) => {
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send('hello world')
@@ -238,7 +334,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(largePayload)
@@ -301,7 +397,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(createReadStream('./package.json'))
@@ -321,7 +417,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       const stream = new ReadableStream({
@@ -350,7 +446,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     const customZlib = { createGzip: () => (usedCustom = true) && zlib.createGzip() }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, zlib: customZlib })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, zlib: customZlib })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -374,7 +470,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     const customZlib = { createDeflate: () => (usedCustom = true) && zlib.createDeflate() }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false, zlib: customZlib })
+    await fastify.register(compressPlugin, { global: false, syncThreshold, zlib: customZlib })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').compress(smallPayload)
@@ -394,7 +490,7 @@ describe('It should fall back to the stream pipeline when the payload is not eli
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, removeContentLengthHeader: false })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, removeContentLengthHeader: false })
 
     fastify.get('/', (_request, reply) => {
       reply
@@ -508,7 +604,7 @@ describe('It should use a synchronous method provided by a custom `zlib` :', asy
     }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, zlib: customZlib })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, zlib: customZlib })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -532,7 +628,7 @@ describe('It should pass already compressed payloads through untouched :', async
     const gzipped = zlib.gzipSync(incompressiblePayload)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('application/octet-stream').send(gzipped)
@@ -554,7 +650,7 @@ describe('It should pass already compressed payloads through untouched :', async
     const deflated = zlib.deflateSync(incompressiblePayload)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('application/octet-stream').send(deflated)
@@ -576,7 +672,7 @@ describe('It should pass already compressed payloads through untouched :', async
     const gzipped = zlib.gzipSync(incompressiblePayload)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false })
+    await fastify.register(compressPlugin, { global: false, syncThreshold })
 
     fastify.get('/', (_request, reply) => {
       reply.type('application/octet-stream').compress(gzipped)
@@ -603,7 +699,7 @@ describe('It should handle synchronous compression errors :', async () => {
     }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true, zlib: customZlib })
+    await fastify.register(compressPlugin, { global: true, syncThreshold, zlib: customZlib })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').send(smallPayload)
@@ -628,7 +724,7 @@ describe('It should handle synchronous compression errors :', async () => {
     }
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false, zlib: customZlib })
+    await fastify.register(compressPlugin, { global: false, syncThreshold, zlib: customZlib })
 
     fastify.get('/', (_request, reply) => {
       reply.type('text/plain').compress(smallPayload)

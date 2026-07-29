@@ -168,19 +168,19 @@ await fastify.register(
 )
 ```
 ### syncThreshold
-The maximum byte size for compressing a response synchronously. Defaults to `32768` (32 KiB).
+The maximum byte size for compressing a response synchronously. Defaults to a value derived
+from `os.availableParallelism()`, between `4096` and `65536`.
 
 Payloads that are already fully in memory (a `string` or a `Buffer`) and are not larger than
 `syncThreshold` are compressed in one call instead of being pushed through a compression
-stream. This is considerably faster for small responses — a per-response zlib stream costs
-more in setup and scheduling than the compression itself at these sizes — and it uses much
-less memory while the response is in flight, since no zlib context is allocated and the
-source payload is released immediately.
+stream. This is faster for small responses — a per-response zlib stream costs more in setup
+and scheduling than the compression itself at these sizes — and it uses much less memory
+while the response is in flight, since no zlib context is allocated and the source payload
+is released immediately.
 
 Larger payloads, streams, [web `ReadableStream`s](#supported-payload-types) and fetch
-`Response`s always use the streaming path, so the event loop is never held for long. Raise
-`syncThreshold` to trade more event loop time for more throughput, or set it to `0` to
-compress every response through the streaming path.
+`Response`s always use the streaming path, so the event loop is never held for long. Set
+`syncThreshold` to `0` to compress every response through the streaming path.
 
 ```js
 await fastify.register(
@@ -188,6 +188,48 @@ await fastify.register(
   { syncThreshold: 65536 }
 )
 ```
+
+#### How the default is chosen
+
+The streaming path hands compression to libuv's threadpool, so it only pays off when there
+are spare cores to overlap that work with the event loop. The more cores are available for
+that overlap, the smaller the payload at which streaming starts to win, so the default
+shrinks as the host gets wider:
+
+| cores reported | default |
+| --- | --- |
+| 1 | `65536` |
+| 2 | `8192` |
+| 3 or more | `4096` |
+
+The scale stops at four because libuv's threadpool defaults to four threads: beyond that,
+extra cores cannot compress any more responses in parallel. The value is computed once at
+startup and is always overridden by an explicit `syncThreshold`.
+
+The memory saving does not depend on payload size — it comes from not allocating a zlib
+context per in-flight response — so it is retained in full even at the lowest default.
+
+#### Raising it on CPU-constrained deployments
+
+`os.availableParallelism()` reports the host's cores and does not account for a cgroup CPU
+quota. A container limited to a fraction of a CPU on a large host therefore reads as "many
+cores" and gets the smallest default, even though it is precisely the deployment that
+benefits most from compressing synchronously — with little or no spare CPU, there is nothing
+for the streaming path to overlap with.
+
+If you run under a CPU limit, set `syncThreshold` explicitly:
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  // a container pinned to ~1 CPU behaves like a single core host
+  { syncThreshold: 65536 }
+)
+```
+
+The default is biased towards the low end on purpose: choosing too low a value only forgoes
+part of the possible throughput gain, while choosing too high a value costs considerably
+more than it can ever return.
 
 Because the compressed size is known upfront, responses compressed synchronously carry an
 accurate `Content-Length` instead of being sent with chunked transfer encoding. Replies that

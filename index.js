@@ -11,6 +11,7 @@ const { Minipass } = require('minipass')
 const { Readable } = require('readable-stream')
 
 const {
+  computeSyncThreshold,
   isStream,
   isGzip,
   isDeflate,
@@ -20,6 +21,10 @@ const {
   webStreamToNodeReadable,
   createPeekTransform
 } = require('./lib/utils')
+
+// The default depends on how much parallelism the host offers, which cannot change while
+// the process runs, so it is computed once here rather than per registration or per request
+const defaultSyncThreshold = computeSyncThreshold()
 
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
@@ -137,9 +142,10 @@ function processCompressParams (opts) {
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   // Upper size bound of the synchronous compression path. Unlike `threshold`, which is a
   // lower bound, this one is a ceiling: bigger payloads keep using the stream pipeline.
-  // 32 KiB keeps the inline work down to roughly a millisecond, which is where the
-  // throughput win over a per-response zlib stream is largest. `0` disables the path.
-  params.syncThreshold = typeof opts.syncThreshold === 'number' ? opts.syncThreshold : 32768
+  // The default scales with the parallelism the host can offer the stream path, see
+  // `computeSyncThreshold()`. An explicit value is always used as is, and `0` disables
+  // the synchronous path entirely.
+  params.syncThreshold = typeof opts.syncThreshold === 'number' ? opts.syncThreshold : defaultSyncThreshold
   params.compressibleTypes = opts.customTypes instanceof RegExp
     ? opts.customTypes.test.bind(opts.customTypes)
     : typeof opts.customTypes === 'function'
