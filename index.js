@@ -127,9 +127,10 @@ function processCompressParams (opts) {
   }
 
   params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
-  params.brotliOptions = params.global
-    ? { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
-    : opts.brotliOptions
+  // The recommended defaults apply whatever the value of `global` is: with
+  // `global: false` the compression still runs, just through `reply.compress()`,
+  // and falling back to zlib's default quality of 11 there is needlessly slow.
+  params.brotliOptions = { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
   params.zlibOptions = opts.zlibOptions
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true

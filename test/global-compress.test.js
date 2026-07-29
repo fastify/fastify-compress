@@ -2821,6 +2821,70 @@ describe('It should send data compressed according to `brotliOptions` :', async 
     const compressedPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
     t.assert.deepEqual(response.rawPayload, compressedPayload)
   })
+
+  test('default BROTLI_PARAM_QUALITY to be 4 when `global` is `false`', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: false })
+
+    const file = readFileSync('./package.json', 'utf8')
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(file)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'br'
+      }
+    })
+
+    const defaultBrotliOptions = {
+      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 4 }
+    }
+    const compressedPayload = zlib.brotliCompressSync(file, defaultBrotliOptions)
+    t.assert.deepEqual(response.rawPayload, compressedPayload)
+
+    // zlib's own default of quality 11 is far more expensive and must not be used
+    const maxQualityPayload = zlib.brotliCompressSync(file)
+    t.assert.notDeepEqual(response.rawPayload, maxQualityPayload)
+  })
+
+  test('user supplied `brotliOptions` still take precedence when `global` is `false`', async (t) => {
+    t.plan(1)
+
+    const brotliOptions = {
+      params: {
+        [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
+        [zlib.constants.BROTLI_PARAM_QUALITY]: 8
+      }
+    }
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: false, brotliOptions })
+
+    const file = readFileSync('./package.json', 'utf8')
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('text/plain')
+        .compress(file)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'br'
+      }
+    })
+
+    const compressedPayload = zlib.brotliCompressSync(file, brotliOptions)
+    t.assert.deepEqual(response.rawPayload, compressedPayload)
+  })
 })
 
 describe('It should send data compressed according to `zlibOptions` :', async () => {
