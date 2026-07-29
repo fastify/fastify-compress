@@ -26,6 +26,7 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "benchmark": "node benchmark/sync-compression.mjs",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tstyche",
     "test:unit": "node --test",
