@@ -211,13 +211,21 @@ context per in-flight response — so it is retained in full even at the lowest 
 
 #### Raising it on CPU-constrained deployments
 
-`os.availableParallelism()` reports the host's cores and does not account for a cgroup CPU
-quota. A container limited to a fraction of a CPU on a large host therefore reads as "many
-cores" and gets the smallest default, even though it is precisely the deployment that
-benefits most from compressing synchronously — with little or no spare CPU, there is nothing
-for the streaming path to overlap with.
+Since libuv 1.49 (Node.js 22.12), `os.availableParallelism()` accounts for a cgroup CPU
+quota, so a container limited to whole cores reports those rather than the host's and gets
+an appropriate default on its own. Two cases still read as a wide host and so get the
+smallest default:
 
-If you run under a CPU limit, set `syncThreshold` explicitly:
+| deployment | reported | why |
+| --- | --- | --- |
+| Node.js before 22.12 | host cores | the quota is not consulted at all |
+| a quota below one core, e.g. Kubernetes `cpu: 500m` | host cores | the quota floors to zero and falls back to the host count |
+
+Both are precisely the deployments that benefit most from compressing synchronously: with
+little or no spare CPU, there is nothing for the streaming path to overlap with. Quotas are
+also floored rather than rounded, so `cpu: 2500m` reports two cores.
+
+If either applies to you, set `syncThreshold` explicitly:
 
 ```js
 await fastify.register(
