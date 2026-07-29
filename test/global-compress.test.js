@@ -2005,11 +2005,14 @@ describe('It should support stream1 :', async () => {
 })
 
 describe('It should remove `Content-Length` header :', async () => {
+  // `./package.json` is small enough to be compressed synchronously, and the synchronous
+  // path knows the compressed size, so it replaces the stale `Content-Length` with an
+  // accurate one instead of removing it. `syncThreshold: 0` restores the streamed behaviour.
   test('using `reply.compress()`', async (t) => {
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold: 0 })
 
     fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {
@@ -2069,7 +2072,7 @@ describe('It should remove `Content-Length` header :', async () => {
     t.plan(4)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: true })
+    await fastify.register(compressPlugin, { global: true, syncThreshold: 0 })
 
     fastify.get('/', (_request, reply) => {
       readFile('./package.json', 'utf8', (err, data) => {

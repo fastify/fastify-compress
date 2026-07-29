@@ -37,6 +37,7 @@ type RouteCompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'inflateIfDeflated'
   | 'onUnsupportedEncoding'
   | 'removeContentLengthHeader'
+  | 'syncThreshold'
   | 'threshold'
   | 'zlib'
   | 'zlibOptions'
@@ -78,6 +79,7 @@ declare namespace fastifyCompress {
     onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest, reply: FastifyReply) => Error | undefined | null;
     removeContentLengthHeader?: boolean;
     requestEncodings?: EncodingToken[];
+    syncThreshold?: number;
     threshold?: number;
     zlib?: unknown;
     zlibOptions?: ZlibOptions;

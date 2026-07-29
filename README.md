@@ -167,6 +167,34 @@ await fastify.register(
   { threshold: 2048 }
 )
 ```
+### syncThreshold
+The maximum byte size for compressing a response synchronously. Defaults to `32768` (32 KiB).
+
+Payloads that are already fully in memory (a `string` or a `Buffer`) and are not larger than
+`syncThreshold` are compressed in one call instead of being pushed through a compression
+stream. This is considerably faster for small responses — a per-response zlib stream costs
+more in setup and scheduling than the compression itself at these sizes — and it uses much
+less memory while the response is in flight, since no zlib context is allocated and the
+source payload is released immediately.
+
+Larger payloads, streams, [web `ReadableStream`s](#supported-payload-types) and fetch
+`Response`s always use the streaming path, so the event loop is never held for long. Raise
+`syncThreshold` to trade more event loop time for more throughput, or set it to `0` to
+compress every response through the streaming path.
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { syncThreshold: 65536 }
+)
+```
+
+Because the compressed size is known upfront, responses compressed synchronously carry an
+accurate `Content-Length` instead of being sent with chunked transfer encoding. Replies that
+already carry a `Content-Length` the plugin has been asked to keep
+(see [removeContentLengthHeader](#manage-content-length-header-removal-with-removecontentlengthheader))
+use the streaming path so the provided value is preserved.
+
 ### customTypes
 [mime-db](https://github.com/jshttp/mime-db) determines if a `content-type` should be compressed. Additional content types can be compressed via regex or a function.
 
@@ -267,6 +295,12 @@ By default, `@fastify/compress` removes the reply `Content-Length` header. Chang
     reply.compress(fs.createReadStream('./file.gz'))
   )
 ```
+
+This option exists because the streaming path cannot know the compressed size upfront, so
+the reply `Content-Length` would otherwise describe the uncompressed payload. Responses
+taking the [synchronous path](#syncthreshold) do know the compressed size and always send an
+accurate `Content-Length`; a reply that already carries a `Content-Length` and sets
+`removeContentLengthHeader` to `false` is streamed instead, so the provided value is kept.
 
 ## Usage - Decompress request payloads
 This plugin adds a `preParsing` hook to decompress the request payload based on the `content-encoding` request header.

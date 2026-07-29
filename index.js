@@ -135,6 +135,11 @@ function processCompressParams (opts) {
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
+  // Upper size bound of the synchronous compression path. Unlike `threshold`, which is a
+  // lower bound, this one is a ceiling: bigger payloads keep using the stream pipeline.
+  // 32 KiB keeps the inline work down to roughly a millisecond, which is where the
+  // throughput win over a per-response zlib stream is largest. `0` disables the path.
+  params.syncThreshold = typeof opts.syncThreshold === 'number' ? opts.syncThreshold : 32768
   params.compressibleTypes = opts.customTypes instanceof RegExp
     ? opts.customTypes.test.bind(opts.customTypes)
     : typeof opts.customTypes === 'function'
@@ -148,6 +153,22 @@ function processCompressParams (opts) {
   if (typeof ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress) === 'function') {
     params.compressStream.zstd = () => ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
   }
+  // Synchronous counterparts of `params.compressStream`, used for small buffered payloads.
+  // Encodings without a usable synchronous method are left out of the map so that they
+  // keep flowing through the stream pipeline.
+  params.compressSync = {}
+  for (const [encoding, streamMethod, syncMethod, options] of [
+    ['br', 'createBrotliCompress', 'brotliCompressSync', params.brotliOptions],
+    ['gzip', 'createGzip', 'gzipSync', params.zlibOptions],
+    ['deflate', 'createDeflate', 'deflateSync', params.zlibOptions],
+    ['zstd', 'createZstdCompress', 'zstdCompressSync', params.zlibOptions]
+  ]) {
+    const compressSync = resolveSyncCompressor(opts.zlib, streamMethod, syncMethod, options)
+    if (compressSync !== undefined) {
+      params.compressSync[encoding] = compressSync
+    }
+  }
+
   params.uncompressStream = {
     // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
     // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
@@ -173,6 +194,54 @@ function processCompressParams (opts) {
     : supportedEncodings
 
   return params
+}
+
+// Resolve the synchronous counterpart of a stream compressor.
+// A synchronous method is only picked when it comes from the same `zlib` implementation the
+// stream path would have used, so a custom `zlib` exposing just the stream constructor is
+// never bypassed: its encoding simply keeps using the stream pipeline.
+function resolveSyncCompressor (customZlib, streamMethod, syncMethod, options) {
+  let compressSync
+
+  if (customZlib != null && typeof customZlib[syncMethod] === 'function') {
+    compressSync = customZlib[syncMethod]
+  } else if ((customZlib == null || typeof customZlib[streamMethod] !== 'function') && typeof zlib[syncMethod] === 'function') {
+    // `zlib.zstdCompressSync` is only available on Node.js 22.15+/23.8+
+    compressSync = zlib[syncMethod]
+  } else {
+    return undefined
+  }
+
+  return (payload) => compressSync(payload, options)
+}
+
+// Compress an already buffered payload inline, bypassing the stream pipeline.
+// Small payloads are much cheaper to compress this way: no zlib context and no stream
+// pipeline are allocated per response, and the source payload is released immediately
+// instead of being pinned for as long as the response is in flight.
+// Returns `null` when the payload is not eligible and must be streamed instead.
+function compressPayloadSync (params, reply, encoding, payload, payloadSize) {
+  if (params.syncThreshold <= 0 || payloadSize > params.syncThreshold) return null
+
+  const compressSync = params.compressSync[encoding]
+  if (compressSync === undefined) return null
+
+  // Only strings and Buffers are fully buffered and can be compressed in one go.
+  // Fastify already turns every other buffered payload type into one of those two
+  // before this point, so this is a safety net rather than a reachable path.
+  /* c8 ignore next */
+  if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) return null
+
+  // Fastify recomputes `content-length` for buffered payloads, so a caller provided value
+  // that the plugin has been asked to keep can only be honoured by the stream path
+  if (params.removeContentLengthHeader === false && reply.getHeader('content-length') !== undefined) return null
+
+  const buffer = Buffer.isBuffer(payload) ? payload : Buffer.from(payload)
+
+  // Mirror `zipStream()` and pass already gzip or deflate compressed payloads through as is
+  if (isCompressed(buffer) !== 0) return buffer
+
+  return compressSync(buffer)
 }
 
 function processDecompressParams (opts) {
@@ -303,9 +372,27 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       if (isWebReadableStream(payload)) {
         payload = webStreamToNodeReadable(payload)
       } else {
-        if (Buffer.byteLength(payload) < params.threshold) {
+        const payloadSize = Buffer.byteLength(payload)
+        if (payloadSize < params.threshold) {
           return next()
         }
+
+        let compressedPayload = null
+        try {
+          compressedPayload = compressPayloadSync(params, reply, encoding, payload, payloadSize)
+        } catch (err) {
+          return next(err)
+        }
+
+        if (compressedPayload !== null) {
+          setVaryHeader(reply)
+          reply.header('Content-Encoding', encoding)
+          // The compressed size is known on this path, so an accurate `content-length` is
+          // set instead of dropping the header and falling back to a chunked response
+          reply.header('Content-Length', compressedPayload.length)
+          return next(null, compressedPayload)
+        }
+
         payload = Readable.from(intoAsyncIterator(payload))
       }
     }
@@ -437,9 +524,27 @@ function compress (params) {
     }
 
     if (typeof payload.pipe !== 'function') {
-      if (Buffer.byteLength(payload) < params.threshold) {
+      const payloadSize = Buffer.byteLength(payload)
+      if (payloadSize < params.threshold) {
         return this.send(payload)
       }
+
+      let compressedPayload = null
+      try {
+        compressedPayload = compressPayloadSync(params, this, encoding, payload, payloadSize)
+      } catch (err) {
+        return this.send(err)
+      }
+
+      if (compressedPayload !== null) {
+        setVaryHeader(this)
+        this.header('Content-Encoding', encoding)
+        // The compressed size is known on this path, so an accurate `content-length` is
+        // set instead of dropping the header and falling back to a chunked response
+        this.header('Content-Length', compressedPayload.length)
+        return this.send(compressedPayload)
+      }
+
       payload = Readable.from(intoAsyncIterator(payload))
     }
 

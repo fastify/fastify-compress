@@ -9,6 +9,7 @@ const stream = createReadStream('./package.json')
 const withGlobalOptions: FastifyCompressOptions = {
   global: true,
   threshold: 10,
+  syncThreshold: 32768,
   zlib,
   brotliOptions: {
     params: {
@@ -55,7 +56,8 @@ appWithoutGlobal.get('/one', {
     zlib: {
       createGzip: () => zlib.createGzip()
     },
-    removeContentLengthHeader: false
+    removeContentLengthHeader: false,
+    syncThreshold: 0
   },
   decompress: {
     forceRequestEncoding: 'gzip',
