@@ -364,6 +364,23 @@ test('reply.compress should handle Fetch Response', async (t) => {
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from reply.compress')
 })
 
+test('reply.compress should preserve a Fetch Response status and headers', async (t) => {
+  t.plan(4)
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { global: true, threshold: 0 })
+  fastify.get('/', (_req, reply) => {
+    reply.compress(new Response('from reply.compress', {
+      status: 418,
+      headers: { 'content-type': 'text/plain', 'x-custom': 'kept' }
+    }))
+  })
+  const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
+  t.assert.equal(res.statusCode, 418)
+  t.assert.equal(res.headers['content-type'], 'text/plain')
+  t.assert.equal(res.headers['x-custom'], 'kept')
+  t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from reply.compress')
+})
+
 test('reply.compress should handle Web ReadableStream', async (t) => {
   t.plan(1)
   const fastify = Fastify()
