@@ -288,6 +288,36 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     t.assert.equal(payload.toString('utf-8'), body)
   })
 
+  test('it should preserve a Fetch API Response status and headers', async (t) => {
+    t.plan(5)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'hello from fetch response'
+    fastify.get('/fetch-resp', (_request, reply) => {
+      reply.send(new Response(body, {
+        status: 201,
+        headers: {
+          'content-type': 'text/plain',
+          'cache-control': 'public, max-age=120',
+          'set-cookie': 'a=b; HttpOnly'
+        }
+      }))
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.statusCode, 201)
+    t.assert.equal(response.headers['content-type'], 'text/plain')
+    t.assert.equal(response.headers['cache-control'], 'public, max-age=120')
+    t.assert.equal(response.headers['set-cookie'], 'a=b; HttpOnly')
+    t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), body)
+  })
+
   test('it should compress a Web ReadableStream body', async (t) => {
     t.plan(1)
 

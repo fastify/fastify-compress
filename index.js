@@ -19,6 +19,7 @@ const {
   isWebReadableStream,
   isFetchResponse,
   webStreamToNodeReadable,
+  unwrapFetchResponse,
   createPeekTransform
 } = require('./lib/utils')
 
@@ -372,7 +373,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
 
     if (typeof payload.pipe !== 'function') {
       if (isFetchResponse(payload)) {
-        payload = payload.body
+        payload = unwrapFetchResponse(reply, payload)
       }
 
       if (isWebReadableStream(payload)) {
@@ -519,7 +520,7 @@ function compress (params) {
 
     if (typeof payload.pipe !== 'function') {
       if (isFetchResponse(payload)) {
-        payload = payload.body
+        payload = unwrapFetchResponse(this, payload)
       }
 
       if (isWebReadableStream(payload)) {
