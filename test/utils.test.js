@@ -5,7 +5,41 @@ const { Socket } = require('node:net')
 const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('node:stream')
 const { finished } = require('node:stream/promises')
 const { test } = require('node:test')
-const { isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createPeekTransform } = require('../lib/utils')
+const { availableParallelism } = require('node:os')
+const { computeSyncThreshold, isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createPeekTransform } = require('../lib/utils')
+
+test('computeSyncThreshold() utility should scale the default with the host parallelism', async (t) => {
+  t.plan(7)
+  const equal = t.assert.equal
+
+  // a single core has nothing to overlap stream compression with, so the whole range
+  // is worth compressing synchronously
+  equal(computeSyncThreshold(1), 65536)
+  equal(computeSyncThreshold(2), 8192)
+  // from three cores up the lower clamp takes over
+  equal(computeSyncThreshold(3), 4096)
+  equal(computeSyncThreshold(4), 4096)
+  // beyond libuv's threadpool size extra cores cannot compress any more in parallel
+  equal(computeSyncThreshold(8), 4096)
+  equal(computeSyncThreshold(16), 4096)
+  equal(computeSyncThreshold(1024), 4096)
+})
+
+test('computeSyncThreshold() utility should clamp the default to a sane range', async (t) => {
+  const parallelisms = [0, 1, 2, 3, 4, 7, 12, 64, 4096]
+  t.plan(parallelisms.length)
+
+  for (const parallelism of parallelisms) {
+    const threshold = computeSyncThreshold(parallelism)
+    t.assert.ok(threshold >= 4096 && threshold <= 65536, `${parallelism} cores yielded ${threshold}`)
+  }
+})
+
+test('computeSyncThreshold() utility should default to the host parallelism', async (t) => {
+  t.plan(1)
+
+  t.assert.equal(computeSyncThreshold(), computeSyncThreshold(availableParallelism()))
+})
 
 test('isStream() utility should be able to detect Streams', async (t) => {
   t.plan(12)

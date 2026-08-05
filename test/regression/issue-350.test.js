@@ -22,7 +22,9 @@ async function routes (fastify) {
 
 test('should compress large payload without premature close', async (t) => {
   const fastify = Fastify()
-  await fastify.register(fastifyCompress, { encodings: ['gzip'], global: true })
+  // `syncThreshold: 0` keeps this payload on the stream pipeline this regression covers,
+  // whatever default the host parallelism would otherwise produce
+  await fastify.register(fastifyCompress, { encodings: ['gzip'], global: true, syncThreshold: 0 })
   await fastify.register(routes)
 
   const response = await fastify.inject({

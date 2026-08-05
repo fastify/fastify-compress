@@ -167,6 +167,84 @@ await fastify.register(
   { threshold: 2048 }
 )
 ```
+### syncThreshold
+The maximum byte size for compressing a response synchronously. Defaults to a value derived
+from `os.availableParallelism()`, between `4096` and `65536`.
+
+Payloads that are already fully in memory (a `string` or a `Buffer`) and are not larger than
+`syncThreshold` are compressed in one call instead of being pushed through a compression
+stream. This is faster for small responses — a per-response zlib stream costs more in setup
+and scheduling than the compression itself at these sizes — and it uses much less memory
+while the response is in flight, since no zlib context is allocated and the source payload
+is released immediately.
+
+Larger payloads, streams, [web `ReadableStream`s](#supported-payload-types) and fetch
+`Response`s always use the streaming path, so the event loop is never held for long. Set
+`syncThreshold` to `0` to compress every response through the streaming path.
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { syncThreshold: 65536 }
+)
+```
+
+#### How the default is chosen
+
+The streaming path hands compression to libuv's threadpool, so it only pays off when there
+are spare cores to overlap that work with the event loop. The more cores are available for
+that overlap, the smaller the payload at which streaming starts to win, so the default
+shrinks as the host gets wider:
+
+| cores reported | default |
+| --- | --- |
+| 1 | `65536` |
+| 2 | `8192` |
+| 3 or more | `4096` |
+
+The scale stops at four because libuv's threadpool defaults to four threads: beyond that,
+extra cores cannot compress any more responses in parallel. The value is computed once at
+startup and is always overridden by an explicit `syncThreshold`.
+
+The memory saving does not depend on payload size — it comes from not allocating a zlib
+context per in-flight response — so it is retained in full even at the lowest default.
+
+#### Raising it on CPU-constrained deployments
+
+Since libuv 1.49 (Node.js 22.12), `os.availableParallelism()` accounts for a cgroup CPU
+quota, so a container limited to whole cores reports those rather than the host's and gets
+an appropriate default on its own. Two cases still read as a wide host and so get the
+smallest default:
+
+| deployment | reported | why |
+| --- | --- | --- |
+| Node.js before 22.12 | host cores | the quota is not consulted at all |
+| a quota below one core, e.g. Kubernetes `cpu: 500m` | host cores | the quota floors to zero and falls back to the host count |
+
+Both are precisely the deployments that benefit most from compressing synchronously: with
+little or no spare CPU, there is nothing for the streaming path to overlap with. Quotas are
+also floored rather than rounded, so `cpu: 2500m` reports two cores.
+
+If either applies to you, set `syncThreshold` explicitly:
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  // a container pinned to ~1 CPU behaves like a single core host
+  { syncThreshold: 65536 }
+)
+```
+
+The default is biased towards the low end on purpose: choosing too low a value only forgoes
+part of the possible throughput gain, while choosing too high a value costs considerably
+more than it can ever return.
+
+Because the compressed size is known upfront, responses compressed synchronously carry an
+accurate `Content-Length` instead of being sent with chunked transfer encoding. Replies that
+already carry a `Content-Length` the plugin has been asked to keep
+(see [removeContentLengthHeader](#manage-content-length-header-removal-with-removecontentlengthheader))
+use the streaming path so the provided value is preserved.
+
 ### customTypes
 [mime-db](https://github.com/jshttp/mime-db) determines if a `content-type` should be compressed. Additional content types can be compressed via regex or a function.
 
@@ -267,6 +345,12 @@ By default, `@fastify/compress` removes the reply `Content-Length` header. Chang
     reply.compress(fs.createReadStream('./file.gz'))
   )
 ```
+
+This option exists because the streaming path cannot know the compressed size upfront, so
+the reply `Content-Length` would otherwise describe the uncompressed payload. Responses
+taking the [synchronous path](#syncthreshold) do know the compressed size and always send an
+accurate `Content-Length`; a reply that already carries a `Content-Length` and sets
+`removeContentLengthHeader` to `false` is streamed instead, so the provided value is kept.
 
 ## Usage - Decompress request payloads
 This plugin adds a `preParsing` hook to decompress the request payload based on the `content-encoding` request header.
