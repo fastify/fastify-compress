@@ -1,6 +1,6 @@
 {
   "name": "@fastify/compress",
-  "version": "9.1.0",
+  "version": "9.1.1",
   "description": "Fastify compression utils",
   "main": "index.js",
   "type": "commonjs",
@@ -26,6 +26,7 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "benchmark": "node benchmark/sync-compression.mjs",
     "test": "npm run test:unit && npm run test:typescript",
     "test:typescript": "tstyche",
     "test:unit": "node --test",
