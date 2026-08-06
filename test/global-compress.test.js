@@ -318,6 +318,98 @@ describe('When `global` is not set, it is `true` by default :', async () => {
     t.assert.equal(zlib.gunzipSync(response.rawPayload).toString('utf-8'), body)
   })
 
+  test('it should not compress a Fetch API Response holding a non-compressible `Content-Type`', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'data: hello from fetch response\n\n'
+    fastify.get('/fetch-resp', (_request, reply) => {
+      reply.send(new Response(body, { headers: { 'content-type': 'text/event-stream' } }))
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.rawPayload.toString('utf-8'), body)
+  })
+
+  test('it should not compress a Fetch API Response that is already compressed', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'hello from fetch response'
+    fastify.get('/fetch-resp', (_request, reply) => {
+      reply.send(new Response(zlib.brotliCompressSync(body), {
+        headers: {
+          'content-type': 'text/plain',
+          'content-encoding': 'br'
+        }
+      }))
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'br')
+    t.assert.equal(zlib.brotliDecompressSync(response.rawPayload).toString('utf-8'), body)
+  })
+
+  test('it should not compress a partial Fetch API Response', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    const body = 'hello fr'
+    fastify.get('/fetch-resp', (_request, reply) => {
+      reply.send(new Response(body, {
+        status: 206,
+        headers: {
+          'content-type': 'text/plain',
+          'content-range': 'bytes 0-7/25'
+        }
+      }))
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.statusCode, 206)
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.rawPayload.toString('utf-8'), body)
+  })
+
+  test('it should send a bodyless Fetch API Response as is', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/fetch-resp', (_request, reply) => {
+      reply.send(new Response(null, { status: 204, headers: { 'x-custom': 'kept' } }))
+    })
+
+    const response = await fastify.inject({
+      url: '/fetch-resp',
+      method: 'GET',
+      headers: { 'accept-encoding': 'gzip' }
+    })
+    t.assert.equal(response.statusCode, 204)
+    t.assert.equal(response.headers['x-custom'], 'kept')
+    t.assert.equal(response.rawPayload.length, 0)
+  })
+
   test('it should compress a Web ReadableStream body', async (t) => {
     t.plan(1)
 
