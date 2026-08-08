@@ -480,7 +480,7 @@ await fastify.register(
 
 ## Acknowledgments
 
-Past sp
+Past sponsors:
 - LetzDoIt
 
 ## License
