@@ -343,7 +343,8 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       return next(null, payload)
     }
 
-    let stream, encoding
+    let stream
+    const encoding = getEncodingHeader(params.encodings, req)
     const noCompress =
       // don't compress on x-no-compression header
       (req.headers['x-no-compression'] !== undefined) ||
@@ -353,7 +354,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       // don't compress if not one of the indicated compressible types
       (shouldCompress(reply.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(params.encodings, req)) == null || encoding === 'identity')
+      (encoding == null || encoding === 'identity')
 
     if (encoding == null && params.onUnsupportedEncoding != null) {
       const encodingHeader = req.headers['accept-encoding']
@@ -495,14 +496,15 @@ function compress (params) {
       payload = unwrapFetchResponse(this, payload)
     }
 
-    let stream, encoding
+    let stream
+    const encoding = getEncodingHeader(params.encodings, this.request)
     const noCompress =
       // don't compress on x-no-compression header
       (this.request.headers['x-no-compression'] !== undefined) ||
       // don't compress if not one of the indicated compressible types
       (shouldCompress(this.getHeader('Content-Type') || 'application/json', params.compressibleTypes) === false) ||
       // don't compress on missing or identity `accept-encoding` header
-      ((encoding = getEncodingHeader(params.encodings, this.request)) == null || encoding === 'identity')
+      (encoding == null || encoding === 'identity')
 
     if (encoding == null && params.onUnsupportedEncoding != null) {
       const encodingHeader = this.request.headers['accept-encoding']
