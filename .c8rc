@@ -1,6 +1,6 @@
 {
   "all": true,
-  "exclude": ["test/", "coverage/", "types/", "eslint.config.js"],
+  "exclude": ["test/", "coverage/", "types/", "benchmark/", "eslint.config.js"],
   "clean": true,
   "check-coverage": true,
   "branches": 100,
