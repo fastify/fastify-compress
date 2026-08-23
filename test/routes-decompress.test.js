@@ -188,6 +188,137 @@ describe('When using routes `decompress` settings :', async () => {
     t.assert.match(response.json().message, /is not valid JSON/)
   })
 
+  test('it should preserve global onInvalidRequestPayload when route decompress options are provided', async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload (encoding, _request, error) {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_HANDLER',
+          message: `Global Handler: ${encoding} - ${error.message}`
+        }
+      }
+    })
+
+    fastify.post('/custom', {
+      decompress: {
+        requestEncodings: ['deflate']
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 400)
+    t.assert.equal(response.json().code, 'GLOBAL_HANDLER')
+  })
+
+  test('it should preserve global onUnsupportedRequestEncoding when route decompress options are provided', async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onUnsupportedRequestEncoding (encoding) {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_UNSUPPORTED',
+          message: `Unsupported: ${encoding}`
+        }
+      }
+    })
+    fastify.post('/custom', {
+      decompress: {
+        requestEncodings: ['gzip']
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'br'
+      },
+      payload: createPayload(zlib.createBrotliCompress)
+    })
+
+    t.assert.equal(response.statusCode, 400)
+    t.assert.equal(response.json().code, 'GLOBAL_UNSUPPORTED')
+  })
+
+  test('it should allow route onInvalidRequestPayload to override global handler', async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload () {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_HANDLER'
+        }
+      }
+    })
+    fastify.post('/custom', {
+      decompress: {
+        requestEncodings: ['deflate'],
+        onInvalidRequestPayload (encoding, _request, error) {
+          return {
+            statusCode: 400,
+            code: 'ROUTE_HANDLER',
+            message: `${encoding}: ${error.message}`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 400)
+    t.assert.equal(response.json().code, 'ROUTE_HANDLER')
+  })
+
+  test('it should allow route decompress options to override global options', async (t) => {
+    t.plan(2)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      requestEncodings: ['gzip']
+    })
+    fastify.post('/custom', {
+      decompress: {
+        requestEncodings: ['deflate']
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+    const response = await fastify.inject({
+      url: '/custom',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
+  })
+
   test('it should return FST_ERR_CTP_INVALID_CONTENT_LENGTH when Content-Length mismatches payload', async (t) => {
     t.plan(2)
     const equal = t.assert.equal

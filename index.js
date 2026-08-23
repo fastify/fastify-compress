@@ -91,9 +91,10 @@ function fastifyCompress (fastify, opts, next) {
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        const mergedDecompressParams = processDecompressParams({
+          ...globalDecompressParams,
+          ...routeOptions.decompress
+        })
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {
