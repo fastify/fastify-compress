@@ -432,6 +432,9 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
 
     if (!encoding) {
       encoding = request.headers['content-encoding']
+      if (typeof encoding === 'string') {
+        encoding = encoding.toLowerCase()
+      }
     }
 
     // The request is not compressed, nothing to do here

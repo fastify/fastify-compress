@@ -117,6 +117,29 @@ describe('It should decompress the request payload :', async () => {
     t.assert.equal(response.body, '@fastify/compress')
   })
 
+  test('using gzip algorithm when `Content-Encoding` request header value uses mixed case', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.post('/', (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'GzIp'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
+  })
+
   test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
