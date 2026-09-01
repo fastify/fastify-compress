@@ -322,7 +322,7 @@ describe('It should return the error returned by :', async () => {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'content-encoding': 'whatever'
+        'content-encoding': 'WhatEver'
       },
       payload: createPayload(zlib.createDeflate)
     })
@@ -331,7 +331,7 @@ describe('It should return the error returned by :', async () => {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
-      message: 'We don\'t want to deal with whatever.'
+      message: 'We don\'t want to deal with WhatEver.'
     })
   })
 
