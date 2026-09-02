@@ -30,7 +30,7 @@ const defaultSyncThreshold = computeSyncThreshold()
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
-function fastifyCompress (fastify, opts, next) {
+function fastifyCompress(fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
   const globalDecompressParams = processDecompressParams(opts)
 
@@ -120,7 +120,7 @@ const recommendedDefaultBrotliOptions = {
   }
 }
 
-function processCompressParams (opts) {
+function processCompressParams(opts) {
   /* c8 ignore next 3 */
   if (!opts) {
     return
@@ -200,14 +200,16 @@ function processCompressParams (opts) {
       .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
     : supportedEncodings
 
-  return params
+  return Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value != undefined)
+  )
 }
 
 // Resolve the synchronous counterpart of a stream compressor.
 // A synchronous method is only picked when it comes from the same `zlib` implementation the
 // stream path would have used, so a custom `zlib` exposing just the stream constructor is
 // never bypassed: its encoding simply keeps using the stream pipeline.
-function resolveSyncCompressor (customZlib, streamMethod, syncMethod, options) {
+function resolveSyncCompressor(customZlib, streamMethod, syncMethod, options) {
   let compressSync
 
   if (customZlib != null && typeof customZlib[syncMethod] === 'function') {
@@ -227,7 +229,7 @@ function resolveSyncCompressor (customZlib, streamMethod, syncMethod, options) {
 // pipeline are allocated per response, and the source payload is released immediately
 // instead of being pinned for as long as the response is in flight.
 // Returns `null` when the payload is not eligible and must be streamed instead.
-function compressPayloadSync (params, reply, encoding, payload, payloadSize) {
+function compressPayloadSync(params, reply, encoding, payload, payloadSize) {
   if (params.syncThreshold <= 0 || payloadSize > params.syncThreshold) return null
 
   const compressSync = params.compressSync[encoding]
@@ -251,7 +253,7 @@ function compressPayloadSync (params, reply, encoding, payload, payloadSize) {
   return compressSync(buffer)
 }
 
-function processDecompressParams (opts) {
+function processDecompressParams(opts) {
   /* c8 ignore next 3 */
   if (!opts) {
     return
@@ -296,10 +298,12 @@ function processDecompressParams (opts) {
     }
   }
 
-  return params
+  return Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value != undefined)
+  )
 }
 
-function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
+function buildRouteCompress(_fastify, params, routeOptions, decorateOnly) {
   // In order to provide a compress method with the same parameter set as the route itself,
   // we decorate the reply at the start of the request
   if (Array.isArray(routeOptions.onRequest)) {
@@ -311,7 +315,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
   }
 
   const compressFn = compress(params)
-  function onRequest (_req, reply, next) {
+  function onRequest(_req, reply, next) {
     reply.compress = compressFn
     next()
   }
@@ -328,7 +332,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
     routeOptions.onSend = [onSend]
   }
 
-  function onSend (req, reply, payload, next) {
+  function onSend(req, reply, payload, next) {
     if (isFetchResponse(payload)) {
       payload = unwrapFetchResponse(reply, payload)
     }
@@ -416,7 +420,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
   }
 }
 
-function buildRouteDecompress (_fastify, params, routeOptions) {
+function buildRouteDecompress(_fastify, params, routeOptions) {
   // Add our decompress handler in the preParsing hook
   if (Array.isArray(routeOptions.preParsing)) {
     routeOptions.preParsing.unshift(preParsing)
@@ -426,7 +430,7 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
     routeOptions.preParsing = [preParsing]
   }
 
-  function preParsing (request, _reply, raw, next) {
+  function preParsing(request, _reply, raw, next) {
     // Get the encoding from the options or from the headers
     let encoding = params.forceEncoding
 
@@ -480,7 +484,7 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
   }
 }
 
-function compress (params) {
+function compress(params) {
   return function (payload) {
     if (payload == null) {
       this.send(new Error('Internal server error'))
@@ -571,7 +575,7 @@ function compress (params) {
   }
 }
 
-function setVaryHeader (reply) {
+function setVaryHeader(reply) {
   if (reply.hasHeader('Vary')) {
     const rawHeaderValue = reply.getHeader('Vary')
     const headerValueArray = Array.isArray(rawHeaderValue) ? rawHeaderValue : [rawHeaderValue]
@@ -583,7 +587,7 @@ function setVaryHeader (reply) {
   }
 }
 
-function onEnd (err) {
+function onEnd(err) {
   // Client disconnection during streaming is expected and handled by Fastify.
   // Do not log "premature close" errors at error level since they are not
   // actual errors - they occur when clients disconnect mid-response.
@@ -597,16 +601,16 @@ function onEnd (err) {
   }
 }
 
-function trackEncodedLength (chunk) {
+function trackEncodedLength(chunk) {
   this.receivedEncodedLength += chunk.length
 }
 
-function removeEncodedLengthTracking () {
+function removeEncodedLengthTracking() {
   this.removeListener('data', trackEncodedLength)
   this.removeListener('end', removeEncodedLengthTracking)
 }
 
-function onDecompressError (request, params, encoding, error) {
+function onDecompressError(request, params, encoding, error) {
   this.log.debug(`compress: invalid request payload - ${error}`)
 
   let errorPayload
@@ -629,7 +633,7 @@ function onDecompressError (request, params, encoding, error) {
 
 const gzipAlias = /\*|x-gzip/gu
 
-function getEncodingHeader (encodings, request) {
+function getEncodingHeader(encodings, request) {
   let header = request.headers['accept-encoding']
   if (header != null) {
     header = header.toLowerCase()
@@ -643,20 +647,20 @@ function getEncodingHeader (encodings, request) {
   }
 }
 
-function shouldCompress (type, compressibleTypes) {
+function shouldCompress(type, compressibleTypes) {
   if (compressibleTypes(type)) return true
   const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
   return data.compressible === true
 }
 
-function isCompressed (data) {
+function isCompressed(data) {
   if (isGzip(data)) return 1
   if (isDeflate(data)) return 2
   return 0
 }
 
-function maybeUnzip (payload, serialize) {
+function maybeUnzip(payload, serialize) {
   if (isStream(payload)) return payload
 
   let buf = payload; let result = payload
@@ -678,7 +682,7 @@ function maybeUnzip (payload, serialize) {
   return Readable.from(intoAsyncIterator(result))
 }
 
-function zipStream (deflate, encoding) {
+function zipStream(deflate, encoding) {
   return createPeekTransform(function (data) {
     switch (isCompressed(data)) {
       case 1: return new Minipass()
@@ -688,7 +692,7 @@ function zipStream (deflate, encoding) {
   })
 }
 
-function unzipStream (inflate, maxRecursion) {
+function unzipStream(inflate, maxRecursion) {
   if (!(maxRecursion >= 0)) maxRecursion = 3
   return createPeekTransform(function (data) {
     // This path is never taken, when `maxRecursion` < 0 it is automatically set back to 3
@@ -702,10 +706,10 @@ function unzipStream (inflate, maxRecursion) {
   })
 }
 
-function createError (code, message, statusCode) {
+function createError(code, message, statusCode) {
   code = code.toUpperCase()
 
-  function FastifyCompressError (a) {
+  function FastifyCompressError(a) {
     Error.captureStackTrace(this, FastifyCompressError)
     this.name = 'FastifyCompressError'
     this.code = code
