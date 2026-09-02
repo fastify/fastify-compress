@@ -5,6 +5,10 @@ const zlib = require('node:zlib')
 const Fastify = require('fastify')
 const fastifyCompress = require('../..')
 
+function createPayload(compressor) {
+  return Buffer.from(JSON.stringify({ name: 'fastify' }))
+}
+
 test('global onUnsupportedRequestEncoding should be used when route only overrides onInvalidRequestPayload', async (t) => {
   let globalCalled = false
 
