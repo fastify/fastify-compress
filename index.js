@@ -66,9 +66,7 @@ function fastifyCompress (fastify, opts, next) {
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
-        const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.compress)
-        )
+        const mergedCompressParams = processCompressParams(mergeRouteOptions(opts, routeOptions.compress))
 
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
@@ -91,9 +89,7 @@ function fastifyCompress (fastify, opts, next) {
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        const mergedDecompressParams = processDecompressParams(mergeRouteOptions(opts, routeOptions.decompress))
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {
@@ -109,6 +105,20 @@ function fastifyCompress (fastify, opts, next) {
   })
 
   next()
+}
+
+function mergeRouteOptions (globalOptions, routeOptions) {
+  const mergedOptions = { ...globalOptions }
+
+  if (routeOptions) {
+    for (const [key, value] of Object.entries(routeOptions)) {
+      if (value !== undefined) {
+        mergedOptions[key] = value
+      }
+    }
+  }
+
+  return mergedOptions
 }
 
 const defaultCompressibleTypes = /^text\/(?!event-stream)|(?:\+|\/)json(?:;|$)|(?:\+|\/)text(?:;|$)|(?:\+|\/)xml(?:;|$)|octet-stream(?:;|$)/u
