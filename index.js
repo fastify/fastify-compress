@@ -2,13 +2,11 @@
 
 const zlib = require('node:zlib')
 const { inherits, format } = require('node:util')
-const { pipeline, compose } = require('node:stream')
+const { pipeline, compose, Readable, PassThrough } = require('node:stream')
 
 const fp = require('fastify-plugin')
 const encodingNegotiator = require('@fastify/accept-negotiator')
 const mimedb = require('mime-db')
-const { Minipass } = require('minipass')
-const { Readable } = require('readable-stream')
 
 const {
   computeSyncThreshold,
@@ -681,8 +679,8 @@ function maybeUnzip (payload, serialize) {
 function zipStream (deflate, encoding) {
   return createPeekTransform(function (data) {
     switch (isCompressed(data)) {
-      case 1: return new Minipass()
-      case 2: return new Minipass()
+      case 1: return new PassThrough()
+      case 2: return new PassThrough()
     }
     return deflate[encoding]()
   })
@@ -698,7 +696,7 @@ function unzipStream (inflate, maxRecursion) {
       case 1: return compose(inflate.gzip(), unzipStream(inflate, maxRecursion - 1))
       case 2: return compose(inflate.deflate(), unzipStream(inflate, maxRecursion - 1))
     }
-    return new Minipass()
+    return new PassThrough()
   })
 }
 
