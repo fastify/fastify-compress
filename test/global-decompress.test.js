@@ -349,7 +349,54 @@ describe('It should return the error returned by :', async () => {
     })
   })
 })
+test('should preserve global `onInvalidRequestPayload` when route `decompress` options are partial', async (t) => {
+  t.plan(2)
 
+  const fastify = Fastify()
+
+  await fastify.register(compressPlugin, {
+    onInvalidRequestPayload (encoding, _request, error) {
+      return {
+        statusCode: 400,
+        code: 'GLOBAL_INVALID',
+        error: 'Bad Request',
+        message: `Global handler: ${encoding} ${error.message}.`
+      }
+    }
+  })
+
+  fastify.post('/', {
+    decompress: {
+      onUnsupportedRequestEncoding () {
+        return {
+          statusCode: 415,
+          code: 'ROUTE_UNSUPPORTED',
+          error: 'Unsupported Media Type'
+        }
+      }
+    }
+  }, (request, reply) => {
+    reply.send(request.body.name)
+  })
+
+  const response = await fastify.inject({
+    url: '/',
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'content-encoding': 'deflate'
+    },
+    payload: createPayload(zlib.createGzip)
+  })
+
+  t.assert.equal(response.statusCode, 400)
+  t.assert.deepEqual(response.json(), {
+    statusCode: 400,
+    code: 'GLOBAL_INVALID',
+    error: 'Bad Request',
+    message: 'Global handler: deflate incorrect header check.'
+  })
+})
 describe('It should return the default error :', async () => {
   test('when `onUnsupportedRequestEncoding` throws', async (t) => {
     t.plan(2)
