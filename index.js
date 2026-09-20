@@ -642,6 +642,7 @@ function getEncodingHeader (encodings, request) {
 }
 
 function shouldCompress (type, compressibleTypes) {
+  if (typeof type !== 'string') return false
   if (compressibleTypes(type)) return true
   const data = mimedb[type.split(';', 1)[0].trim().toLowerCase()]
   if (data === undefined) return false
