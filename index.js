@@ -427,9 +427,14 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
   function preParsing (request, _reply, raw, next) {
     // Get the encoding from the options or from the headers
     let encoding = params.forceEncoding
+    let rawEncoding = encoding
 
     if (!encoding) {
       encoding = request.headers['content-encoding']
+      rawEncoding = encoding
+      if (typeof encoding === 'string') {
+        encoding = encoding.toLowerCase()
+      }
     }
 
     // The request is not compressed, nothing to do here
@@ -443,14 +448,14 @@ function buildRouteDecompress (_fastify, params, routeOptions) {
 
       if (params.onUnsupportedRequestEncoding) {
         try {
-          errorPayload = params.onUnsupportedRequestEncoding(encoding, request)
+          errorPayload = params.onUnsupportedRequestEncoding(rawEncoding, request)
         } catch {
           errorPayload = undefined
         }
       }
 
       if (!errorPayload) {
-        errorPayload = new InvalidRequestEncodingError(encoding)
+        errorPayload = new InvalidRequestEncodingError(rawEncoding)
       }
 
       return next(errorPayload)
