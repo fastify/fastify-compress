@@ -233,3 +233,99 @@ describe('When using routes `decompress` settings :', async () => {
     }
   })
 })
+
+describe('When route `decompress` options are partial', async () => {
+  test('inherits global `onInvalidRequestPayload` when the route overrides `onUnsupportedRequestEncoding`', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload () {
+        return {
+          statusCode: 422,
+          code: 'GLOBAL_INVALID',
+          error: 'Unprocessable Entity',
+          message: 'Global invalid payload handler used.'
+        }
+      }
+    })
+
+    fastify.post('/', {
+      decompress: {
+        onInvalidRequestPayload: undefined,
+        onUnsupportedRequestEncoding () {
+          return new Error('Route unsupported encoding handler used.')
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+
+    t.assert.equal(response.json().code, 'GLOBAL_INVALID')
+  })
+
+  test('allows a route force encoding included in inherited request encodings', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      requestEncodings: ['gzip', 'deflate'],
+      forceRequestEncoding: 'gzip'
+    })
+
+    fastify.post('/', {
+      decompress: { forceRequestEncoding: 'deflate' }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+
+    t.assert.equal(response.body, '@fastify/compress')
+  })
+
+  test('rejects a route force encoding excluded from inherited request encodings', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      requestEncodings: ['gzip']
+    })
+
+    fastify.post('/', {
+      decompress: { forceRequestEncoding: 'deflate' }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+
+    t.assert.equal(response.json().code, 'FST_CP_ERR_INVALID_CONTENT_ENCODING')
+  })
+})
