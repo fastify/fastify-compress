@@ -3167,6 +3167,55 @@ test('It should not add `accept-encoding` to `Vary` reply header if already pres
   })
 })
 
+test('It should handle case-insensitivity, substring safety, and wildcard in Vary header', async (t) => {
+  t.plan(3)
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, { global: true })
+
+  fastify.get('/case', (_request, reply) => {
+    reply
+      .header('vary', 'Accept-Encoding')
+      .type('text/plain')
+      .compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/substring', (_request, reply) => {
+    reply
+      .header('vary', 'x-accept-encoding')
+      .type('text/plain')
+      .compress(createReadStream('./package.json'))
+  })
+
+  fastify.get('/wildcard', (_request, reply) => {
+    reply
+      .header('vary', '*')
+      .type('text/plain')
+      .compress(createReadStream('./package.json'))
+  })
+
+  const res1 = await fastify.inject({
+    url: '/case',
+    method: 'GET',
+    headers: { 'accept-encoding': 'deflate' }
+  })
+  t.assert.equal(res1.headers.vary, 'Accept-Encoding')
+
+  const res2 = await fastify.inject({
+    url: '/substring',
+    method: 'GET',
+    headers: { 'accept-encoding': 'deflate' }
+  })
+  t.assert.equal(res2.headers.vary, 'x-accept-encoding, accept-encoding')
+
+  const res3 = await fastify.inject({
+    url: '/wildcard',
+    method: 'GET',
+    headers: { 'accept-encoding': 'deflate' }
+  })
+  t.assert.equal(res3.headers.vary, '*')
+})
+
 test('It should follow the `Accept-Encoding` request header encoding order', async (t) => {
   t.plan(3)
 

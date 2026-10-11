@@ -570,15 +570,30 @@ function compress (params) {
 }
 
 function setVaryHeader (reply) {
-  if (reply.hasHeader('Vary')) {
-    const rawHeaderValue = reply.getHeader('Vary')
-    const headerValueArray = Array.isArray(rawHeaderValue) ? rawHeaderValue : [rawHeaderValue]
-    if (!headerValueArray.some((h) => h.includes('accept-encoding'))) {
-      reply.header('Vary', headerValueArray.concat('accept-encoding').join(', '))
-    }
-  } else {
-    reply.header('Vary', 'accept-encoding')
+  const current = reply.getHeader('vary')
+
+  if (current === undefined) {
+    reply.header('vary', 'accept-encoding')
+    return
   }
+
+  const value = Array.isArray(current) ? current.join(', ') : String(current)
+
+  // Walk the comma-separated tokens without splitting the string.
+  const headerLength = value.length
+  let start = 0
+  for (let i = 0; i <= headerLength; i++) {
+    if (i === headerLength || value[i] === ',') {
+      const token = value.slice(start, i).trim().toLowerCase()
+      // A `Vary: *` already covers every request header.
+      if (token === 'accept-encoding' || token === '*') {
+        return
+      }
+      start = i + 1
+    }
+  }
+
+  reply.header('vary', value + ', accept-encoding')
 }
 
 function onEnd (err) {
