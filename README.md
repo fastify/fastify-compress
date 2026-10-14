@@ -160,7 +160,10 @@ app.get('/', (req, reply) => {
 ## Compress Options
 
 ### threshold
-The minimum byte size for response compression. Defaults to `1024`.
+The minimum byte size for compressing buffered payloads, such as a `string` or a `Buffer`. Defaults to `1024`.
+
+This option does not apply to stream payloads, which can be compressed even when their size is below the threshold.
+
 ```js
 await fastify.register(
   import('@fastify/compress'),
