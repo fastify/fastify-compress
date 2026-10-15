@@ -328,6 +328,60 @@ describe('When `compress.removeContentLengthHeader` is `false`, it should not re
     equal(response.headers['content-length'], payload.length.toString())
     equal(payload.toString('utf-8'), file)
   })
+
+  test('inherits the global setting when route options are partial', async (t) => {
+    t.plan(1)
+
+    const payload = 'hello world'.repeat(100)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: true, removeContentLengthHeader: false })
+
+    fastify.get('/', {
+      compress: { threshold: 1 }
+    }, (_request, reply) => {
+      reply
+        .type('text/plain')
+        .header('content-length', Buffer.byteLength(payload))
+        .send(payload)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      headers: { 'accept-encoding': 'deflate' }
+    })
+
+    t.assert.equal(response.headers['content-length'], String(Buffer.byteLength(payload)))
+  })
+})
+
+describe('When route `compress` options are partial', async () => {
+  test('inherits global `onUnsupportedEncoding`', async (t) => {
+    t.plan(1)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding (encoding) {
+        return `unsupported: ${encoding}`
+      }
+    })
+
+    fastify.get('/', {
+      compress: {
+        threshold: 1,
+        onUnsupportedEncoding: undefined
+      }
+    }, (_request, reply) => {
+      reply.type('text/plain').send('hello world')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      headers: { 'accept-encoding': 'hello' }
+    })
+
+    t.assert.equal(response.payload, 'unsupported: hello')
+  })
 })
 
 test('It should avoid to trigger `onSend` hook twice', async (t) => {
