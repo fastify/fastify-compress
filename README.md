@@ -380,7 +380,17 @@ The plugin supports compressing the following payload types:
 
 ### Global hook
 
-The global request decompression hook is enabled by default. To disable it, pass `{ global: false }`:
+The global request decompression hook is enabled by default (`globalDecompression: true`).
+
+To disable request decompression while keeping response compression enabled, pass `{ globalDecompression: false }`:
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { globalDecompression: false }
+)
+```
+
+To disable both global compression and global decompression, pass `{ global: false }`:
 ```js
 await fastify.register(
   import('@fastify/compress'),
@@ -389,6 +399,10 @@ await fastify.register(
 ```
 
 Fastify encapsulation can be used to set global decompression but run it only in a subset of routes by wrapping them inside a plugin.
+
+> [!TIP]
+> **Security Consideration (Request Decompression Attack Surface)**:
+> Ingestion of compressed request payloads exposes applications to untrusted decompression processing (such as CVE-2026-111497 in Node.js Brotli decoder). If an application only serves compressed responses and does not expect compressed request bodies, explicitly configuring `{ globalDecompression: false }` reduces attack surface by ensuring incoming request streams bypass decompression hooks.
 
 ### Per Route options
 
