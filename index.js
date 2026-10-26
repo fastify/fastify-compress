@@ -19,7 +19,6 @@ const {
   webStreamToNodeReadable,
   unwrapFetchResponse,
   createPeekTransform,
-  flushWhenIdle,
   hasNoTransformDirective
 } = require('./lib/utils')
 
@@ -744,9 +743,8 @@ function zipStream (deflate, encoding, flushOnIdle) {
       case 1: return new PassThrough()
       case 2: return new PassThrough()
     }
-    const stream = deflate[encoding]()
-    return flushOnIdle ? flushWhenIdle(stream, idleFlushKinds[encoding]) : stream
-  })
+    return deflate[encoding]()
+  }, 10, flushOnIdle ? idleFlushKinds[encoding] : undefined)
 }
 
 function unzipStream (inflate, maxRecursion) {
