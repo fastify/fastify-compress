@@ -6,7 +6,19 @@ const { Duplex, PassThrough, Readable, Stream, Transform, Writable } = require('
 const { finished } = require('node:stream/promises')
 const { test } = require('node:test')
 const { availableParallelism } = require('node:os')
-const { computeSyncThreshold, isStream, isZstd, isDeflate, isGzip, intoAsyncIterator, createPeekTransform } = require('../lib/utils')
+const { setImmediate: nextImmediate } = require('node:timers/promises')
+const zlib = require('node:zlib')
+const {
+  computeSyncThreshold,
+  isStream,
+  isZstd,
+  isDeflate,
+  isGzip,
+  intoAsyncIterator,
+  createPeekTransform,
+  flushWhenIdle,
+  hasNoTransformDirective
+} = require('../lib/utils')
 
 test('computeSyncThreshold() utility should scale the default with the host parallelism', async (t) => {
   t.plan(7)
@@ -275,6 +287,36 @@ test('createPeekTransform', async (t) => {
     await t.assert.rejects(finished(transform), new Error('boom'))
   })
 
+  await t.test('destroy before the downstream is selected', async (t) => {
+    t.plan(1)
+
+    const transform = createPeekTransform(function () {
+      t.assert.fail('should not reach')
+    })
+
+    transform.write('hello')
+    transform.destroy()
+
+    await t.assert.rejects(finished(transform), { code: 'ERR_STREAM_PREMATURE_CLOSE' })
+  })
+
+  await t.test('destroy tears the downstream down', async (t) => {
+    t.plan(2)
+
+    let downstream
+    const transform = createPeekTransform(function () {
+      downstream = new UpperCaseTransform()
+      return downstream
+    })
+
+    transform.write('hello world')
+    await nextImmediate()
+    transform.destroy()
+
+    await t.assert.rejects(finished(transform), { code: 'ERR_STREAM_PREMATURE_CLOSE' })
+    t.assert.equal(downstream.destroyed, true)
+  })
+
   await t.test('error inside downstream', async (t) => {
     t.plan(2)
 
@@ -294,4 +336,110 @@ test('createPeekTransform', async (t) => {
 
     await t.assert.rejects(finished(transform), new Error('boom'))
   })
+})
+
+test('flushWhenIdle() utility should flush once per burst of writes', async (t) => {
+  t.plan(3)
+
+  const stream = zlib.createGzip()
+  const flushes = []
+  const flush = stream.flush
+  stream.flush = function (kind, callback) {
+    flushes.push(kind)
+    return flush.call(this, kind, callback)
+  }
+  flushWhenIdle(stream, zlib.constants.Z_SYNC_FLUSH)
+
+  const gunzip = zlib.createGunzip()
+  let text = ''
+  gunzip.on('data', (chunk) => { text += chunk })
+  stream.pipe(gunzip)
+
+  stream.write('hello ')
+  stream.write('world')
+  await nextImmediate()
+  t.assert.deepEqual(flushes, [zlib.constants.Z_SYNC_FLUSH])
+
+  // the flush must not have scheduled another one on its own
+  await nextImmediate()
+  await nextImmediate()
+  t.assert.deepEqual(flushes, [zlib.constants.Z_SYNC_FLUSH])
+
+  stream.end()
+  await finished(gunzip)
+  t.assert.equal(text, 'hello world')
+})
+
+test('flushWhenIdle() utility should not flush ended or destroyed streams', async (t) => {
+  t.plan(2)
+
+  let flushes = 0
+  function createStream (opts) {
+    const stream = new PassThrough(opts)
+    stream.flush = () => { flushes++ }
+    stream.resume()
+    return flushWhenIdle(stream, 0)
+  }
+
+  const ended = createStream()
+  ended.write('hello')
+  ended.end()
+
+  const destroyed = createStream()
+  destroyed.write('hello')
+  destroyed.destroy()
+
+  // without a `close` event, the pending flush is only skipped by the check it runs
+  const destroyedWithoutClose = createStream({ emitClose: false })
+  destroyedWithoutClose.write('hello')
+  destroyedWithoutClose.destroy()
+
+  await nextImmediate()
+  await nextImmediate()
+  t.assert.equal(flushes, 0)
+
+  // a stream that is left alone does get flushed
+  const idle = createStream()
+  idle.write('hello')
+  await nextImmediate()
+  t.assert.equal(flushes, 1)
+  idle.destroy()
+})
+
+test('flushWhenIdle() utility should leave streams without `flush()` untouched', async (t) => {
+  t.plan(2)
+
+  const stream = new PassThrough()
+  const write = stream.write
+  t.assert.equal(flushWhenIdle(stream, 0), stream)
+  t.assert.equal(stream.write, write)
+})
+
+test('hasNoTransformDirective() utility should match the `no-transform` directive only', async (t) => {
+  const cases = [
+    [undefined, false],
+    ['', false],
+    ['max-age=60', false],
+    ['no-transform', true],
+    ['NO-TRANSFORM', true],
+    [' public ,  no-transform ', true],
+    ['public, max-age=60, no-transform', true],
+    ['no-transform, public', true],
+    [['public', 'no-transform'], true],
+    [['public', 'max-age=60'], false],
+    ['x-no-transform', false],
+    ['no-transforms', false],
+    ['no-transform-later', false],
+    ['no-transform=1', true],
+    ['private="no-transform"', false],
+    ['private="a, no-transform", max-age=60', false],
+    ['private="a\\", no-transform"', false],
+    ['private="a\\"b", no-transform', true],
+    ['private="unterminated, no-transform', false]
+  ]
+  t.plan(cases.length)
+
+  for (const [value, expected] of cases) {
+    t.assert.equal(hasNoTransformDirective(value), expected, JSON.stringify(value))
+  }
 })

@@ -34,6 +34,7 @@ type RouteCompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'brotliOptions'
   | 'customTypes'
   | 'encodings'
+  | 'flushOnIdle'
   | 'inflateIfDeflated'
   | 'onUnsupportedEncoding'
   | 'removeContentLengthHeader'
@@ -69,6 +70,7 @@ declare namespace fastifyCompress {
     brotliOptions?: BrotliOptions;
     customTypes?: RegExp | CompressibleContentTypeFunction;
     encodings?: EncodingToken[];
+    flushOnIdle?: boolean;
     forceRequestEncoding?: EncodingToken;
     global?: boolean;
     globalDecompression?: boolean;

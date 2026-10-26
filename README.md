@@ -162,7 +162,9 @@ app.get('/', (req, reply) => {
 ### threshold
 The minimum byte size for compressing buffered payloads, such as a `string` or a `Buffer`. Defaults to `1024`.
 
-This option does not apply to stream payloads, which can be compressed even when their size is below the threshold.
+Stream payloads, whose size is usually unknown, are compressed whatever their size, unless the reply
+carries a `Content-Length` header below the threshold, as proxied responses often do. Such streams are
+sent uncompressed, with their `Content-Length` header left in place.
 
 ```js
 await fastify.register(
@@ -248,6 +250,36 @@ already carry a `Content-Length` the plugin has been asked to keep
 (see [removeContentLengthHeader](#manage-content-length-header-removal-with-removecontentlengthheader))
 use the streaming path so the provided value is preserved.
 
+### flushOnIdle
+Flush the compressor every time a stream payload pauses, so that the data written so far reaches the
+client right away instead of waiting for the compressor to gather more of it. Defaults to `false`.
+
+Compressors buffer their input, which delays streamed responses whose chunks are meant to be shown as
+soon as they are produced. A server-rendered page streamed with React, for example, sends its shell
+first and the content of each Suspense boundary later on: without flushing, the client only gets them
+once enough data has piled up, or at the very end of the response. This is common when compressing
+responses proxied with [`@fastify/http-proxy`](https://github.com/fastify/fastify-http-proxy) or
+[`@fastify/reply-from`](https://github.com/fastify/fastify-reply-from).
+
+With `flushOnIdle` enabled, the compressor is flushed once the stream has no more data immediately
+available, i.e. on the turn of the event loop that follows a burst of chunks. The chunks of a single
+burst are flushed together, and a stream that ends right after a burst is not flushed on its own, so
+the compression ratio of fast streams is barely affected. The flushes used (`Z_SYNC_FLUSH` for `gzip`
+and `deflate`, `BROTLI_OPERATION_FLUSH` for `br` and `ZSTD_e_flush` for `zstd`) do not reset the
+compression state. Note that the first 10 bytes of a stream are always held until they are all
+available, to detect payloads that are already compressed.
+
+The option only applies to stream payloads, including [web `ReadableStream`s](#supported-payload-types)
+and fetch `Response`s: buffered payloads are compressed in one go. Compression streams of a custom
+[`zlib`](#per-route-options) that do not implement `flush()` are not flushed.
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { flushOnIdle: true }
+)
+```
+
 ### customTypes
 [mime-db](https://github.com/jshttp/mime-db) determines if a `content-type` should be compressed. Additional content types can be compressed via regex or a function.
 
@@ -284,6 +316,10 @@ await fastify.register(
 
 ### Disable compression by header
 Response compression can be disabled by an `x-no-compression` header in the request.
+
+Responses with a `Cache-Control` header carrying the
+[`no-transform`](https://www.rfc-editor.org/rfc/rfc9111#section-5.2.2.6) directive are always sent as
+they are: they are neither compressed, nor inflated by [`inflateIfDeflated`](#inflate-pre-compressed-bodies-for-clients-that-do-not-support-compression).
 
 ### Inflate pre-compressed bodies for clients that do not support compression
 Optional feature to inflate pre-compressed data if the client does not include one of the supported compression types in its `accept-encoding` header.
