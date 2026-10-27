@@ -1,6 +1,6 @@
 {
   "name": "@fastify/compress",
-  "version": "9.2.2",
+  "version": "9.3.0",
   "description": "Fastify compression utils",
   "main": "index.js",
   "type": "commonjs",
