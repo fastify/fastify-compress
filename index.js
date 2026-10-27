@@ -151,6 +151,7 @@ function processCompressParams (opts) {
   params.inflateIfDeflated = opts.inflateIfDeflated === true
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
   params.flushOnIdle = opts.flushOnIdle === true
+  params.respectNoTransform = opts.respectNoTransform === true
   // Upper size bound of the synchronous compression path. Unlike `threshold`, which is a
   // lower bound, this one is a ceiling: bigger payloads keep using the stream pipeline.
   // The default scales with the parallelism the host can offer the stream path, see
@@ -353,8 +354,9 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       return next(null, payload)
     }
 
-    // `Cache-Control: no-transform` forbids altering the payload, so it is sent as is
-    if (hasNoTransformDirective(reply.getHeader('Cache-Control'))) {
+    // `Cache-Control: no-transform` forbids intermediaries from altering the payload, so
+    // when acting as one it is sent as is
+    if (params.respectNoTransform && hasNoTransformDirective(reply.getHeader('Cache-Control'))) {
       return next(null, payload)
     }
 
@@ -519,8 +521,9 @@ function compress (params) {
       payload = unwrapFetchResponse(this, payload)
     }
 
-    // `Cache-Control: no-transform` forbids altering the payload, so it is sent as is
-    if (hasNoTransformDirective(this.getHeader('Cache-Control'))) {
+    // `Cache-Control: no-transform` forbids intermediaries from altering the payload, so
+    // when acting as one it is sent as is
+    if (params.respectNoTransform && hasNoTransformDirective(this.getHeader('Cache-Control'))) {
       return this.send(payload)
     }
 

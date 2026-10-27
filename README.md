@@ -317,9 +317,25 @@ await fastify.register(
 ### Disable compression by header
 Response compression can be disabled by an `x-no-compression` header in the request.
 
-Responses with a `Cache-Control` header carrying the
-[`no-transform`](https://www.rfc-editor.org/rfc/rfc9111#section-5.2.2.6) directive are always sent as
-they are: they are neither compressed, nor inflated by [`inflateIfDeflated`](#inflate-pre-compressed-bodies-for-clients-that-do-not-support-compression).
+### respectNoTransform
+Send responses whose `Cache-Control` header carries the
+[`no-transform`](https://www.rfc-editor.org/rfc/rfc9111#section-5.2.2.6) directive as they are: they are
+neither compressed, nor inflated by [`inflateIfDeflated`](#inflate-pre-compressed-bodies-for-clients-that-do-not-support-compression).
+Defaults to `false`.
+
+The directive forbids *intermediaries* from transforming the content, so enable this option when the
+plugin compresses responses produced by another server, for example when proxying with
+[`@fastify/http-proxy`](https://github.com/fastify/fastify-http-proxy) or
+[`@fastify/reply-from`](https://github.com/fastify/fastify-reply-from). Leave it disabled when the
+application produces the responses itself: an origin server may compress its own responses and still
+mark them `no-transform`, to keep CDNs and other intermediaries from altering them.
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { respectNoTransform: true }
+)
+```
 
 ### Inflate pre-compressed bodies for clients that do not support compression
 Optional feature to inflate pre-compressed data if the client does not include one of the supported compression types in its `accept-encoding` header.

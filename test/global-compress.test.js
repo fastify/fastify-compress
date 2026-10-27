@@ -4006,12 +4006,34 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
   for (const useCompress of [false, true]) {
     const path = useCompress ? 'using `reply.compress()`' : 'using `onSend` hook'
 
+    test(`it should compress by default, ${path}`, async (t) => {
+      t.plan(2)
+
+      const fastify = Fastify()
+      await fastify.register(compressPlugin, { threshold: 0 })
+
+      fastify.get('/', (_request, reply) => {
+        reply
+          .type('text/plain')
+          .header('cache-control', 'public, no-transform')
+        return useCompress ? reply.compress(Readable.from([data])) : Readable.from([data])
+      })
+
+      const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+      t.assert.equal(response.headers['content-encoding'], 'gzip')
+      t.assert.equal(zlib.gunzipSync(response.rawPayload).toString(), data)
+    })
+  }
+
+  for (const useCompress of [false, true]) {
+    const path = useCompress ? 'using `reply.compress()`' : 'using `onSend` hook'
+
     for (const cacheControl of ['no-transform', 'public, max-age=60, No-Transform', ['public', 'no-transform']]) {
       test(`it should not compress with \`${cacheControl}\`, ${path}`, async (t) => {
         t.plan(3)
 
         const fastify = Fastify()
-        await fastify.register(compressPlugin, { threshold: 0 })
+        await fastify.register(compressPlugin, { threshold: 0, respectNoTransform: true })
 
         fastify.get('/', (_request, reply) => {
           reply
@@ -4032,7 +4054,7 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
         t.plan(2)
 
         const fastify = Fastify()
-        await fastify.register(compressPlugin, { threshold: 0 })
+        await fastify.register(compressPlugin, { threshold: 0, respectNoTransform: true })
 
         fastify.get('/', (_request, reply) => {
           reply
@@ -4052,7 +4074,7 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
     t.plan(3)
 
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { global: false })
+    await fastify.register(compressPlugin, { global: false, respectNoTransform: true })
 
     fastify.get('/', (_request, reply) => {
       reply.compress(new Response(data, {
@@ -4071,7 +4093,7 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
 
     const gzipped = zlib.gzipSync(data)
     const fastify = Fastify()
-    await fastify.register(compressPlugin, { inflateIfDeflated: true })
+    await fastify.register(compressPlugin, { inflateIfDeflated: true, respectNoTransform: true })
 
     fastify.get('/', (_request, reply) => {
       reply

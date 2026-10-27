@@ -24,7 +24,8 @@ const withGlobalOptions: FastifyCompressOptions = {
   requestEncodings: ['gzip', 'br', 'identity', 'deflate'],
   forceRequestEncoding: 'gzip',
   removeContentLengthHeader: true,
-  flushOnIdle: true
+  flushOnIdle: true,
+  respectNoTransform: true
 }
 
 const withZstdOptions: FastifyCompressOptions = {
@@ -59,7 +60,8 @@ appWithoutGlobal.get('/one', {
     },
     removeContentLengthHeader: false,
     syncThreshold: 0,
-    flushOnIdle: true
+    flushOnIdle: true,
+    respectNoTransform: true
   },
   decompress: {
     forceRequestEncoding: 'gzip',
@@ -132,6 +134,10 @@ expect(fastify().register).type.not.toBeCallableWith(fastifyCompress, {
 
 expect(fastify().register).type.not.toBeCallableWith(fastifyCompress, {
   flushOnIdle: 'idle'
+})
+
+expect(fastify().register).type.not.toBeCallableWith(fastifyCompress, {
+  respectNoTransform: 'yes'
 })
 
 // Instantiation of an app that should trigger a typescript error
