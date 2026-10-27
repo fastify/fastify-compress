@@ -18,7 +18,8 @@ const {
   isFetchResponse,
   webStreamToNodeReadable,
   unwrapFetchResponse,
-  createPeekTransform
+  createPeekTransform,
+  hasNoTransformDirective
 } = require('./lib/utils')
 
 // The default depends on how much parallelism the host offers, which cannot change while
@@ -110,6 +111,16 @@ function fastifyCompress (fastify, opts, next) {
 }
 
 const defaultCompressibleTypes = /^text\/(?!event-stream)|(?:\+|\/)json(?:;|$)|(?:\+|\/)text(?:;|$)|(?:\+|\/)xml(?:;|$)|octet-stream(?:;|$)/u
+// Flushes that emit everything buffered so far without resetting the compression state,
+// used by the `flushOnIdle` option. `Z_FULL_FLUSH`, the default of `flush()` for gzip and
+// deflate, would reset the dictionary and hurt the compression ratio.
+const idleFlushKinds = {
+  br: zlib.constants.BROTLI_OPERATION_FLUSH,
+  gzip: zlib.constants.Z_SYNC_FLUSH,
+  deflate: zlib.constants.Z_SYNC_FLUSH,
+  // `zlib.constants.ZSTD_e_flush` is only available on Node.js 22.15+/23.8+, like zstd itself
+  zstd: zlib.constants.ZSTD_e_flush
+}
 const recommendedDefaultBrotliOptions = {
   params: {
     // Default of 4 as 11 has a heavy impact on performance.
@@ -139,6 +150,8 @@ function processCompressParams (opts) {
   params.onUnsupportedEncoding = opts.onUnsupportedEncoding
   params.inflateIfDeflated = opts.inflateIfDeflated === true
   params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
+  params.flushOnIdle = opts.flushOnIdle === true
+  params.respectNoTransform = opts.respectNoTransform === true
   // Upper size bound of the synchronous compression path. Unlike `threshold`, which is a
   // lower bound, this one is a ceiling: bigger payloads keep using the stream pipeline.
   // The default scales with the parallelism the host can offer the stream path, see
@@ -341,6 +354,12 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       return next(null, payload)
     }
 
+    // `Cache-Control: no-transform` forbids intermediaries from altering the payload, so
+    // when acting as one it is sent as is
+    if (params.respectNoTransform && hasNoTransformDirective(reply.getHeader('Cache-Control'))) {
+      return next(null, payload)
+    }
+
     let stream, encoding
     const noCompress =
       // don't compress on x-no-compression header
@@ -373,10 +392,17 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       return next(null, payload)
     }
 
+    // Only payloads that already are streams are flushed when idle: buffered ones are
+    // written in one go and gain nothing from it
+    let flushOnIdle = params.flushOnIdle
     if (typeof payload.pipe !== 'function') {
       if (isWebReadableStream(payload)) {
+        if (isBelowThreshold(params, reply)) {
+          return next(null, payload)
+        }
         payload = webStreamToNodeReadable(payload)
       } else {
+        flushOnIdle = false
         const payloadSize = Buffer.byteLength(payload)
         if (payloadSize < params.threshold) {
           return next()
@@ -400,6 +426,8 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
 
         payload = Readable.from(intoAsyncIterator(payload))
       }
+    } else if (isBelowThreshold(params, reply)) {
+      return next(null, payload)
     }
 
     setVaryHeader(reply)
@@ -408,7 +436,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       reply.removeHeader('content-length')
     }
 
-    stream = zipStream(params.compressStream, encoding)
+    stream = zipStream(params.compressStream, encoding, flushOnIdle)
     pipeline(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
@@ -493,6 +521,12 @@ function compress (params) {
       payload = unwrapFetchResponse(this, payload)
     }
 
+    // `Cache-Control: no-transform` forbids intermediaries from altering the payload, so
+    // when acting as one it is sent as is
+    if (params.respectNoTransform && hasNoTransformDirective(this.getHeader('Cache-Control'))) {
+      return this.send(payload)
+    }
+
     let stream, encoding
     const noCompress =
       // don't compress on x-no-compression header
@@ -524,6 +558,9 @@ function compress (params) {
       return this.send(payload)
     }
 
+    // Only payloads that already are streams are flushed when idle: buffered ones are
+    // written in one go and gain nothing from it
+    let flushOnIdle = params.flushOnIdle
     if (typeof payload.pipe !== 'function') {
       if (isWebReadableStream(payload)) {
         payload = webStreamToNodeReadable(payload)
@@ -532,7 +569,12 @@ function compress (params) {
       }
     }
 
-    if (typeof payload.pipe !== 'function') {
+    if (typeof payload.pipe === 'function') {
+      if (isBelowThreshold(params, this)) {
+        return this.send(payload)
+      }
+    } else {
+      flushOnIdle = false
       const payloadSize = Buffer.byteLength(payload)
       if (payloadSize < params.threshold) {
         return this.send(payload)
@@ -563,10 +605,17 @@ function compress (params) {
       this.removeHeader('content-length')
     }
 
-    stream = zipStream(params.compressStream, encoding)
+    stream = zipStream(params.compressStream, encoding, flushOnIdle)
     pipeline(payload, stream, onEnd.bind(this))
     return this.send(stream)
   }
+}
+
+// The size of a stream payload is unknown, unless the reply declares it upfront with a
+// `content-length` header, as proxied responses usually do. That size is then checked
+// against `threshold`, like the one of buffered payloads.
+function isBelowThreshold (params, reply) {
+  return Number(reply.getHeader('content-length')) < params.threshold
 }
 
 function setVaryHeader (reply) {
@@ -691,14 +740,14 @@ function maybeUnzip (payload, serialize) {
   return Readable.from(intoAsyncIterator(result))
 }
 
-function zipStream (deflate, encoding) {
+function zipStream (deflate, encoding, flushOnIdle) {
   return createPeekTransform(function (data) {
     switch (isCompressed(data)) {
       case 1: return new PassThrough()
       case 2: return new PassThrough()
     }
     return deflate[encoding]()
-  })
+  }, 10, flushOnIdle ? idleFlushKinds[encoding] : undefined)
 }
 
 function unzipStream (inflate, maxRecursion) {

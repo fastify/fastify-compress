@@ -3905,3 +3905,205 @@ describe('Range Responses', () => {
     t.assert.equal(response.body, 'hello')
   })
 })
+
+describe('When a stream payload has a known `Content-Length` :', async () => {
+  const small = 'a'.repeat(100)
+  const large = 'a'.repeat(2048)
+
+  function webStream (data) {
+    return new WebReadableStream({
+      start (controller) {
+        controller.enqueue(new TextEncoder().encode(data))
+        controller.close()
+      }
+    })
+  }
+
+  for (const [kind, createStream] of [
+    ['Node.js stream', (data) => Readable.from([data])],
+    ['web ReadableStream', webStream]
+  ]) {
+    for (const useCompress of [false, true]) {
+      const path = useCompress ? 'using `reply.compress()`' : 'using `onSend` hook'
+
+      test(`it should not compress a ${kind} below \`threshold\`, ${path}`, async (t) => {
+        t.plan(4)
+
+        const fastify = Fastify()
+        await fastify.register(compressPlugin, { threshold: 1024 })
+
+        fastify.get('/', (_request, reply) => {
+          reply
+            .type('text/plain')
+            .header('content-length', small.length)
+          return useCompress ? reply.compress(createStream(small)) : createStream(small)
+        })
+
+        const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+        t.assert.equal(response.headers['content-encoding'], undefined)
+        t.assert.equal(response.headers['content-length'], String(small.length))
+        t.assert.equal(response.headers.vary, undefined)
+        t.assert.equal(response.payload, small)
+      })
+
+      test(`it should compress a ${kind} at or above \`threshold\`, ${path}`, async (t) => {
+        t.plan(3)
+
+        const fastify = Fastify()
+        await fastify.register(compressPlugin, { threshold: 1024 })
+
+        fastify.get('/', (_request, reply) => {
+          reply
+            .type('text/plain')
+            .header('content-length', large.length)
+          return useCompress ? reply.compress(createStream(large)) : createStream(large)
+        })
+
+        const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+        t.assert.equal(response.headers['content-encoding'], 'gzip')
+        t.assert.equal(response.headers['content-length'], undefined)
+        t.assert.equal(zlib.gunzipSync(response.rawPayload).toString(), large)
+      })
+
+      test(`it should still compress a small ${kind} without \`Content-Length\`, ${path}`, async (t) => {
+        t.plan(2)
+
+        const fastify = Fastify()
+        await fastify.register(compressPlugin, { threshold: 1024 })
+
+        fastify.get('/', (_request, reply) => {
+          reply.type('text/plain')
+          return useCompress ? reply.compress(createStream(small)) : createStream(small)
+        })
+
+        const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+        t.assert.equal(response.headers['content-encoding'], 'gzip')
+        t.assert.equal(zlib.gunzipSync(response.rawPayload).toString(), small)
+      })
+    }
+  }
+
+  test('it should not compress a fetch `Response` whose `Content-Length` is below `threshold`', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 1024 })
+
+    fastify.get('/', () => new Response(webStream(small), {
+      headers: { 'content-type': 'text/plain', 'content-length': String(small.length) }
+    }))
+
+    const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['content-length'], String(small.length))
+    t.assert.equal(response.payload, small)
+  })
+})
+
+describe('When the reply `Cache-Control` header has the `no-transform` directive :', async () => {
+  const data = 'a'.repeat(2048)
+
+  for (const useCompress of [false, true]) {
+    const path = useCompress ? 'using `reply.compress()`' : 'using `onSend` hook'
+
+    test(`it should compress by default, ${path}`, async (t) => {
+      t.plan(2)
+
+      const fastify = Fastify()
+      await fastify.register(compressPlugin, { threshold: 0 })
+
+      fastify.get('/', (_request, reply) => {
+        reply
+          .type('text/plain')
+          .header('cache-control', 'public, no-transform')
+        return useCompress ? reply.compress(Readable.from([data])) : Readable.from([data])
+      })
+
+      const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+      t.assert.equal(response.headers['content-encoding'], 'gzip')
+      t.assert.equal(zlib.gunzipSync(response.rawPayload).toString(), data)
+    })
+  }
+
+  for (const useCompress of [false, true]) {
+    const path = useCompress ? 'using `reply.compress()`' : 'using `onSend` hook'
+
+    for (const cacheControl of ['no-transform', 'public, max-age=60, No-Transform', ['public', 'no-transform']]) {
+      test(`it should not compress with \`${cacheControl}\`, ${path}`, async (t) => {
+        t.plan(3)
+
+        const fastify = Fastify()
+        await fastify.register(compressPlugin, { threshold: 0, respectNoTransform: true })
+
+        fastify.get('/', (_request, reply) => {
+          reply
+            .type('text/plain')
+            .header('cache-control', cacheControl)
+          return useCompress ? reply.compress(Readable.from([data])) : Readable.from([data])
+        })
+
+        const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+        t.assert.equal(response.headers['content-encoding'], undefined)
+        t.assert.equal(response.headers.vary, undefined)
+        t.assert.equal(response.payload, data)
+      })
+    }
+
+    for (const cacheControl of ['x-no-transform', 'no-transform-later', 'private="no-transform"', 'max-age=60']) {
+      test(`it should compress with \`${cacheControl}\`, ${path}`, async (t) => {
+        t.plan(2)
+
+        const fastify = Fastify()
+        await fastify.register(compressPlugin, { threshold: 0, respectNoTransform: true })
+
+        fastify.get('/', (_request, reply) => {
+          reply
+            .type('text/plain')
+            .header('cache-control', cacheControl)
+          return useCompress ? reply.compress(data) : data
+        })
+
+        const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+        t.assert.equal(response.headers['content-encoding'], 'gzip')
+        t.assert.equal(zlib.gunzipSync(response.rawPayload).toString(), data)
+      })
+    }
+  }
+
+  test('it should not compress a fetch `Response` carrying `no-transform`, using `reply.compress()`', async (t) => {
+    t.plan(3)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { global: false, respectNoTransform: true })
+
+    fastify.get('/', (_request, reply) => {
+      reply.compress(new Response(data, {
+        headers: { 'content-type': 'text/plain', 'cache-control': 'no-transform' }
+      }))
+    })
+
+    const response = await fastify.inject({ url: '/', headers: { 'accept-encoding': 'gzip' } })
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.headers['cache-control'], 'no-transform')
+    t.assert.equal(response.payload, data)
+  })
+
+  test('it should not inflate a compressed payload when `inflateIfDeflated` is `true`', async (t) => {
+    t.plan(2)
+
+    const gzipped = zlib.gzipSync(data)
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { inflateIfDeflated: true, respectNoTransform: true })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .type('application/octet-stream')
+        .header('cache-control', 'no-transform')
+      return Readable.from([gzipped])
+    })
+
+    const response = await fastify.inject({ url: '/', headers: { 'x-no-compression': true } })
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.deepEqual(response.rawPayload, gzipped)
+  })
+})

@@ -34,9 +34,11 @@ type RouteCompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'brotliOptions'
   | 'customTypes'
   | 'encodings'
+  | 'flushOnIdle'
   | 'inflateIfDeflated'
   | 'onUnsupportedEncoding'
   | 'removeContentLengthHeader'
+  | 'respectNoTransform'
   | 'syncThreshold'
   | 'threshold'
   | 'zlib'
@@ -69,6 +71,7 @@ declare namespace fastifyCompress {
     brotliOptions?: BrotliOptions;
     customTypes?: RegExp | CompressibleContentTypeFunction;
     encodings?: EncodingToken[];
+    flushOnIdle?: boolean;
     forceRequestEncoding?: EncodingToken;
     global?: boolean;
     globalDecompression?: boolean;
@@ -79,6 +82,7 @@ declare namespace fastifyCompress {
     onUnsupportedRequestEncoding?: (encoding: string, request: FastifyRequest, reply: FastifyReply) => Error | undefined | null;
     removeContentLengthHeader?: boolean;
     requestEncodings?: EncodingToken[];
+    respectNoTransform?: boolean;
     syncThreshold?: number;
     threshold?: number;
     zlib?: unknown;
