@@ -232,4 +232,57 @@ describe('When using routes `decompress` settings :', async () => {
       t.assert.equal(err.message, 'Unknown value for route decompress configuration')
     }
   })
+
+  test('it should inherit global options when route decompress options are partially defined (#340)', async (t) => {
+    t.plan(4)
+
+    let globalInvalidCalled = false
+    let routeUnsupportedCalled = false
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      onInvalidRequestPayload: (_encoding, _request, _error) => {
+        globalInvalidCalled = true
+        return { statusCode: 400, error: 'CustomGlobalInvalid' }
+      },
+      onUnsupportedRequestEncoding: (_encoding, _request, _reply) => {
+        return { statusCode: 415, error: 'GlobalUnsupported' }
+      }
+    })
+
+    fastify.post('/route', {
+      decompress: {
+        onUnsupportedRequestEncoding: (_encoding, _request, _reply) => {
+          routeUnsupportedCalled = true
+          return { statusCode: 415, error: 'RouteUnsupported' }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body)
+    })
+
+    const res1 = await fastify.inject({
+      url: '/route',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'unsupported'
+      },
+      payload: 'dummy'
+    })
+    t.assert.equal(res1.statusCode, 415)
+    t.assert.equal(routeUnsupportedCalled, true)
+
+    const res2 = await fastify.inject({
+      url: '/route',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: 'invalid-gzip-bytes'
+    })
+    t.assert.equal(res2.statusCode, 400)
+    t.assert.equal(globalInvalidCalled, true)
+  })
 })
