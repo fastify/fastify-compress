@@ -424,3 +424,41 @@ test('reply.compress should handle Web ReadableStream', async (t) => {
   const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
 })
+
+test('it should inherit global options when route compress options are partially defined (#340)', async (t) => {
+  t.plan(4)
+
+  let globalCustomZlibCalled = false
+  const customZlib = {
+    createGzip: () => {
+      globalCustomZlibCalled = true
+      return zlib.createGzip()
+    }
+  }
+
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: false,
+    threshold: 5000,
+    zlib: customZlib
+  })
+
+  fastify.get('/custom-threshold', {
+    compress: {
+      threshold: 10
+    }
+  }, (_request, reply) => {
+    reply.type('text/plain').send('hello world, this payload is small but larger than 10 bytes')
+  })
+
+  const res = await fastify.inject({
+    url: '/custom-threshold',
+    method: 'GET',
+    headers: { 'accept-encoding': 'gzip' }
+  })
+
+  t.assert.equal(res.statusCode, 200)
+  t.assert.equal(res.headers['content-encoding'], 'gzip')
+  t.assert.equal(globalCustomZlibCalled, true)
+  t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'hello world, this payload is small but larger than 10 bytes')
+})

@@ -65,9 +65,7 @@ function fastifyCompress (fastify, opts, next) {
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
-        const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.compress)
-        )
+        const mergedCompressParams = processCompressParams(routeOptions.compress, opts)
 
         // if the current endpoint has a custom compress configuration ...
         buildRouteCompress(fastify, mergedCompressParams, routeOptions)
@@ -89,10 +87,8 @@ function fastifyCompress (fastify, opts, next) {
     // Manage decompression options
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
-        // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
-        )
+        // if the current endpoint has a custom decompress configuration ...
+        const mergedDecompressParams = processDecompressParams(routeOptions.decompress, opts)
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
       } else if (routeOptions.decompress === false) {
@@ -129,7 +125,7 @@ const recommendedDefaultBrotliOptions = {
   }
 }
 
-function processCompressParams (opts) {
+function processCompressParams (opts, baseOpts = {}) {
   /* c8 ignore next 3 */
   if (!opts) {
     return
@@ -138,38 +134,50 @@ function processCompressParams (opts) {
   const params = {
     global: (typeof opts.globalCompression === 'boolean')
       ? opts.globalCompression
-      : (typeof opts.global === 'boolean') ? opts.global : true
+      : (typeof opts.global === 'boolean')
+          ? opts.global
+          : (typeof baseOpts.globalCompression === 'boolean')
+              ? baseOpts.globalCompression
+              : (typeof baseOpts.global === 'boolean') ? baseOpts.global : true
   }
 
-  params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
+  params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean'
+    ? opts.removeContentLengthHeader
+    : (typeof baseOpts.removeContentLengthHeader === 'boolean' ? baseOpts.removeContentLengthHeader : true)
   // The recommended defaults apply whatever the value of `global` is: with
   // `global: false` the compression still runs, just through `reply.compress()`,
   // and falling back to zlib's default quality of 11 there is needlessly slow.
-  params.brotliOptions = { ...recommendedDefaultBrotliOptions, ...opts.brotliOptions }
-  params.zlibOptions = opts.zlibOptions
-  params.onUnsupportedEncoding = opts.onUnsupportedEncoding
-  params.inflateIfDeflated = opts.inflateIfDeflated === true
-  params.threshold = typeof opts.threshold === 'number' ? opts.threshold : 1024
-  params.flushOnIdle = opts.flushOnIdle === true
-  params.respectNoTransform = opts.respectNoTransform === true
+  params.brotliOptions = { ...recommendedDefaultBrotliOptions, ...baseOpts.brotliOptions, ...opts.brotliOptions }
+  params.zlibOptions = opts.zlibOptions !== undefined ? opts.zlibOptions : baseOpts.zlibOptions
+  params.onUnsupportedEncoding = opts.onUnsupportedEncoding !== undefined ? opts.onUnsupportedEncoding : baseOpts.onUnsupportedEncoding
+  params.inflateIfDeflated = (opts.inflateIfDeflated !== undefined ? opts.inflateIfDeflated : baseOpts.inflateIfDeflated) === true
+  params.threshold = typeof opts.threshold === 'number'
+    ? opts.threshold
+    : (typeof baseOpts.threshold === 'number' ? baseOpts.threshold : 1024)
+  params.flushOnIdle = (opts.flushOnIdle !== undefined ? opts.flushOnIdle : baseOpts.flushOnIdle) === true
+  params.respectNoTransform = (opts.respectNoTransform !== undefined ? opts.respectNoTransform : baseOpts.respectNoTransform) === true
   // Upper size bound of the synchronous compression path. Unlike `threshold`, which is a
   // lower bound, this one is a ceiling: bigger payloads keep using the stream pipeline.
   // The default scales with the parallelism the host can offer the stream path, see
   // `computeSyncThreshold()`. An explicit value is always used as is, and `0` disables
   // the synchronous path entirely.
-  params.syncThreshold = typeof opts.syncThreshold === 'number' ? opts.syncThreshold : defaultSyncThreshold
-  params.compressibleTypes = opts.customTypes instanceof RegExp
-    ? opts.customTypes.test.bind(opts.customTypes)
-    : typeof opts.customTypes === 'function'
-      ? opts.customTypes
+  params.syncThreshold = typeof opts.syncThreshold === 'number'
+    ? opts.syncThreshold
+    : (typeof baseOpts.syncThreshold === 'number' ? baseOpts.syncThreshold : defaultSyncThreshold)
+  const customTypes = opts.customTypes !== undefined ? opts.customTypes : baseOpts.customTypes
+  params.compressibleTypes = customTypes instanceof RegExp
+    ? customTypes.test.bind(customTypes)
+    : typeof customTypes === 'function'
+      ? customTypes
       : defaultCompressibleTypes.test.bind(defaultCompressibleTypes)
+  const chosenZlib = opts.zlib || baseOpts.zlib || zlib
   params.compressStream = {
-    br: () => ((opts.zlib || zlib).createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGzip || zlib.createGzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createDeflate || zlib.createDeflate)(params.zlibOptions)
+    br: () => (chosenZlib.createBrotliCompress || zlib.createBrotliCompress)(params.brotliOptions),
+    gzip: () => (chosenZlib.createGzip || zlib.createGzip)(params.zlibOptions),
+    deflate: () => (chosenZlib.createDeflate || zlib.createDeflate)(params.zlibOptions)
   }
-  if (typeof ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress) === 'function') {
-    params.compressStream.zstd = () => ((opts.zlib || zlib).createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
+  if (typeof (chosenZlib.createZstdCompress || zlib.createZstdCompress) === 'function') {
+    params.compressStream.zstd = () => (chosenZlib.createZstdCompress || zlib.createZstdCompress)(params.zlibOptions)
   }
   // Synchronous counterparts of `params.compressStream`, used for small buffered payloads.
   // Encodings without a usable synchronous method are left out of the map so that they
@@ -181,7 +189,7 @@ function processCompressParams (opts) {
     ['deflate', 'createDeflate', 'deflateSync', params.zlibOptions],
     ['zstd', 'createZstdCompress', 'zstdCompressSync', params.zlibOptions]
   ]) {
-    const compressSync = resolveSyncCompressor(opts.zlib, streamMethod, syncMethod, options)
+    const compressSync = resolveSyncCompressor(chosenZlib, streamMethod, syncMethod, options)
     if (compressSync !== undefined) {
       params.compressSync[encoding] = compressSync
     }
@@ -190,14 +198,14 @@ function processCompressParams (opts) {
   params.uncompressStream = {
     // Currently params.uncompressStream.br() is never called as we do not have any way to autodetect brotli compression in `fastify-compress`
     // Brotli documentation reference: [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932)
-    br: /* c8 ignore next */ () => ((opts.zlib || zlib).createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
-    gzip: () => ((opts.zlib || zlib).createGunzip || zlib.createGunzip)(params.zlibOptions),
-    deflate: () => ((opts.zlib || zlib).createInflate || zlib.createInflate)(params.zlibOptions)
+    br: /* c8 ignore next */ () => (chosenZlib.createBrotliDecompress || zlib.createBrotliDecompress)(params.brotliOptions),
+    gzip: () => (chosenZlib.createGunzip || zlib.createGunzip)(params.zlibOptions),
+    deflate: () => (chosenZlib.createInflate || zlib.createInflate)(params.zlibOptions)
   }
-  if (typeof ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress) === 'function') {
+  if (typeof (chosenZlib.createZstdDecompress || zlib.createZstdDecompress) === 'function') {
     // Currently params.uncompressStream.zstd() is never called as we do not have any way to autodetect zstd compression in `fastify-compress`
     // Zstd documentation reference: [RFC 8878](https://www.rfc-editor.org/rfc/rfc8878)
-    params.uncompressStream.zstd = /* c8 ignore next */ () => ((opts.zlib || zlib).createZstdDecompress || zlib.createZstdDecompress)(params.zlibOptions)
+    params.uncompressStream.zstd = /* c8 ignore next */ () => (chosenZlib.createZstdDecompress || zlib.createZstdDecompress)(params.zlibOptions)
   }
 
   const supportedEncodings = ['br', 'gzip', 'deflate', 'identity']
@@ -205,10 +213,11 @@ function processCompressParams (opts) {
     supportedEncodings.unshift('zstd')
   }
 
-  params.encodings = Array.isArray(opts.encodings)
+  const rawEncodings = opts.encodings !== undefined ? opts.encodings : baseOpts.encodings
+  params.encodings = Array.isArray(rawEncodings)
     ? supportedEncodings
-      .filter(encoding => opts.encodings.includes(encoding))
-      .sort((a, b) => opts.encodings.indexOf(a) - opts.encodings.indexOf(b))
+      .filter(encoding => rawEncodings.includes(encoding))
+      .sort((a, b) => rawEncodings.indexOf(a) - rawEncodings.indexOf(b))
     : supportedEncodings
 
   return params
@@ -262,20 +271,28 @@ function compressPayloadSync (params, reply, encoding, payload, payloadSize) {
   return compressSync(buffer)
 }
 
-function processDecompressParams (opts) {
+function processDecompressParams (opts, baseOpts = {}) {
   /* c8 ignore next 3 */
   if (!opts) {
     return
   }
 
-  const customZlib = opts.zlib || zlib
+  const customZlib = opts.zlib || baseOpts.zlib || zlib
 
   const params = {
     global: (typeof opts.globalDecompression === 'boolean')
       ? opts.globalDecompression
-      : (typeof opts.global === 'boolean') ? opts.global : true,
-    onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding,
-    onInvalidRequestPayload: opts.onInvalidRequestPayload,
+      : (typeof opts.global === 'boolean')
+          ? opts.global
+          : (typeof baseOpts.globalDecompression === 'boolean')
+              ? baseOpts.globalDecompression
+              : (typeof baseOpts.global === 'boolean') ? baseOpts.global : true,
+    onUnsupportedRequestEncoding: opts.onUnsupportedRequestEncoding !== undefined
+      ? opts.onUnsupportedRequestEncoding
+      : baseOpts.onUnsupportedRequestEncoding,
+    onInvalidRequestPayload: opts.onInvalidRequestPayload !== undefined
+      ? opts.onInvalidRequestPayload
+      : baseOpts.onInvalidRequestPayload,
     decompressStream: {
       br: customZlib.createBrotliDecompress || zlib.createBrotliDecompress,
       gzip: customZlib.createGunzip || zlib.createGunzip,
@@ -293,17 +310,23 @@ function processDecompressParams (opts) {
     supportedEncodings.unshift('zstd')
   }
 
-  params.encodings = Array.isArray(opts.requestEncodings)
+  const rawRequestEncodings = opts.requestEncodings !== undefined
+    ? opts.requestEncodings
+    : baseOpts.requestEncodings
+  params.encodings = Array.isArray(rawRequestEncodings)
     ? supportedEncodings
-      .filter(encoding => opts.requestEncodings.includes(encoding))
-      .sort((a, b) => opts.requestEncodings.indexOf(a) - opts.requestEncodings.indexOf(b))
+      .filter(encoding => rawRequestEncodings.includes(encoding))
+      .sort((a, b) => rawRequestEncodings.indexOf(a) - rawRequestEncodings.indexOf(b))
     : supportedEncodings
 
-  if (opts.forceRequestEncoding) {
-    params.forceEncoding = opts.forceRequestEncoding
+  const forceRequestEncoding = opts.forceRequestEncoding !== undefined
+    ? opts.forceRequestEncoding
+    : baseOpts.forceRequestEncoding
+  if (forceRequestEncoding) {
+    params.forceEncoding = forceRequestEncoding
 
-    if (params.encodings.includes(opts.forceRequestEncoding)) {
-      params.encodings = [opts.forceRequestEncoding]
+    if (params.encodings.includes(forceRequestEncoding)) {
+      params.encodings = [forceRequestEncoding]
     }
   }
 
