@@ -129,7 +129,7 @@ test('isGzip() utility should be able to detect gzip compressed Buffer', async (
 })
 
 test('intoAsyncIterator() utility should handle different data', async (t) => {
-  t.plan(8)
+  t.plan(9)
   const equal = t.assert.equal
 
   const buf = Buffer.from('foo')
@@ -137,6 +137,7 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   const arr = [str, str]
   const arrayBuffer = new ArrayBuffer(8)
   const typedArray = new Int32Array(arrayBuffer)
+  const dataView = new DataView(arrayBuffer, 2, 4)
   const asyncIterator = (async function * () {
     yield str
   })()
@@ -162,6 +163,10 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
     equal(chunk.toString(), Buffer.from(typedArray).toString())
   }
 
+  for await (const chunk of intoAsyncIterator(dataView)) {
+    equal(chunk.toString(), Buffer.from(arrayBuffer, 2, 4).toString())
+  }
+
   for await (const chunk of intoAsyncIterator(asyncIterator)) {
     equal(chunk, str)
   }
@@ -169,6 +174,17 @@ test('intoAsyncIterator() utility should handle different data', async (t) => {
   for await (const chunk of intoAsyncIterator(obj)) {
     equal(chunk, obj)
   }
+})
+
+test('intoAsyncIterator() utility should handle DataView with offset and byteLength', async (t) => {
+  const buffer = new Uint8Array([1, 2, 3, 4, 5, 6]).buffer
+  const dataView = new DataView(buffer, 1, 4)
+  const chunks = []
+  for await (const chunk of intoAsyncIterator(dataView)) {
+    chunks.push(chunk)
+  }
+  t.assert.equal(chunks.length, 1)
+  t.assert.deepStrictEqual(chunks[0], Buffer.from([2, 3, 4, 5]))
 })
 
 test('createPeekTransform', async (t) => {
