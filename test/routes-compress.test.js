@@ -424,3 +424,31 @@ test('reply.compress should handle Web ReadableStream', async (t) => {
   const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
 })
+
+test('it should inherit global compress options when route options are defined partially', async (t) => {
+  t.plan(2)
+  const fastify = Fastify()
+  await fastify.register(compressPlugin, {
+    global: true,
+    removeContentLengthHeader: false
+  })
+
+  fastify.get('/partial', {
+    compress: {
+      threshold: 2048
+    }
+  }, (_request, reply) => {
+    reply.header('content-length', '5').send('hello')
+  })
+
+  const response = await fastify.inject({
+    url: '/partial',
+    method: 'GET',
+    headers: {
+      'accept-encoding': 'gzip'
+    }
+  })
+
+  t.assert.equal(response.statusCode, 200)
+  t.assert.equal(response.headers['content-length'], '5')
+})
