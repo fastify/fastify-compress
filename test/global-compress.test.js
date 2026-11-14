@@ -4106,4 +4106,49 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
     t.assert.equal(response.headers['content-encoding'], undefined)
     t.assert.deepEqual(response.rawPayload, gzipped)
   })
+
+  test('it should handle array content-type without throwing (non-compressible)', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/', (_request, reply) => {
+      reply.raw.setHeader('content-type', ['application/force-download'])
+      return Readable.from(['hello world'])
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+    t.assert.equal(response.headers['content-encoding'], undefined)
+    t.assert.equal(response.payload, 'hello world')
+  })
+
+  test('it should handle array content-type without throwing (compressible)', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, { threshold: 0 })
+
+    fastify.get('/', (_request, reply) => {
+      reply.raw.setHeader('content-type', ['text/plain'])
+      return Readable.from(['hello world'])
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+    t.assert.equal(response.headers['content-encoding'], 'gzip')
+    const payload = zlib.gunzipSync(response.rawPayload)
+    t.assert.equal(payload.toString('utf-8'), 'hello world')
+  })
 })
