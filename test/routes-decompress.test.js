@@ -232,4 +232,41 @@ describe('When using routes `decompress` settings :', async () => {
       t.assert.equal(err.message, 'Unknown value for route decompress configuration')
     }
   })
+
+  test('it should inherit global decompress options when route options are defined partially', async (t) => {
+    t.plan(3)
+    let globalHandlerCalled = false
+    const onInvalidRequestPayload = (encoding, request, error) => {
+      globalHandlerCalled = true
+      return { statusCode: 400, message: 'custom global invalid payload' }
+    }
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onInvalidRequestPayload
+    })
+
+    fastify.post('/partial', {
+      decompress: {
+        onUnsupportedRequestEncoding: () => ({ statusCode: 415 })
+      }
+    }, (request, reply) => {
+      reply.send('ok')
+    })
+
+    const response = await fastify.inject({
+      url: '/partial',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'gzip'
+      },
+      payload: 'invalid-not-gzipped-payload'
+    })
+
+    t.assert.equal(globalHandlerCalled, true)
+    t.assert.equal(response.statusCode, 400)
+    t.assert.equal(JSON.parse(response.body).message, 'custom global invalid payload')
+  })
 })
