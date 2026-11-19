@@ -233,3 +233,63 @@ describe('When using routes `decompress` settings :', async () => {
     }
   })
 })
+
+describe('When a route defines partial `decompress` settings :', async () => {
+  test('it should preserve the global settings that the route does not override', async (t) => {
+    t.plan(4)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onInvalidRequestPayload (encoding, _request, error) {
+        return {
+          statusCode: 400,
+          code: 'GLOBAL_INVALID',
+          error: 'Bad Request',
+          message: `global handler: ${encoding} ${error.message}.`
+        }
+      }
+    })
+
+    fastify.post('/', {
+      decompress: {
+        onUnsupportedRequestEncoding (encoding, _request) {
+          return {
+            statusCode: 415,
+            code: 'ROUTE_UNSUPPORTED',
+            error: 'Unsupported Media Type',
+            message: `route handler: ${encoding}.`
+          }
+        }
+      }
+    }, (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    // The route's own override is used
+    let response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'whatever'
+      },
+      payload: createPayload(zlib.createDeflate)
+    })
+    t.assert.equal(response.statusCode, 415)
+    t.assert.equal(response.json().code, 'ROUTE_UNSUPPORTED')
+
+    // The global handler the route did not override is still used
+    response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'deflate'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 400)
+    t.assert.equal(response.json().code, 'GLOBAL_INVALID')
+  })
+})
