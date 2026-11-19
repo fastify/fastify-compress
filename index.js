@@ -65,8 +65,11 @@ function fastifyCompress (fastify, opts, next) {
     // Manage compression options
     if (routeOptions.compress !== undefined) {
       if (typeof routeOptions.compress === 'object') {
-        const mergedCompressParams = Object.assign(
-          {}, globalCompressParams, processCompressParams(routeOptions.compress)
+        // Merge the raw options before processing them: merging the processed
+        // params instead would let the defaults that processCompressParams()
+        // fills in for options the route did not set override the global ones
+        const mergedCompressParams = processCompressParams(
+          Object.assign({}, opts, routeOptions.compress)
         )
 
         // if the current endpoint has a custom compress configuration ...
@@ -90,8 +93,9 @@ function fastifyCompress (fastify, opts, next) {
     if (routeOptions.decompress !== undefined) {
       if (typeof routeOptions.decompress === 'object') {
         // if the current endpoint has a custom compress configuration ...
-        const mergedDecompressParams = Object.assign(
-          {}, globalDecompressParams, processDecompressParams(routeOptions.decompress)
+        // Raw options are merged before processing for the same reason as above
+        const mergedDecompressParams = processDecompressParams(
+          Object.assign({}, opts, routeOptions.decompress)
         )
 
         buildRouteDecompress(fastify, mergedDecompressParams, routeOptions)
