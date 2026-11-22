@@ -117,6 +117,29 @@ describe('It should decompress the request payload :', async () => {
     t.assert.equal(response.body, '@fastify/compress')
   })
 
+  test('using gzip algorithm when `Content-Encoding` request header value uses mixed case', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin)
+
+    fastify.post('/', (request, reply) => {
+      reply.send(request.body.name)
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'content-encoding': 'GzIp'
+      },
+      payload: createPayload(zlib.createGzip)
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.body, '@fastify/compress')
+  })
+
   test('using the `forceRequestEncoding` provided algorithm over the `Content-Encoding` request header value', async (t) => {
     t.plan(2)
 
@@ -299,7 +322,7 @@ describe('It should return the error returned by :', async () => {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'content-encoding': 'whatever'
+        'content-encoding': 'WhatEver'
       },
       payload: createPayload(zlib.createDeflate)
     })
@@ -308,7 +331,7 @@ describe('It should return the error returned by :', async () => {
       statusCode: 400,
       code: 'INVALID',
       error: 'Bad Request',
-      message: 'We don\'t want to deal with whatever.'
+      message: 'We don\'t want to deal with WhatEver.'
     })
   })
 
