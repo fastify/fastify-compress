@@ -424,3 +424,45 @@ test('reply.compress should handle Web ReadableStream', async (t) => {
   const res = await fastify.inject({ url: '/', method: 'GET', headers: { 'accept-encoding': 'gzip' } })
   t.assert.equal(zlib.gunzipSync(res.rawPayload).toString('utf8'), 'from webstream')
 })
+
+describe('When a route defines partial `compress` settings :', async () => {
+  test('it should preserve the global settings that the route does not override', async (t) => {
+    t.plan(3)
+    const equal = t.assert.equal
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      removeContentLengthHeader: false
+    })
+
+    // The route overrides `threshold` only: the global
+    // `removeContentLengthHeader: false` must still apply
+    fastify.get('/', {
+      compress: { threshold: 0 }
+    }, (_request, reply) => {
+      readFile('./package.json', 'utf8', (err, data) => {
+        if (err) {
+          return reply.send(err)
+        }
+
+        reply
+          .type('text/plain')
+          .header('content-length', '' + data.length)
+          .send(data)
+      })
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'deflate'
+      }
+    })
+    const payload = zlib.inflateSync(response.rawPayload)
+    equal(response.headers['content-encoding'], 'deflate')
+    equal(response.headers['content-length'], payload.length.toString())
+    equal(payload.toString('utf-8'), readFileSync('./package.json', 'utf8'))
+  })
+})
