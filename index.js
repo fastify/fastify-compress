@@ -146,6 +146,7 @@ function processCompressParams (opts) {
   }
 
   params.removeContentLengthHeader = typeof opts.removeContentLengthHeader === 'boolean' ? opts.removeContentLengthHeader : true
+  params.detectAlreadyCompressed = typeof opts.detectAlreadyCompressed === 'boolean' ? opts.detectAlreadyCompressed : true
   // The recommended defaults apply whatever the value of `global` is: with
   // `global: false` the compression still runs, just through `reply.compress()`,
   // and falling back to zlib's default quality of 11 there is needlessly slow.
@@ -261,7 +262,7 @@ function compressPayloadSync (params, reply, encoding, payload, payloadSize) {
   const buffer = Buffer.isBuffer(payload) ? payload : Buffer.from(payload)
 
   // Mirror `zipStream()` and pass already gzip or deflate compressed payloads through as is
-  if (isCompressed(buffer) !== 0) return buffer
+  if (params.detectAlreadyCompressed && isCompressed(buffer) !== 0) return buffer
 
   return compressSync(buffer)
 }
@@ -440,7 +441,7 @@ function buildRouteCompress (_fastify, params, routeOptions, decorateOnly) {
       reply.removeHeader('content-length')
     }
 
-    stream = zipStream(params.compressStream, encoding, flushOnIdle)
+    stream = zipStream(params.compressStream, encoding, flushOnIdle, params.detectAlreadyCompressed)
     pipeline(payload, stream, onEnd.bind(reply))
     next(null, stream)
   }
@@ -609,7 +610,7 @@ function compress (params) {
       this.removeHeader('content-length')
     }
 
-    stream = zipStream(params.compressStream, encoding, flushOnIdle)
+    stream = zipStream(params.compressStream, encoding, flushOnIdle, params.detectAlreadyCompressed)
     pipeline(payload, stream, onEnd.bind(this))
     return this.send(stream)
   }
@@ -744,11 +745,13 @@ function maybeUnzip (payload, serialize) {
   return Readable.from(intoAsyncIterator(result))
 }
 
-function zipStream (deflate, encoding, flushOnIdle) {
+function zipStream (deflate, encoding, flushOnIdle, detectAlreadyCompressed) {
   return createPeekTransform(function (data) {
-    switch (isCompressed(data)) {
-      case 1: return new PassThrough()
-      case 2: return new PassThrough()
+    if (detectAlreadyCompressed) {
+      switch (isCompressed(data)) {
+        case 1: return new PassThrough()
+        case 2: return new PassThrough()
+      }
     }
     return deflate[encoding]()
   }, 10, flushOnIdle ? idleFlushKinds[encoding] : undefined)

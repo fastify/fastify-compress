@@ -351,6 +351,20 @@ fastify.get('/file', (req, reply) =>
   reply.send(fs.createReadStream('./file.gz')))
 ```
 
+### detectAlreadyCompressed
+By default, `@fastify/compress` inspects the first bytes of a payload and skips compressing it when they carry a gzip or deflate signature, so an already-compressed body is passed through instead of being compressed twice. Set `detectAlreadyCompressed` to `false` to skip that check and always compress.
+
+```js
+await fastify.register(
+  import('@fastify/compress'),
+  { detectAlreadyCompressed: false }
+)
+```
+
+The check reads a signature, not the actual contents, so an uncompressed payload whose leading bytes happen to match is passed through while the response still carries the negotiated `Content-Encoding`, and the client fails to decode it. The deflate signature is two bytes wide and 66 of the 65536 possible pairs match it, so roughly 1 in 993 payloads of arbitrary bytes — binary formats, encrypted blobs, random identifiers — trips this. Turning the check off removes that failure mode.
+
+Leave it on if the application ever serves payloads that are already gzip or deflate compressed: with the check off those are compressed a second time, and a client that decodes one layer gets the compressed bytes rather than the original.
+
 ### Customize encoding priority
 By default, `@fastify/compress` prioritizes compression as described [here](#usage). Change this by passing an array of compression tokens to the `encodings` option:
 
