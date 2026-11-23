@@ -29,6 +29,20 @@ const defaultSyncThreshold = computeSyncThreshold()
 const InvalidRequestEncodingError = createError('FST_CP_ERR_INVALID_CONTENT_ENCODING', 'Unsupported Content-Encoding: %s', 415)
 const InvalidRequestCompressedPayloadError = createError('FST_CP_ERR_INVALID_CONTENT', 'Could not decompress the request payload using the provided encoding', 400)
 
+// TODO: remove in next major, once the default for globalDecompression flips to false
+function warnImplicitGlobalDecompression () {
+  if (warnImplicitGlobalDecompression.warned) return
+  warnImplicitGlobalDecompression.warned = true
+  process.emitWarning(
+    'Registering @fastify/compress without an explicit `globalDecompression` (or `global`) option decompresses every request payload by default. ' +
+    'This exposes the server to attacker-controlled decompression input (see https://app.opencve.io/cve/CVE-2026-111497 for one example of the risk class). ' +
+    'Set `{ globalDecompression: false }` if this server only needs response compression, or `{ globalDecompression: true }` to keep the current behavior and silence this warning. ' +
+    'The implicit default is expected to change to `false` in a future major version.',
+    'DeprecationWarning',
+    'FST_CP_WARN_IMPLICIT_GLOBAL_DECOMPRESSION'
+  )
+}
+
 function fastifyCompress (fastify, opts, next) {
   const globalCompressParams = processCompressParams(opts)
   const globalDecompressParams = processDecompressParams(opts)
@@ -273,6 +287,10 @@ function processDecompressParams (opts) {
   }
 
   const customZlib = opts.zlib || zlib
+
+  if (typeof opts.globalDecompression !== 'boolean' && typeof opts.global !== 'boolean') {
+    warnImplicitGlobalDecompression()
+  }
 
   const params = {
     global: (typeof opts.globalDecompression === 'boolean')

@@ -533,6 +533,28 @@ await fastify.register(
 )
 ```
 
+### Implicit `globalDecompression` warning
+
+Registering the plugin without explicitly setting `globalDecompression` or `global` emits a one-time `FST_CP_WARN_IMPLICIT_GLOBAL_DECOMPRESSION` process warning. Request decompression is enabled by default, which means the server decompresses attacker-controlled request bodies even when the application only ever registered the plugin to compress its own responses — a real-world example of the risk this creates is [CVE-2026-111497](https://app.opencve.io/cve/CVE-2026-111497), an out-of-bounds write in the Node.js Brotli decoder.
+
+Set the option explicitly to silence the warning and state your intent:
+
+```js
+// This server only compresses responses and never needs to decompress request bodies
+await fastify.register(
+  import('@fastify/compress'),
+  { globalDecompression: false }
+)
+
+// This server does intend to decompress request bodies
+await fastify.register(
+  import('@fastify/compress'),
+  { globalDecompression: true }
+)
+```
+
+The implicit default is expected to change to `false` in a future major version.
+
 ## Acknowledgments
 
 Past sponsors:
