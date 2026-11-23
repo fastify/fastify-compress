@@ -33,6 +33,7 @@ type FastifyCompress = FastifyPluginCallback<fastifyCompress.FastifyCompressOpti
 type RouteCompressOptions = Pick<fastifyCompress.FastifyCompressOptions,
   | 'brotliOptions'
   | 'customTypes'
+  | 'detectAlreadyCompressed'
   | 'encodings'
   | 'flushOnIdle'
   | 'inflateIfDeflated'
@@ -70,6 +71,7 @@ declare namespace fastifyCompress {
   export interface FastifyCompressOptions {
     brotliOptions?: BrotliOptions;
     customTypes?: RegExp | CompressibleContentTypeFunction;
+    detectAlreadyCompressed?: boolean;
     encodings?: EncodingToken[];
     flushOnIdle?: boolean;
     forceRequestEncoding?: EncodingToken;
