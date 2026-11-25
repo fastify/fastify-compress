@@ -4107,3 +4107,64 @@ describe('When the reply `Cache-Control` header has the `no-transform` directive
     t.assert.deepEqual(response.rawPayload, gzipped)
   })
 })
+
+describe('When compression is skipped but a supported encoding is negotiable and `onUnsupportedEncoding` is defined :', async () => {
+  test('it should not call `onUnsupportedEncoding()` on `x-no-compression` header', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding: (encoding, _request, reply) => {
+        reply.code(406)
+        return JSON.stringify({ hello: encoding })
+      }
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .header('Content-Type', 'text/plain')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip',
+        'x-no-compression': 'true'
+      }
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.payload, 'hello')
+  })
+
+  test('it should not call `onUnsupportedEncoding()` on a non-compressible content type', async (t) => {
+    t.plan(2)
+
+    const fastify = Fastify()
+    await fastify.register(compressPlugin, {
+      global: true,
+      onUnsupportedEncoding: (encoding, _request, reply) => {
+        reply.code(406)
+        return JSON.stringify({ hello: encoding })
+      }
+    })
+
+    fastify.get('/', (_request, reply) => {
+      reply
+        .header('Content-Type', 'application/octet-stream')
+        .send('hello')
+    })
+
+    const response = await fastify.inject({
+      url: '/',
+      method: 'GET',
+      headers: {
+        'accept-encoding': 'gzip'
+      }
+    })
+    t.assert.equal(response.statusCode, 200)
+    t.assert.equal(response.payload, 'hello')
+  })
+})
